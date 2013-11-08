@@ -1,0 +1,9 @@
+== Dependencies ==
+- libopencv-*
+We will not use the OpenCV version which is supplied by ROS, because they don't ship it with a proper cmake find file.
+libopencv-core-dev provides one, but opencv is only at 2.3.6 then ...
+
+== How to build ==
+cd to build # or create it
+cmake ..
+Run 'src/surf_keypoints'
