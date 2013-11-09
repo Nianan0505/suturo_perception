@@ -3,12 +3,19 @@
 #include <stdio.h>
 #include <iostream>
 #include <opencv2/core/core.hpp>
-#include <opencv2/nonfree/features2d.hpp>
+#include <opencv2/core/version.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp> 
 #include <boost/timer.hpp>      // For boost::timer class
+
+// OpenCV 2.4 moved the SURF and SIFT libraries to a new nonfree/ directory
+#if CV_MINOR_VERSION > 3
+	#include <opencv2/nonfree/features2d.hpp>
+#else
+	#include <opencv2/features2d/features2d.hpp>
+#endif
 
 using namespace cv;
 
