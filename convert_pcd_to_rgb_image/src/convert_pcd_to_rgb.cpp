@@ -12,9 +12,9 @@ int
 {
 	pcl::PointCloud<pcl::PointXYZRGBA> cloud;
 
-	if (argc < 2)
+	if (argc < 3)
 	{
-		fprintf (stderr, "Usage: convert_pcd_to_rgb_image point_cloud.pcd\n");
+		fprintf (stderr, "Usage: convert_pcd_to_rgb_image point_cloud.pcd filename_of_output_image.jpg\n");
 		return 1;
 	}
 
@@ -40,8 +40,9 @@ int
 			img.at<Vec3b>(row,column)[2] = cloud.at(column,row).r;
 		}
 	}
-  imshow( "PC", img );
-  waitKey(0);
+  // imshow( "PC", img );
+  // waitKey(0);
+	imwrite(argv[2], img );
 
   return (0);
 }

@@ -37,7 +37,7 @@ int main( int argc, char** argv )
 	boost::timer t;
 
   //-- Step 1: Detect the keypoints using SURF Detector
-  int minHessian = 400;
+  int minHessian = 500;
 
   SurfFeatureDetector detector( minHessian );
 
@@ -78,7 +78,7 @@ int main( int argc, char** argv )
   std::vector< DMatch > good_matches;
 
   for( int i = 0; i < descriptors_object.rows; i++ )
-  { if( matches[i].distance < 2*min_dist )
+  { if( matches[i].distance < 3*min_dist )
      { good_matches.push_back( matches[i]); }
   }
   Mat img_matches;
@@ -97,45 +97,55 @@ int main( int argc, char** argv )
     scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
   }
 	double goodMatchesElapsedTime = t.elapsed();
+	std::cout << keypoints_object.size() << " detected keypoints in the object frame " << std::endl;
+	std::cout << keypoints_scene.size() << " detected keypoints in the scene frame " << std::endl;
+	std::cout << good_matches.size() << " good matches" << std::endl;
+  printf("-- Max dist between matches: %f \n", max_dist );
+  printf("-- Min dist between matches: %f \n", min_dist );
 
-	std::vector<uchar> outlier_mask;  // Used for homography
-  Mat H = findHomography( obj, scene, CV_RANSAC, 1.0, outlier_mask);
-	double homographyElapsedTime = t.elapsed();
-	int inliers=0, outliers=0;
-	for(unsigned int k=0; k<obj.size();++k)
-	{
-		if(outlier_mask.at(k))
+	if(good_matches.size() >= 4){
+		std::vector<uchar> outlier_mask;  // Used for homography
+		Mat H = findHomography( obj, scene, CV_RANSAC, 1.0, outlier_mask);
+		double homographyElapsedTime = t.elapsed();
+		int inliers=0, outliers=0;
+		for(unsigned int k=0; k<obj.size();++k)
 		{
-			++inliers;
+			if(outlier_mask.at(k))
+			{
+				++inliers;
+			}
+			else
+			{
+				++outliers;
+			}
 		}
-		else
-		{
-			++outliers;
+
+		// The homography must contain atleast 70% of the extracted keypoints in the homography
+		// for a "good match"
+		// If the inlier to outlier ratio is above this threshold, we will draw the bounding box
+		// and count the object as recognized
+		float inlierRatio = 0.7;
+		float actualInlierRatio = static_cast<float>(inliers) / static_cast<float>(good_matches.size());
+		std::cout << actualInlierRatio << std::endl;
+		if( good_matches.size() > 0 && actualInlierRatio >= inlierRatio){
+			std::cout << "Recognized the object in the scene" << std::endl;
+			//-- Get the corners from the image_1 ( the object to be "detected" on the left)
+			std::vector<Point2f> obj_corners(4);
+			obj_corners[0] = cvPoint(0,0);
+			obj_corners[1] = cvPoint( img_object.cols, 0 );
+			obj_corners[2] = cvPoint( img_object.cols, img_object.rows );
+			obj_corners[3] = cvPoint( 0, img_object.rows );
+			std::vector<Point2f> scene_corners(4);
+
+			perspectiveTransform( obj_corners, scene_corners, H);
+
+			//-- Draw lines between the corners (the mapped object in the scene - image_2 )
+			line( img_matches, scene_corners[0] + Point2f( img_object.cols, 0), scene_corners[1] + Point2f( img_object.cols, 0), Scalar(0, 255, 0), 4 );
+			line( img_matches, scene_corners[1] + Point2f( img_object.cols, 0), scene_corners[2] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
+			line( img_matches, scene_corners[2] + Point2f( img_object.cols, 0), scene_corners[3] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
+			line( img_matches, scene_corners[3] + Point2f( img_object.cols, 0), scene_corners[0] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
 		}
-	}
-
-	// The homography must contain atleast 70% of the extracted keypoints in the homography
-	// for a "good match"
-	// If the inlier to outlier ratio is above this threshold, we will draw the bounding box
-	// and count the object as recognized
-	float inlierRatio = 0.7;
-	if( static_cast<float>(inliers/outliers) >= inlierRatio){
-		std::cout << "Recognized the object in the scene" << std::endl;
-		//-- Get the corners from the image_1 ( the object to be "detected" on the left)
-		std::vector<Point2f> obj_corners(4);
-		obj_corners[0] = cvPoint(0,0);
-		obj_corners[1] = cvPoint( img_object.cols, 0 );
-		obj_corners[2] = cvPoint( img_object.cols, img_object.rows );
-		obj_corners[3] = cvPoint( 0, img_object.rows );
-		std::vector<Point2f> scene_corners(4);
-
-		perspectiveTransform( obj_corners, scene_corners, H);
-
-		//-- Draw lines between the corners (the mapped object in the scene - image_2 )
-		line( img_matches, scene_corners[0] + Point2f( img_object.cols, 0), scene_corners[1] + Point2f( img_object.cols, 0), Scalar(0, 255, 0), 4 );
-		line( img_matches, scene_corners[1] + Point2f( img_object.cols, 0), scene_corners[2] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
-		line( img_matches, scene_corners[2] + Point2f( img_object.cols, 0), scene_corners[3] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
-		line( img_matches, scene_corners[3] + Point2f( img_object.cols, 0), scene_corners[0] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
+		std::cout << "found " << inliers << " Inliers in the Homography and " << outliers << " Outliers" << std::endl;
 	}
 	double totalElapsedTime = t.elapsed();
 	std::cout << std::endl << "#### Time measurements #### " << std::endl;
@@ -143,12 +153,6 @@ int main( int argc, char** argv )
 	std::cout << "Keypoints calculated at " << keypointObjectElapsedTime << "seconds for the object and at "<< keypointSceneElapsedTime << " seconds for the scene " << std::endl;
 	std::cout << "Descriptors calculated at " << descriptorObjectElapsedTime << "seconds for the object and at "<< descriptorSceneElapsedTime << " seconds for the scene " << std::endl;
 
-	std::cout << keypoints_object.size() << " detected keypoints in the object frame " << std::endl;
-	std::cout << keypoints_scene.size() << " detected keypoints in the scene frame " << std::endl;
-  printf("-- Max dist between matches: %f \n", max_dist );
-  printf("-- Min dist between matches: %f \n", min_dist );
-	std::cout << good_matches.size() << " good matches" << std::endl;
-	std::cout << "found " << inliers << " Inliers in the Homography and " << outliers << " Outliers" << std::endl;
 
   //-- Show detected matches
   imshow( "Good Matches & Object detection", img_matches );
