@@ -51,7 +51,7 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 
-void MyClass::sayHi(){
+void SuturoPerception::sayHi(){
   pcl::PointCloud<pcl::PointXYZ> cloud;
 
   // Fill in the cloud data
@@ -88,7 +88,7 @@ bool ReceivedObjectGreaterThan(const PerceivedObject& p1, const PerceivedObject&
 	 *
 	 * The result is a list of PerceivedObject's, which will be put into the buffer perceivedObjects.
 	 */
-void MyClass::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+void SuturoPerception::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
 	//point cloud objects
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());

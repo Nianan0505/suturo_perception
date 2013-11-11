@@ -8,12 +8,13 @@
 #include <boost/signals2/mutex.hpp>
 #include "PerceivedObject.h"
 
-class MyClass{
+class SuturoPerception{
     public:
 	void sayHi();
 	
 	void process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
 	
+  int magicNumber() {return 23;}
     private:
 	// ID counter for the perceived objects
 	int objectID;

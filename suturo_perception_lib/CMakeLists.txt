@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(suturo_perception_lib)
 
+
+message("Hallo Welt!!!")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -9,7 +12,20 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED COMPONENTS system)
+set(Boost_USE_STATIC_LIBS OFF) 
+set(Boost_USE_MULTITHREADED ON)  
+set(Boost_USE_STATIC_RUNTIME OFF) 
+find_package(Boost REQUIRED COMPONENTS system thread)
+include_directories(${Boost_INCLUDE_DIRS}) 
+link_directories(${Boost_LIBRARY_DIRS})      
+
+# Use the PCL packages for the lib
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+                                                                                                                                                                                                            
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -96,9 +112,9 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(suturo_perception_lib
-  lib/suturo_perception.cpp
-)
+#add_library(suturo_perception_lib
+# lib/suturo_perception.cpp
+#
 
 ## Declare a cpp executable
 # add_executable(perception_node src/perception_node.cpp)
@@ -152,7 +168,7 @@ add_library(suturo_perception_lib
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_perception.cpp)
+catkin_add_gtest(${PROJECT_NAME}-test test/test.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
@@ -161,24 +177,25 @@ add_library(suturo_perception_lib
 # catkin_add_nosetests(test)
 
 # Search the following folders for additional CMakeLists.txt
-# add_subdirectory(lib)
+add_subdirectory(lib)
+add_subdirectory(test)
 
 # Use the PCL packages for the lib
-find_package(PCL 1.6 REQUIRED COMPONENTS)
+#find_package(PCL 1.6 REQUIRED COMPONENTS)
 
 # Include PCL directories after discovery of PCL
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+#include_directories(${PCL_INCLUDE_DIRS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
 
 
 # include boost
-set(Boost_USE_STATIC_LIBS OFF) 
-set(Boost_USE_MULTITHREADED ON)  
-set(Boost_USE_STATIC_RUNTIME OFF) 
-find_package(Boost 1.48.0 COMPONENTS thread) 
+#set(Boost_USE_STATIC_LIBS OFF) 
+#set(Boost_USE_MULTITHREADED ON)  
+#set(Boost_USE_STATIC_RUNTIME OFF) 
+#find_package(Boost 1.48.0 COMPONENTS thread) 
 
-include_directories(${Boost_INCLUDE_DIRS}) 
-link_directories(${Boost_LIBRARY_DIRS})
+#include_directories(${Boost_INCLUDE_DIRS}) 
+#link_directories(${Boost_LIBRARY_DIRS})
 # Link library against PCL and boost
-target_link_libraries(suturo_perception_lib ${PCL_LIBRARIES} ${Boost_LIBRARIES})   
+#target_link_libraries(suturo_perception_lib ${PCL_LIBRARIES} ${Boost_LIBRARIES})   
