@@ -1,0 +1,6 @@
+To build the standalone lib execute the following commands:
+
+mkdir build
+cd build
+cmake ..
+make
