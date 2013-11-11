@@ -9,6 +9,12 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp> 
 #include <boost/timer.hpp>      // For boost::timer class
+#include <boost/program_options.hpp>
+#include <algorithm>
+#include <iterator>
+ 
+using namespace boost;
+namespace po = boost::program_options;
 
 // OpenCV 2.4 moved the SURF and SIFT libraries to a new nonfree/ directory
 #if CV_MINOR_VERSION > 3
@@ -18,12 +24,92 @@
 #endif
 
 using namespace cv;
+using namespace std;
+namespace po = boost::program_options;
 
 void readme();
 
 /** @function main */
 int main( int argc, char** argv )
 {
+  bool headless_mode=false;
+  try
+  {
+    // Declare the supported options.
+    po::options_description desc("Allowed options");
+    desc.add_options()
+      ("help", "produce help message")
+      ("train-img,t", po::value<std::vector<std::string> >()->required(), "The training image, that should be matched in the test images")
+      ("test-img,i", po::value<std::vector<std::string> >()->required(), "A set of images where train-img should be recognized")
+      // zero_tokens tells program_options to not require an argument to a parameter switch
+      // This gives flag-like behaviour
+      ("headless,h", po::value<bool>()->zero_tokens(), "Headless mode -- Dont show images")
+    ;
+    // Use positional_options to allow the passing of test-img filenames without giving
+    // the parameters explicitly. Like surf_keypoints testimg1 testimg2 instead of
+    // surf_keypoints -i testimg1 -i testimg2 etc.
+    po::positional_options_description p;
+    p.add("test-img", -1);
+
+    // "HashMap" for parameters
+    po::variables_map vm;
+    // po::store(po::parse_command_line(argc, argv, desc), vm); // Without positional options
+    po::store(po::command_line_parser(argc, argv).
+          options(desc).positional(p).run(), vm); 
+
+    if (vm.count("help")) {
+      cout << "Usage: surf_keypoints [OPTIONS] test-img1 test-img2..." << endl << endl;
+      cout << desc << "\n";
+      return 1;
+    }
+
+    // Put notify after the help check, so help is display even
+    // if required parameters are not given
+    po::notify(vm);
+
+    cout << vm.count("train-img") << endl;
+    if(vm.count("train-img"))
+    {
+      std::vector<std::string> files = vm["train-img"].as<std::vector<std::string> >();
+      for(int i=0;i<files.size();i++)
+      {
+        std::cout << "Train image " << files.at(i) << std::endl;
+      }
+    }
+    if(vm.count("test-img"))
+    {
+      std::vector<std::string> files = vm["test-img"].as<std::vector<std::string> >();
+      for(int i=0;i<files.size();i++)
+      {
+        std::cout << "Test image " << files.at(i) << std::endl;
+      }
+    }
+    if(vm.count("headless"))
+    {
+      headless_mode = true;
+      cout << "Running headless" << endl;
+    }
+    else
+    {
+      headless_mode = false;
+      cout << "Running with GUI" << endl;
+    }
+
+  }
+  catch(std::exception& e)
+  {
+    std::cerr << "Error: " << e.what() << "\n";
+    return false;
+  }
+  catch(...)
+  {
+    std::cerr << "Unknown error!" << "\n";
+    return false;
+  } 
+
+
+  return 0;
+
   if( argc != 3 )
   { readme(); return -1; }
 
@@ -163,4 +249,6 @@ int main( int argc, char** argv )
 
   /** @function readme */
   void readme()
-  { std::cout << " Usage: ./surf_keypoints <img1> <img2>" << std::endl; }
+  { std::cout << " Usage: ./surf_keypoints <img1> <img2> OPTION" << std::endl; std::cout << "OPTION could be: " << std::endl << "-h\t for headless operation (e.g. not showing any images)"; }
+
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
