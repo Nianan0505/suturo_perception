@@ -94,9 +94,9 @@ add_definitions(${PCL_DEFINITIONS})
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS lib
-  LIBRARIES suturo_perception_lib
-#  CATKIN_DEPENDS roscpp
+  INCLUDE_DIRS include
+#  LIBRARIES suturo_perception_lib
+  CATKIN_DEPENDS pcl
 #  DEPENDS system_lib
 )
 
@@ -106,7 +106,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
+include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
