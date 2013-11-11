@@ -78,8 +78,8 @@ find_package(Boost REQUIRED COMPONENTS system)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES basic_perception_lib
+  INCLUDE_DIRS lib
+  LIBRARIES suturo_perception_lib
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
 )
@@ -97,7 +97,7 @@ include_directories(
 
 ## Declare a cpp library
 add_library(suturo_perception_lib
-  src/${PROJECT_NAME}/suturo_perception.cpp
+  lib/suturo_perception.cpp
 )
 
 ## Declare a cpp executable
