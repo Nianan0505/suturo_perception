@@ -1,5 +1,5 @@
 # Compile my_class as library
-add_library(MyClass my_class.cpp PerceivedObject.cpp Point.cpp)
+add_library(suturo_perception_lib suturo_perception.cpp)
 
 # Use the PCL packages for the lib
 find_package(PCL 1.6 REQUIRED COMPONENTS)
@@ -19,4 +19,4 @@ find_package(Boost 1.48.0 COMPONENTS thread)
 include_directories(${Boost_INCLUDE_DIRS}) 
 link_directories(${Boost_LIBRARY_DIRS})
 # Link library against PCL and boost
-target_link_libraries(MyClass ${PCL_LIBRARIES} ${Boost_LIBRARIES})                                                                                                                                                                                                                            
+target_link_libraries(suturo_perception_lib ${PCL_LIBRARIES} ${Boost_LIBRARIES})                                                                                                                                                                                                                            

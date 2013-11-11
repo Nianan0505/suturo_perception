@@ -1,4 +1,4 @@
-#include "my_class.h"
+#include "suturo_perception.h"
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 

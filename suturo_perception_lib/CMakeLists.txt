@@ -162,5 +162,4 @@ include_directories(
 
 # Search the following folders for additional CMakeLists.txt
 add_subdirectory(lib)
-add_subdirectory(src)
 
