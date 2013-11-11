@@ -96,9 +96,9 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(perception
-#   src/${PROJECT_NAME}/perception.cpp
-# )
+add_library(suturo_perception_lib
+  src/${PROJECT_NAME}/suturo_perception.cpp
+)
 
 ## Declare a cpp executable
 # add_executable(perception_node src/perception_node.cpp)
@@ -161,5 +161,24 @@ include_directories(
 # catkin_add_nosetests(test)
 
 # Search the following folders for additional CMakeLists.txt
-add_subdirectory(lib)
+# add_subdirectory(lib)
 
+# Use the PCL packages for the lib
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+
+# Include PCL directories after discovery of PCL
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+
+# include boost
+set(Boost_USE_STATIC_LIBS OFF) 
+set(Boost_USE_MULTITHREADED ON)  
+set(Boost_USE_STATIC_RUNTIME OFF) 
+find_package(Boost 1.48.0 COMPONENTS thread) 
+
+include_directories(${Boost_INCLUDE_DIRS}) 
+link_directories(${Boost_LIBRARY_DIRS})
+# Link library against PCL and boost
+target_link_libraries(suturo_perception_lib ${PCL_LIBRARIES} ${Boost_LIBRARIES})   
