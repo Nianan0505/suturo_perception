@@ -27,12 +27,15 @@ using namespace cv;
 using namespace std;
 namespace po = boost::program_options;
 
-void readme();
+bool surf_recognition(std::string training_image, std::string test_image, bool headless){
+}
 
 /** @function main */
 int main( int argc, char** argv )
 {
   bool headless_mode=false;
+  std::string train_image;
+  std::string test_image;
   try
   {
     // Declare the supported options.
@@ -70,19 +73,22 @@ int main( int argc, char** argv )
     cout << vm.count("train-img") << endl;
     if(vm.count("train-img"))
     {
-      std::vector<std::string> files = vm["train-img"].as<std::vector<std::string> >();
-      for(int i=0;i<files.size();i++)
-      {
-        std::cout << "Train image " << files.at(i) << std::endl;
-      }
+      // std::vector<std::string> files = vm["train-img"].as<std::vector<std::string> >();
+      // for(int i=0;i<files.size();i++)
+      // {
+      //   std::cout << "Train image " << files.at(i) << std::endl;
+      // }
+      // Take the first train-image, we are not supporting more right now
+      train_image = vm["train-img"].as<std::vector<std::string> >().at(0);
     }
     if(vm.count("test-img"))
     {
-      std::vector<std::string> files = vm["test-img"].as<std::vector<std::string> >();
-      for(int i=0;i<files.size();i++)
-      {
-        std::cout << "Test image " << files.at(i) << std::endl;
-      }
+      // std::vector<std::string> files = vm["test-img"].as<std::vector<std::string> >();
+      // for(int i=0;i<files.size();i++)
+      // {
+      //   std::cout << "Test image " << files.at(i) << std::endl;
+      // }
+      test_image = vm["test-img"].as<std::vector<std::string> >().at(0);
     }
     if(vm.count("headless"))
     {
@@ -98,6 +104,7 @@ int main( int argc, char** argv )
   }
   catch(std::exception& e)
   {
+    cout << "Usage: surf_keypoints [OPTIONS] test-img1 test-img2..." << endl << endl;
     std::cerr << "Error: " << e.what() << "\n";
     return false;
   }
@@ -107,14 +114,8 @@ int main( int argc, char** argv )
     return false;
   } 
 
-
-  return 0;
-
-  if( argc != 3 )
-  { readme(); return -1; }
-
-  Mat img_object = imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
-  Mat img_scene = imread( argv[2], CV_LOAD_IMAGE_GRAYSCALE );
+  Mat img_object = imread( train_image, CV_LOAD_IMAGE_GRAYSCALE );
+  Mat img_scene = imread( test_image, CV_LOAD_IMAGE_GRAYSCALE );
 
   if( !img_object.data || !img_scene.data )
   { std::cout<< " --(!) Error reading images " << std::endl; return -1; }
@@ -248,7 +249,7 @@ int main( int argc, char** argv )
   }
 
   /** @function readme */
-  void readme()
-  { std::cout << " Usage: ./surf_keypoints <img1> <img2> OPTION" << std::endl; std::cout << "OPTION could be: " << std::endl << "-h\t for headless operation (e.g. not showing any images)"; }
+  // void readme()
+  // { std::cout << " Usage: ./surf_keypoints <img1> <img2> OPTION" << std::endl; std::cout << "OPTION could be: " << std::endl << "-h\t for headless operation (e.g. not showing any images)"; }
 
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
