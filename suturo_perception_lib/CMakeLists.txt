@@ -95,7 +95,7 @@ add_definitions(${PCL_DEFINITIONS})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES suturo_perception_lib
+  LIBRARIES suturo_perception_lib
   CATKIN_DEPENDS pcl
 #  DEPENDS system_lib
 )
