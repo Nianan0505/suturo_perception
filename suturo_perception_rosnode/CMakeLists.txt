@@ -4,11 +4,21 @@ project(suturo_perception_rosnode)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS 
+suturo_perception_lib
+)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
+# WORKAROUND - import pcl here as well 
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+
+link_directories(${suturo_perception_lib_LIBRARY_DIRS})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -75,12 +85,14 @@ find_package(catkin REQUIRED)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
+
+#catkin_package(DEPENDS roscpp CATKIN_DEPENDS suturo_perception_lib)
+#catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES suturo_perception_rosnode
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
-)
+#)
 
 ###########
 ## Build ##
@@ -89,6 +101,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
+message(========= INCLUDE DIRS "${catkin_INCLUDE_DIRS}")
+
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+)
+# workaround: catkin_include doesn't work
+include_directories(${suturo_perception_lib_INCLUDE_DIRS})
+
 
 ## Declare a cpp library
 # add_library(suturo_perception_rosnode
@@ -96,16 +116,16 @@ catkin_package(
 # )
 
 ## Declare a cpp executable
-# add_executable(suturo_perception_rosnode_node src/suturo_perception_rosnode_node.cpp)
+add_executable(suturo_perception_rosnode src/main.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(suturo_perception_rosnode_node suturo_perception_rosnode_generate_messages_cpp)
+add_dependencies(suturo_perception_rosnode suturo_perception_lib)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(suturo_perception_rosnode_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(suturo_perception_rosnode
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

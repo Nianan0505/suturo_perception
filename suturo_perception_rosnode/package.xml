@@ -7,7 +7,7 @@
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="andre@todo.todo">andre</maintainer>
+  <maintainer email="aluebken@cs.uni-bremen.de">Andre Lübken</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -40,7 +40,11 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-
+  <build_depend>roscpp</build_depend>
+  <build_depend>suturo_perception_lib</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>suturo_perception_lib</run_depend>
+  
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
