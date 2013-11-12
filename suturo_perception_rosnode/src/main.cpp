@@ -104,5 +104,7 @@ int main (int argc, char** argv)
     SuturoPerceptionROSNode spr(nh);
     ROS_INFO("suturo_perception READY");
     //sp.sayHi();
+    ros::MultiThreadedSpinner spinner(2);
+    spinner.spin();
     return (0);
 }
