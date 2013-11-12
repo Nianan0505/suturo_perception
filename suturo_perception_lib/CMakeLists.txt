@@ -4,10 +4,9 @@ project(suturo_perception_lib)
 include(ExternalProject)
 ExternalProject_Add(
   suturo_pcd_files
-  DOWNLOAD_COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/sync_pointclouds.sh" "${CMAKE_CURRENT_SOURCE_DIR}"
-  DOWNLOAD_DIR pointclouds
+  DOWNLOAD_COMMAND ""
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
+  BUILD_COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/sync_pointclouds.sh" "${CMAKE_CURRENT_SOURCE_DIR}"
   INSTALL_COMMAND ""
 )
 
