@@ -17,8 +17,16 @@ set(
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
+# Use the PCL packages for the test
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+
+# Include PCL directories after discovery of PCL
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 # Name of the executable and the related source files
 add_executable (test_bin test.cpp)
 
 # Link the test program against the lib, the gtest framework and pthread
-target_link_libraries(test_bin suturo_perception_lib ${GTEST_LIBRARIES} pthread)
+target_link_libraries(test_bin suturo_perception_lib ${GTEST_LIBRARIES} ${PCL_LIBRARIES} pthread)

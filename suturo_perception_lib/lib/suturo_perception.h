@@ -15,6 +15,8 @@ class SuturoPerception{
 	void process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
 	
   int magicNumber() {return 23;}
+  
+  std::vector<PerceivedObject> *getPerceivedObjects() { return &perceivedObjects; }
     private:
 	// ID counter for the perceived objects
 	int objectID;
