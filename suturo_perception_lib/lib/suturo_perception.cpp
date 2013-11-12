@@ -51,7 +51,13 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 
-void SuturoPerception::sayHi(){
+std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
+{
+	return perceivedObjects;
+}
+
+void SuturoPerception::sayHi()
+{
   pcl::PointCloud<pcl::PointXYZ> cloud;
 
   // Fill in the cloud data
@@ -76,7 +82,8 @@ void SuturoPerception::sayHi(){
 }
 
 // Comparator function for PerceivedObject's. PerceivedObjects will be compared by their volume
-bool ReceivedObjectGreaterThan(const PerceivedObject& p1, const PerceivedObject& p2){
+bool ReceivedObjectGreaterThan(const PerceivedObject& p1, const PerceivedObject& p2)
+{
 	return p1.c_volume > p2.c_volume;
 }
 
