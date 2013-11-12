@@ -34,6 +34,13 @@ public:
         }
     }
 
+    /*
+     * Implementation of the GetClusters Service.
+     *
+     * This method will subscribe to the /camera/depth_registered/points topic, 
+     * wait for the processing of a single point cloud, and return the result from
+     * the calulations as a list of PerceivedObjects.
+     */
     bool getClusters(suturo_perception_msgs::GetClusters::Request &req,
                      suturo_perception_msgs::GetClusters::Response &res)
     {
@@ -73,29 +80,6 @@ private:
     boost::signals2::mutex mutex;   
 };
 
-
-    /*
-     * Implementation of the GetClusters Service.
-     *
-     * This method will subscribe to the /camera/depth_registered/points topic, 
-     * wait for the processing of a single point cloud, and return the result from
-     * the calulations as a list of PerceivedObjects.
-     */
-
-
-/**
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "listener");
-  ros::NodeHandle nh;
-  PerceptionServer ps(nh);
-
-  ROS_INFO("Ready to get clusters");
-  ros::MultiThreadedSpinner spinner(2);
-  spinner.spin();
-  return 0;
-}
-**/
 
 int main (int argc, char** argv)
 {
