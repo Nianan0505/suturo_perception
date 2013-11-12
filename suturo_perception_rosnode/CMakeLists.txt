@@ -6,6 +6,8 @@ project(suturo_perception_rosnode)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS 
 suturo_perception_lib
+suturo_perception_msgs
+roscpp
 )
 
 ## System dependencies are found with CMake's conventions
@@ -108,6 +110,7 @@ include_directories(
 )
 # workaround: catkin_include doesn't work
 include_directories(${suturo_perception_lib_INCLUDE_DIRS})
+include_directories(${suturo_perception_msgs_INCLUDE_DIRS})
 
 
 ## Declare a cpp library
@@ -120,7 +123,7 @@ add_executable(suturo_perception_rosnode src/main.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(suturo_perception_rosnode suturo_perception_lib)
+add_dependencies(suturo_perception_rosnode suturo_perception_lib suturo_perception_msgs)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_rosnode
