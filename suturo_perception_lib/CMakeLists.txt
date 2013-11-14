@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(suturo_perception_lib)
 
+SET(POINTCLOUD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/pointclouds" CACHE STRING "Path of Pointclouds")
+
 include(ExternalProject)
 ExternalProject_Add(
   suturo_pcd_files
   DOWNLOAD_COMMAND ""
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/sync_pointclouds.sh" "${CMAKE_CURRENT_SOURCE_DIR}"
+  BUILD_COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/sync_pointclouds.sh" "${CMAKE_CURRENT_SOURCE_DIR}/pointclouds"
   INSTALL_COMMAND ""
 )
 

@@ -17,7 +17,6 @@ class SuturoPerception
 	
   int magicNumber() {return 23;}
   
-  std::vector<PerceivedObject> *getPerceivedObjects() { return &perceivedObjects; }
     private:
 	// ID counter for the perceived objects
 	int objectID;

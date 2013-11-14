@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 
-# Include header files from lib directory
+configure_file( pointcloud_path.h.in ${CMAKE_BINARY_DIR}/generated/pointcloud_path.h )
+include_directories( ${CMAKE_BINARY_DIR}/generated/ )
+
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${CMAKE_BINARY_DIR}/generated/
   ../lib
 )
-message("Hallo Welt...")
 
 # Define all source files for executable
 set(
