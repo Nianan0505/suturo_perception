@@ -109,8 +109,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 # workaround: catkin_include doesn't work
-include_directories(${suturo_perception_lib_INCLUDE_DIRS})
-include_directories(${suturo_perception_msgs_INCLUDE_DIRS})
+#include_directories(${suturo_perception_lib_INCLUDE_DIRS})
+#include_directories(${suturo_perception_msgs_INCLUDE_DIRS})
 
 
 ## Declare a cpp library
@@ -120,16 +120,21 @@ include_directories(${suturo_perception_msgs_INCLUDE_DIRS})
 
 ## Declare a cpp executable
 add_executable(suturo_perception_rosnode src/main.cpp)
+add_executable(suturo_perception_rosclient src/client.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(suturo_perception_rosnode suturo_perception_lib suturo_perception_msgs)
+add_dependencies(suturo_perception_rosclient suturo_perception_lib suturo_perception_msgs)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_rosnode
   ${catkin_LIBRARIES}
 )
 
+target_link_libraries(suturo_perception_rosclient
+  ${catkin_LIBRARIES}
+)
 #############
 ## Install ##
 #############
