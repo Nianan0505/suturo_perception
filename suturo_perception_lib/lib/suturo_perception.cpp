@@ -51,35 +51,6 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 
-std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
-{
-	return perceivedObjects;
-}
-
-void SuturoPerception::sayHi()
-{
-  pcl::PointCloud<pcl::PointXYZ> cloud;
-
-  // Fill in the cloud data
-  cloud.width    = 5;
-  cloud.height   = 1;
-  cloud.is_dense = false;
-  cloud.points.resize (cloud.width * cloud.height);
-
-  for (size_t i = 0; i < cloud.points.size (); ++i)
-  {
-    cloud.points[i].x = 1024 * rand () / (RAND_MAX + 1.0f);
-    cloud.points[i].y = 1024 * rand () / (RAND_MAX + 1.0f);
-    cloud.points[i].z = 1024 * rand () / (RAND_MAX + 1.0f);
-  }
-
-  pcl::io::savePCDFileASCII ("test_pcd.pcd", cloud);
-  std::cerr << "Saved " << cloud.points.size () << " data points to test_pcd.pcd." << std::endl;
-
-  for (size_t i = 0; i < cloud.points.size (); ++i)
-    std::cerr << "    " << cloud.points[i].x << " " << cloud.points[i].y << " " << cloud.points[i].z << std::endl;
-
-}
 
 // Comparator function for PerceivedObject's. PerceivedObjects will be compared by their volume
 bool ReceivedObjectGreaterThan(const PerceivedObject& p1, const PerceivedObject& p2)
@@ -137,8 +108,8 @@ void SuturoPerception::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
 	seg.segment(*inliers,*coefficients);
 	if (inliers->indices.size () == 0)
 	{
-	std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
-	exit(0);
+    std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
+    exit(0);
 	}
 
 	//splitting the cloud in two: plane + other
@@ -168,7 +139,7 @@ void SuturoPerception::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
 	plane_cluster->height = 1;
 	plane_cluster->is_dense = true;
 
-	std::cout << "Table point cloud " << plane_cluster->points.size () << " data points." << std::endl;
+	//std::cout << "Table point cloud " << plane_cluster->points.size () << " data points." << std::endl;
 
 	// Remove the plane from the rest of the point cloud
 	extract.setNegative(true);
@@ -246,6 +217,8 @@ void SuturoPerception::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
 		// Centroid calulcation
 		Eigen::Vector4f centroid;
 		pcl::compute3DCentroid (*hull_points, centroid);  
+    
+    std::cout << "Centroid: " << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << ", ";
 
 		// Add the detected cluster to the list of perceived objects
 		PerceivedObject percObj;
@@ -269,4 +242,9 @@ void SuturoPerception::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
 	mutex.lock();
 	perceivedObjects=tmpPerceivedObjects;
 	mutex.unlock();
+}
+
+std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
+{
+  return perceivedObjects;
 }

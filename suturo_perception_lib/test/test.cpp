@@ -8,12 +8,6 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-TEST(suturo_perception_test, magic_number_is_magic)
-{
-    SuturoPerception mc;
-    EXPECT_EQ(mc.magicNumber(), 23);
-}
-
 TEST(suturo_perception_test, box_1_test)
 {
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -23,8 +17,10 @@ TEST(suturo_perception_test, box_1_test)
 
   if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (boxpath.str().c_str(), *cloud) == -1) //* load the file
   {
-    PCL_ERROR ("Couldn't read file box1.pcd \n");
-    FAIL() << "Couldn't read file box1.pcd" ;
+    std::stringstream error_msg;
+    error_msg << "Couldn't read file " << POINTCLOUD_PATH << "/box1.pcd \n";
+    PCL_ERROR (error_msg.str().c_str());
+    FAIL() << error_msg.str().c_str();
   }
   
   SuturoPerception sp;
