@@ -72,6 +72,7 @@ public:
     ROS_INFO("Cloud processed. Lock buffer and return the results");
 
     mutex.lock();
+    perceivedObjects = sp.getPerceivedObjects();
     res.perceivedObjs = perceivedObjects;
     mutex.unlock();
 

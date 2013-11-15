@@ -35,16 +35,8 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/surface/convex_hull.h>
 
-#include "PerceivedObject.h"
-#include "Point.h"
-#include <boost/thread/thread.hpp>
-/*
-#include "perception_group_msgs/PerceivedObject.h"
-#include "boost/date_time/posix_time/posix_time.hpp"
-#include <boost/thread/thread.hpp> 
 #include "geometry_msgs/Point.h"
-#include "perception_group_msgs/GetClusters.h"
-*/
+#include <boost/thread/thread.hpp>
 
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
@@ -53,7 +45,8 @@
 
 
 // Comparator function for PerceivedObject's. PerceivedObjects will be compared by their volume
-bool ReceivedObjectGreaterThan(const PerceivedObject& p1, const PerceivedObject& p2)
+bool ReceivedObjectGreaterThan(const suturo_perception_msgs::PerceivedObject& p1, 
+															 const suturo_perception_msgs::PerceivedObject& p2)
 {
 	return p1.c_volume > p2.c_volume;
 }
@@ -192,7 +185,7 @@ void SuturoPerception::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
 	ec.extract (cluster_indices);
 
 	// temporary list of perceived objects
-	std::vector<PerceivedObject> tmpPerceivedObjects;
+	std::vector<suturo_perception_msgs::PerceivedObject> tmpPerceivedObjects;
 
 	// Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
 	int j = 0;
@@ -221,10 +214,10 @@ void SuturoPerception::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
     std::cout << "Centroid: " << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << ", ";
 
 		// Add the detected cluster to the list of perceived objects
-		PerceivedObject percObj;
+		suturo_perception_msgs::PerceivedObject percObj;
 		percObj.c_id= objectID;
 		objectID++;
-		Point ptCentroid;
+		geometry_msgs::Point ptCentroid;
 		ptCentroid.x=centroid[0];
 		ptCentroid.y=centroid[1];
 		ptCentroid.z=centroid[2];
@@ -240,11 +233,11 @@ void SuturoPerception::process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
 
 	// Lock the buffer access to assign the recently perceived objects
 	mutex.lock();
-	perceivedObjects=tmpPerceivedObjects;
+	perceivedObjects = tmpPerceivedObjects;
 	mutex.unlock();
 }
 
-std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
+std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerception::getPerceivedObjects()
 {
   return perceivedObjects;
 }

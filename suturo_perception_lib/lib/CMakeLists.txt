@@ -2,7 +2,7 @@
 add_library(suturo_perception_lib suturo_perception.cpp)
 
 # Use the PCL packages for the lib
-find_package(PCL 1.6 REQUIRED COMPONENTS)
+find_package(PCL 1.6 REQUIRED COMPONENTS geometry_msgs)
 
 # Include PCL directories after discovery of PCL
 include_directories(${PCL_INCLUDE_DIRS})
