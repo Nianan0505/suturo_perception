@@ -3,14 +3,14 @@ project(suturo_perception_lib)
 
 SET(POINTCLOUD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/pointclouds" CACHE STRING "Path of Pointclouds")
 
-include(ExternalProject)
-ExternalProject_Add(
-  suturo_pcd_files
-  DOWNLOAD_COMMAND ""
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/sync_pointclouds.sh" "${POINTCLOUD_PATH}"
-  INSTALL_COMMAND ""
-)
+#include(ExternalProject)
+#ExternalProject_Add(
+#  suturo_pcd_files
+#  DOWNLOAD_COMMAND ""
+#  CONFIGURE_COMMAND ""
+#  BUILD_COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/sync_pointclouds.sh" "${POINTCLOUD_PATH}"
+#  INSTALL_COMMAND ""
+#)
 
 #add_dependencies(suturo_perception_lib suturo_pcd_files)
 
@@ -159,13 +159,16 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-catkin_add_gtest(${PROJECT_NAME}-test test/test.cpp)
+catkin_add_gtest(${PROJECT_NAME}-test 
+  test/test.cpp
+  WORKING_DIRECTORY ${POINTCLOUD_PATH}
+)
 if(TARGET ${PROJECT_NAME}-test)
   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
   
   # other stuff neded for the test
-  configure_file( test/pointcloud_path.h.in ${CMAKE_BINARY_DIR}/generated/pointcloud_path.h )
-  include_directories( ${CMAKE_BINARY_DIR}/generated/ )
+  #configure_file( test/pointcloud_path.h.in ${CMAKE_BINARY_DIR}/generated/pointcloud_path.h )
+  #include_directories( ${CMAKE_BINARY_DIR}/generated/ )
   
   # test needs pcl
   find_package(PCL 1.6 REQUIRED COMPONENTS)
@@ -174,6 +177,9 @@ if(TARGET ${PROJECT_NAME}-test)
   include_directories(${PCL_INCLUDE_DIRS})
   link_directories(${PCL_LIBRARY_DIRS})
   add_definitions(${PCL_DEFINITIONS})
+  
+  # used to execute the sync_pointclouds.sh script
+  #add_dependencies(${PROJECT_NAME}-test suturo_pcd_files)
 endif()
 
 ## Add folders to be run by python nosetests

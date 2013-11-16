@@ -1,6 +1,0 @@
-#ifndef POINTCLOUD_PATH_H
-#define POINTCLOUD_PATH_H
-
-#define POINTCLOUD_PATH "@POINTCLOUD_PATH@/pointclouds"
-
-#endif // POINTCLOUD_PATH_H

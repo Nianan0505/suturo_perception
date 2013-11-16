@@ -7,7 +7,6 @@
 #include <pcl/point_types.h>
 #include <boost/signals2/mutex.hpp>
 #include "suturo_perception_msgs/GetClusters.h"
-#include "PerceivedObject.h"
 
 class SuturoPerception
 {
