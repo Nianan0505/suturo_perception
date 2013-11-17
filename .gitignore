@@ -2,3 +2,5 @@ perception.sublime-project
 perception.sublime-workspace
 suturo_perception_lib/pointclouds/
 
+# ignore vim swap files
+*.swp
