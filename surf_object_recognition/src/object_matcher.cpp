@@ -10,6 +10,8 @@
 #include <boost/timer.hpp>      // For boost::timer class
 #include <algorithm>
 #include <iterator>
+
+#include "simple_matcher.cpp"
  
 
 
@@ -28,10 +30,50 @@ using namespace std;
 
 ObjectMatcher::ObjectMatcher()
 {
-	return;
+  // Detect the keypoints using SURF Detector per default with a minHessian of 400
+  int minHessian = 400;
+  detector = new cv::SURF(minHessian);
+  extractor = new SurfDescriptorExtractor(); // SurfDescriptorExtractor produces more positive matches then cv::SURF(400)?
+	this->matching_strategy = new SimpleMatcher();
 }
 
-bool ObjectMatcher::execute(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::DescriptorExtractor> extractor, std::string train_image, std::string test_image, bool headless)
+ObjectMatcher::ObjectMatcher(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::DescriptorExtractor> extractor)
+{
+  this->detector = detector;
+  this->extractor = extractor;
+	this->matching_strategy = new SimpleMatcher();
+}
+
+// void ObjectMatcher::match(cv::Ptr<Mat> descriptors_object, cv::Ptr<Mat> descriptors_scene, cv::Ptr<std::vector<DMatch> > good_matches)
+// void ObjectMatcher::match(Mat &descriptors_object, Mat &descriptors_scene, std::vector<DMatch> &good_matches)
+// {
+//   //-- Step 3: Matching descriptor vectors using FLANN matcher
+//   FlannBasedMatcher matcher;
+//   std::vector< DMatch > matches;
+//   matcher.match( descriptors_object, descriptors_scene, matches );
+// 	// double matcherElapsedTime = t.elapsed();
+// 
+//   double max_dist = 0; double min_dist = 100;
+// 
+//   //-- Quick calculation of max and min distances between keypoints
+//   for( int i = 0; i < descriptors_object.rows; i++ )
+//   { double dist = matches[i].distance;
+//     if( dist < min_dist ) min_dist = dist;
+//     if( dist > max_dist ) max_dist = dist;
+//   }
+//   printf("Max dist between matches: %f \n", max_dist );
+//   printf("Min dist between matches: %f \n", min_dist );
+// 
+//   //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
+//   // std::vector< DMatch > good_matches;
+// 
+//   for( int i = 0; i < descriptors_object.rows; i++ )
+//   { if( matches[i].distance < 3*min_dist )
+//      { good_matches.push_back( matches[i]); }
+//   }
+// }
+
+bool ObjectMatcher::execute(std::string train_image, std::string test_image, bool headless)
 {
   Mat img_object = imread( train_image, CV_LOAD_IMAGE_GRAYSCALE );
   Mat img_scene = imread( test_image, CV_LOAD_IMAGE_GRAYSCALE );
@@ -52,8 +94,6 @@ bool ObjectMatcher::execute(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::D
 
 
   //-- Step 2: Calculate descriptors (feature vectors)
-  SurfDescriptorExtractor extractor2;
-
   Mat descriptors_object, descriptors_scene;
 
   extractor->compute( img_object, keypoints_object, descriptors_object );
@@ -62,27 +102,11 @@ bool ObjectMatcher::execute(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::D
 	double descriptorSceneElapsedTime = t.elapsed();
 
   //-- Step 3: Matching descriptor vectors using FLANN matcher
-  FlannBasedMatcher matcher;
-  std::vector< DMatch > matches;
-  matcher.match( descriptors_object, descriptors_scene, matches );
+  std::vector< DMatch > good_matches;
+	this->matching_strategy->match(descriptors_object, descriptors_scene, good_matches);
+
 	double matcherElapsedTime = t.elapsed();
 
-  double max_dist = 0; double min_dist = 100;
-
-  //-- Quick calculation of max and min distances between keypoints
-  for( int i = 0; i < descriptors_object.rows; i++ )
-  { double dist = matches[i].distance;
-    if( dist < min_dist ) min_dist = dist;
-    if( dist > max_dist ) max_dist = dist;
-  }
-
-  //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
-  std::vector< DMatch > good_matches;
-
-  for( int i = 0; i < descriptors_object.rows; i++ )
-  { if( matches[i].distance < 3*min_dist )
-     { good_matches.push_back( matches[i]); }
-  }
   Mat img_matches;
   drawMatches( img_object, keypoints_object, img_scene, keypoints_scene,
                good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
@@ -102,8 +126,6 @@ bool ObjectMatcher::execute(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::D
   cout << "Training image keypoint count: " <<keypoints_object.size() << endl;
   cout << "Test image keypoint count: " << keypoints_scene.size() << endl;
   cout << "Good match count: " << good_matches.size() << std::endl;
-  printf("Max dist between matches: %f \n", max_dist );
-  printf("Min dist between matches: %f \n", min_dist );
 
   if(good_matches.size() >= 4){
     std::vector<uchar> outlier_mask;  // Used for homography
