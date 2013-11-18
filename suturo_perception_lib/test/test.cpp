@@ -1,6 +1,6 @@
 #include "suturo_perception.h"
-#include "suturo_perception_msgs/GetClusters.h"
-#include "Point.h"
+#include "perceived_object.h"
+#include "point.h"
 #include <iostream>
 #include <sstream>
 #include <gtest/gtest.h>
@@ -22,10 +22,10 @@ TEST(suturo_perception_test, box_1_test)
     FAIL() << error_msg.str().c_str();
   }
   
-  SuturoPerception sp;
+  suturo_perception_lib::SuturoPerception sp;
   sp.process_cloud(cloud);
   
-  std::vector<suturo_perception_msgs::PerceivedObject> objects = sp.getPerceivedObjects();
+  std::vector<suturo_perception_lib::PerceivedObject> objects = sp.getPerceivedObjects();
   
   for (int i = 0; i < objects.size(); i++) 
   {
