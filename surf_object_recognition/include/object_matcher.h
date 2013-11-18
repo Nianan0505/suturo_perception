@@ -20,6 +20,9 @@ using namespace cv;
 class ObjectMatcher
 {
 private:
+	// The minimum amount of good matches. If the amount of good matches is lower
+	// this threshold, the execute method in this class will immediately return false
+	int min_good_matches_;
 	cv::Ptr<cv::FeatureDetector> detector_;
 	cv::Ptr<cv::DescriptorExtractor> extractor_;
 	MatchingStrategy* matching_strategy_;
@@ -36,6 +39,7 @@ public:
 		 */
 		bool execute(std::string train_image, std::string test_image, bool headless);
 		void setMatcher(MatchingStrategy* matching_strategy);
+		void setMinGoodMatches(int min);
 };
 
 #endif

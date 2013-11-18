@@ -30,6 +30,7 @@ using namespace std;
 void ObjectMatcher::setMatcher(MatchingStrategy* matching_strategy)
 {
 	this->matching_strategy_ = matching_strategy;
+  min_good_matches_ = 0;
 }
 
 ObjectMatcher::ObjectMatcher()
@@ -38,15 +39,14 @@ ObjectMatcher::ObjectMatcher()
   int minHessian = 400;
   detector_ = new cv::SURF(minHessian);
   extractor_ = new SurfDescriptorExtractor(); // SurfDescriptorExtractor produces more positive matches then cv::SURF(400)?
-	// this->matching_strategy = new SimpleMatcher();
 	this->matching_strategy_ = new NNDRMatcher();
+  min_good_matches_ = 0;
 }
 
 ObjectMatcher::ObjectMatcher(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::DescriptorExtractor> extractor)
 {
   this->detector_ = detector;
   this->extractor_ = extractor;
-	// this->matching_strategy = new SimpleMatcher();
 	this->matching_strategy_ = new NNDRMatcher();
 }
 
@@ -104,7 +104,12 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
   cout << "Test image keypoint count: " << keypoints_scene.size() << endl;
   cout << "Good match count: " << good_matches.size() << std::endl;
 
-  if(good_matches.size() >= 4)
+  // if(good_matches.size() < min_good_matches_)
+  //   return false;
+
+  // Don't consider object recognition, if the minimum amount of good matches has not been reached
+  // But, atleast 4 good matches must be found in order to draw the homography
+  if(good_matches.size() >= 4 && good_matches.size() >= min_good_matches_)
 	{
     std::vector<uchar> outlier_mask;  // Used for homography
     Mat H = findHomography( obj, scene, CV_RANSAC, 1.0, outlier_mask);
@@ -160,6 +165,8 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
 
     std::cout << "Homography Inlier count: " << inliers << endl;
     std::cout << "Homography Outlier count: " << outliers << endl;
+  }else{
+    std::cout << "Didn't try to compute homography. Either good_matches is not greater than 4 or min_good_matches_ is not reached" << endl;
   }
   double totalElapsedTime = t.elapsed();
   // std::cout << std::endl << "#### Time measurements #### " << std::endl;
@@ -175,4 +182,7 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
   waitKey(0);
 }
 
+void ObjectMatcher::setMinGoodMatches(int min){
+ min_good_matches_ = min;
+}
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

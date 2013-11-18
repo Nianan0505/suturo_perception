@@ -35,6 +35,7 @@ int main( int argc, char** argv )
   bool headless_mode=false;
   std::string train_image;
   std::vector<std::string> test_images;
+  int min_good_matches;
   try
   {
     // Declare the supported options.
@@ -46,6 +47,7 @@ int main( int argc, char** argv )
       // zero_tokens tells program_options to not require an argument to a parameter switch
       // This gives flag-like behaviour
       ("headless,h", po::value<bool>()->zero_tokens(), "Headless mode -- Dont show images")
+      ("min-good-matches,m", po::value<int>(&min_good_matches)->default_value(0), "The minimum amount of good matches which must be present to perform object recognition")
     ;
     // Use positional_options to allow the passing of test-img filenames without giving
     // the parameters explicitly. Like surf_keypoints testimg1 testimg2 instead of
@@ -103,6 +105,7 @@ int main( int argc, char** argv )
   } 
   ObjectMatcher om; // Create ObjectMatcher with SURF as default
   // ObjectMatcher om(detector,extractor);
+  om.setMinGoodMatches(min_good_matches);
 
   // Run all test images against Training image
   for(int i=0;i<test_images.size();i++)
