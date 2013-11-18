@@ -44,6 +44,7 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 
+using namespace suturo_perception_lib;
 
 // Comparator function for PerceivedObject's. PerceivedObjects will be compared by their volume
 bool ReceivedObjectGreaterThan(const PerceivedObject& p1, 

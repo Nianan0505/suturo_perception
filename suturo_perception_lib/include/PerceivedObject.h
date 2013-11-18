@@ -3,11 +3,15 @@
 
 #include "Point.h"
 
-class PerceivedObject {
-    public:
-	int c_id;
-	Point c_centroid;
-	double c_volume;
-};
+namespace suturo_perception_lib
+{
+  class PerceivedObject
+  {
+      public:
+    int c_id;
+    Point c_centroid;
+    double c_volume;
+  };
+}
 
 #endif

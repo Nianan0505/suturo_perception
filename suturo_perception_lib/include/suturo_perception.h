@@ -8,21 +8,24 @@
 #include <boost/signals2/mutex.hpp>
 #include "PerceivedObject.h"
 
-class SuturoPerception
+namespace suturo_perception_lib
 {
-  public:
-	void process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-  std::vector<PerceivedObject> getPerceivedObjects();
-  
-  private:
-	// ID counter for the perceived objects
-	int objectID;
+  class SuturoPerception
+  {
+    public:
+    void process_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+    std::vector<PerceivedObject> getPerceivedObjects();
+    
+    private:
+    // ID counter for the perceived objects
+    int objectID;
 
-	// Buffer for the last perceived objects
-	std::vector<PerceivedObject> perceivedObjects;
-	
-	// Mutex for buffer locking
-	boost::signals2::mutex mutex;
-};
+    // Buffer for the last perceived objects
+    std::vector<PerceivedObject> perceivedObjects;
+    
+    // Mutex for buffer locking
+    boost::signals2::mutex mutex;
+  };
+}
 
 #endif

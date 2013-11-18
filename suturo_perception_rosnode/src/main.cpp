@@ -83,17 +83,19 @@ public:
 
 private:
   bool processing; // processing flag
-  SuturoPerception sp;
-  std::vector<PerceivedObject> perceivedObjects;
+  suturo_perception_lib::SuturoPerception sp;
+  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   ros::NodeHandle nh;
   boost::signals2::mutex mutex;
   // ID counter for the perceived objects
   int objectID;
   ros::ServiceServer clusterService;  
   
-  std::vector<suturo_perception_msgs::PerceivedObject> *convertPerceivedObjects(std::vector<PerceivedObject> *objects) {
+  std::vector<suturo_perception_msgs::PerceivedObject> *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects)
+  {
     std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
-    for (std::vector<PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it) {
+    for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
+    {
       suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
       msgObj->c_id = it->c_id;
       msgObj->c_volume = it->c_volume;
