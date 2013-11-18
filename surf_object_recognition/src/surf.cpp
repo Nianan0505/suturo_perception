@@ -116,6 +116,7 @@ int main( int argc, char** argv )
     std::cerr << "Unknown error!" << "\n";
     return false;
   } 
+
   ObjectMatcher om; // Create ObjectMatcher with SURF as default
   // ObjectMatcher om(detector,extractor);
   std::cout << "Starting with min_good_matches=" << min_good_matches << std::endl;
