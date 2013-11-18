@@ -101,16 +101,8 @@ int main( int argc, char** argv )
     std::cerr << "Unknown error!" << "\n";
     return false;
   } 
-  // Detect the keypoints using SURF Detector
-  // int minHessian = 400;
-  // cv::Ptr<cv::FeatureDetector> detector = new cv::SURF(minHessian);
-  // cv::DescriptorExtractor * extractor = new SurfDescriptorExtractor(); // SurfDescriptorExtractor produces more positive matches then cv::SURF(400)?
-
-  // Detect and describe using SIFT
-  cv::Ptr<cv::FeatureDetector> detector = new cv::SIFT();
-  cv::DescriptorExtractor * extractor = new cv::SIFT();
-
-  ObjectMatcher om(detector,extractor);
+  ObjectMatcher om; // Create ObjectMatcher with SURF as default
+  // ObjectMatcher om(detector,extractor);
 
   // Run all test images against Training image
   for(int i=0;i<test_images.size();i++)

@@ -20,9 +20,9 @@ using namespace cv;
 class ObjectMatcher
 {
 private:
-	cv::Ptr<cv::FeatureDetector> detector;
-	cv::Ptr<cv::DescriptorExtractor> extractor;
-	MatchingStrategy* matching_strategy;
+	cv::Ptr<cv::FeatureDetector> detector_;
+	cv::Ptr<cv::DescriptorExtractor> extractor_;
+	MatchingStrategy* matching_strategy_;
 	// result will be put into good_matches by reference
 	// void match(Mat &descriptors_object, Mat &descriptors_scene, std::vector<DMatch> &good_matches);
 	
@@ -35,6 +35,7 @@ public:
 		 * @returns True, if Object has been recognized
 		 */
 		bool execute(std::string train_image, std::string test_image, bool headless);
+		void setMatcher(MatchingStrategy* matching_strategy);
 };
 
 #endif

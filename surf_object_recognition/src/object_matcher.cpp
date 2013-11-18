@@ -11,9 +11,9 @@
 #include <algorithm>
 #include <iterator>
 
+// Include concrete Matching Strategies
 #include "simple_matcher.cpp"
- 
-
+#include "nndr_matcher.cpp"
 
 using namespace boost;
 
@@ -27,51 +27,28 @@ using namespace boost;
 using namespace cv;
 using namespace std;
 
+void ObjectMatcher::setMatcher(MatchingStrategy* matching_strategy)
+{
+	this->matching_strategy_ = matching_strategy;
+}
 
 ObjectMatcher::ObjectMatcher()
 {
   // Detect the keypoints using SURF Detector per default with a minHessian of 400
   int minHessian = 400;
-  detector = new cv::SURF(minHessian);
-  extractor = new SurfDescriptorExtractor(); // SurfDescriptorExtractor produces more positive matches then cv::SURF(400)?
-	this->matching_strategy = new SimpleMatcher();
+  detector_ = new cv::SURF(minHessian);
+  extractor_ = new SurfDescriptorExtractor(); // SurfDescriptorExtractor produces more positive matches then cv::SURF(400)?
+	// this->matching_strategy = new SimpleMatcher();
+	this->matching_strategy_ = new NNDRMatcher();
 }
 
 ObjectMatcher::ObjectMatcher(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::DescriptorExtractor> extractor)
 {
-  this->detector = detector;
-  this->extractor = extractor;
-	this->matching_strategy = new SimpleMatcher();
+  this->detector_ = detector;
+  this->extractor_ = extractor;
+	// this->matching_strategy = new SimpleMatcher();
+	this->matching_strategy_ = new NNDRMatcher();
 }
-
-// void ObjectMatcher::match(cv::Ptr<Mat> descriptors_object, cv::Ptr<Mat> descriptors_scene, cv::Ptr<std::vector<DMatch> > good_matches)
-// void ObjectMatcher::match(Mat &descriptors_object, Mat &descriptors_scene, std::vector<DMatch> &good_matches)
-// {
-//   //-- Step 3: Matching descriptor vectors using FLANN matcher
-//   FlannBasedMatcher matcher;
-//   std::vector< DMatch > matches;
-//   matcher.match( descriptors_object, descriptors_scene, matches );
-// 	// double matcherElapsedTime = t.elapsed();
-// 
-//   double max_dist = 0; double min_dist = 100;
-// 
-//   //-- Quick calculation of max and min distances between keypoints
-//   for( int i = 0; i < descriptors_object.rows; i++ )
-//   { double dist = matches[i].distance;
-//     if( dist < min_dist ) min_dist = dist;
-//     if( dist > max_dist ) max_dist = dist;
-//   }
-//   printf("Max dist between matches: %f \n", max_dist );
-//   printf("Min dist between matches: %f \n", min_dist );
-// 
-//   //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
-//   // std::vector< DMatch > good_matches;
-// 
-//   for( int i = 0; i < descriptors_object.rows; i++ )
-//   { if( matches[i].distance < 3*min_dist )
-//      { good_matches.push_back( matches[i]); }
-//   }
-// }
 
 bool ObjectMatcher::execute(std::string train_image, std::string test_image, bool headless)
 {
@@ -87,23 +64,23 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
 
   std::vector<KeyPoint> keypoints_object, keypoints_scene;
 
-  detector->detect( img_object, keypoints_object );
+  detector_->detect( img_object, keypoints_object );
   double keypointObjectElapsedTime = t.elapsed();
-  detector->detect( img_scene, keypoints_scene );
+  detector_->detect( img_scene, keypoints_scene );
   double keypointSceneElapsedTime = t.elapsed();
 
 
   //-- Step 2: Calculate descriptors (feature vectors)
   Mat descriptors_object, descriptors_scene;
 
-  extractor->compute( img_object, keypoints_object, descriptors_object );
+  extractor_->compute( img_object, keypoints_object, descriptors_object );
 	double descriptorObjectElapsedTime = t.elapsed();
-  extractor->compute( img_scene, keypoints_scene, descriptors_scene );
+  extractor_->compute( img_scene, keypoints_scene, descriptors_scene );
 	double descriptorSceneElapsedTime = t.elapsed();
 
-  //-- Step 3: Matching descriptor vectors using FLANN matcher
+  //-- Step 3: Matching descriptor vectors using the given MatchingStrategy
   std::vector< DMatch > good_matches;
-	this->matching_strategy->match(descriptors_object, descriptors_scene, good_matches);
+	this->matching_strategy_->match(descriptors_object, descriptors_scene, good_matches);
 
 	double matcherElapsedTime = t.elapsed();
 
@@ -127,7 +104,8 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
   cout << "Test image keypoint count: " << keypoints_scene.size() << endl;
   cout << "Good match count: " << good_matches.size() << std::endl;
 
-  if(good_matches.size() >= 4){
+  if(good_matches.size() >= 4)
+	{
     std::vector<uchar> outlier_mask;  // Used for homography
     Mat H = findHomography( obj, scene, CV_RANSAC, 1.0, outlier_mask);
     double homographyElapsedTime = t.elapsed();
@@ -148,7 +126,7 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
     // for a "good match"
     // If the inlier to outlier ratio is above this threshold, we will draw the bounding box
     // and count the object as recognized
-    float inlierRatio = 0.7;
+    float inlierRatio = 0.4;
     float actualInlierRatio = static_cast<float>(inliers) / static_cast<float>(good_matches.size());
     std::cout << "InlierRatio: " << actualInlierRatio << std::endl;
     std::cout << "Recognized the object in the scene: ";
@@ -197,3 +175,4 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
   waitKey(0);
 }
 
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
