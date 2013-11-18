@@ -7,7 +7,7 @@ set(src_files
 
 # Use the PCL packages for the lib
 # TO FIX: Use older PCL if we don't use PCL 1.7
-find_package(PCL 1.7 REQUIRED COMPONENTS common io)
+find_package(PCL 1.6 REQUIRED COMPONENTS common io)
 find_package(OpenCV REQUIRED )
 
 # Include OpenCV Library

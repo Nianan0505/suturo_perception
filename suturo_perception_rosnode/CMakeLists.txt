@@ -8,6 +8,14 @@ find_package(catkin REQUIRED COMPONENTS
 suturo_perception_lib
 suturo_perception_msgs
 roscpp
+dynamic_reconfigure
+message_generation
+)
+
+#find_package(catkin REQUIRED dynamic_reconfigure)
+# generate dynamic reconfigure options
+generate_dynamic_reconfigure_options(
+  cfg/SuturoPerception.cfg
 )
 
 ## System dependencies are found with CMake's conventions
@@ -21,6 +29,8 @@ add_definitions(${PCL_DEFINITIONS})
 
 
 link_directories(${suturo_perception_lib_LIBRARY_DIRS})
+
+#add_dependencies(suturo_perception_rosnode ${PROJECT_NAME}_gencfg)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
