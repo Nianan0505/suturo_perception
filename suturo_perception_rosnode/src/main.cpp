@@ -2,6 +2,7 @@
 #include <boost/signals2/mutex.hpp>
 #include <dynamic_reconfigure/server.h>
 #include <suturo_perception_rosnode/SuturoPerceptionConfig.h>
+#include <visualization_msgs/Marker.h>
 
 #include "suturo_perception.h"
 #include "perceived_object.h"
@@ -29,13 +30,14 @@ public:
   {
     clusterService = nh.advertiseService("GetClusters", 
       &SuturoPerceptionROSNode::getClusters, this);
+    vis_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 0);
     objectID = 0;
     //processing = false;
   }
 
-  /*
-   * Receive callback for the /camera/depth_registered/points subscription
-   */
+   /*
+    * Receive callback for the /camera/depth_registered/points subscription
+    */
    void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
    {
     // process only one cloud
@@ -90,6 +92,36 @@ public:
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects);
     mutex.unlock();
 
+    ROS_INFO("Publishing centroid visualization markers");
+    int markerId = 0;
+    std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin();
+    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin(); 
+         it != res.perceivedObjs.end (); ++it)
+    {
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = "camera_rgb_optical_frame";
+      marker.header.stamp = ros::Time();
+      marker.ns = "suturo_perception";
+      marker.id = markerId;
+      marker.type = visualization_msgs::Marker::SPHERE;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.pose.position.x = it->c_centroid.x;
+      marker.pose.position.y = it->c_centroid.y;
+      marker.pose.position.z = it->c_centroid.z;
+      marker.pose.orientation.x = 0.0;
+      marker.pose.orientation.y = 0.0;
+      marker.pose.orientation.z = 0.0;
+      marker.pose.orientation.w = 0.0;
+      marker.scale.x = 0.1;
+      marker.scale.y = 0.1;
+      marker.scale.z = 0.1;
+      marker.color.a = 1.0;
+      marker.color.r = 0.0;
+      marker.color.g = 1.0;
+      marker.color.b = 0.0;
+      markerId++;
+      vis_pub.publish(marker);
+    }
     return true;
   }
 
@@ -101,7 +133,8 @@ private:
   boost::signals2::mutex mutex;
   // ID counter for the perceived objects
   int objectID;
-  ros::ServiceServer clusterService;  
+  ros::ServiceServer clusterService;
+  ros::Publisher vis_pub;
   
   /*
    * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list

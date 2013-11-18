@@ -7,6 +7,7 @@ project(suturo_perception_rosnode)
 find_package(catkin REQUIRED COMPONENTS 
 suturo_perception_lib
 suturo_perception_msgs
+visualization_msgs
 roscpp
 dynamic_reconfigure
 message_generation
