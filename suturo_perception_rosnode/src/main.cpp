@@ -108,12 +108,13 @@ private:
     std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
     for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
     {
-      suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
+      suturo_perception_msgs::PerceivedObject msgObj = new suturo_perception_msgs::PerceivedObject();
       msgObj->c_id = it->c_id;
       msgObj->c_volume = it->c_volume;
       msgObj->c_centroid.x = it->c_centroid.x;
       msgObj->c_centroid.y = it->c_centroid.y;
       msgObj->c_centroid.z = it->c_centroid.z;
+      result->push_back(*msgObj);
     }
     return result;
   }
