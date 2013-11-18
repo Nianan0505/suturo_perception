@@ -1,12 +1,12 @@
-#ifndef MY_CLASS_H
-#define MY_CLASS_H
+#ifndef SUTURO_PERCEPTION_H
+#define SUTURO_PERCEPTION_H
 
 #include <iostream>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <boost/signals2/mutex.hpp>
-#include "PerceivedObject.h"
+#include "perceived_object.h"
 
 namespace suturo_perception_lib
 {

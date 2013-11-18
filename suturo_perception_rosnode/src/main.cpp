@@ -2,8 +2,8 @@
 #include <boost/signals2/mutex.hpp>
 
 #include "suturo_perception.h"
-#include "PerceivedObject.h"
-#include "Point.h"
+#include "perceived_object.h"
+#include "point.h"
 #include "suturo_perception_msgs/GetClusters.h"
 
 

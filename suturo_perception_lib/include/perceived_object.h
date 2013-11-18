@@ -1,7 +1,7 @@
 #ifndef PERCEIVED_OBJECT_H
 #define PERCEIVED_OBJECT_H
 
-#include "Point.h"
+#include "point.h"
 
 namespace suturo_perception_lib
 {

@@ -1,6 +1,6 @@
 #include "suturo_perception.h"
-#include "PerceivedObject.h"
-#include "Point.h"
+#include "perceived_object.h"
+#include "point.h"
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 

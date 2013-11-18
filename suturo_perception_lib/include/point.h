@@ -1,5 +1,5 @@
-#ifndef POINT_H
-#define POINT_H
+#ifndef SUTURO_PERCEPTION_POINT_H
+#define SUTURO_PERCEPTION_POINT_H
 
 namespace suturo_perception_lib
 {
