@@ -1,11 +1,23 @@
 #include "ros/ros.h"
 #include <boost/signals2/mutex.hpp>
+#include <dynamic_reconfigure/server.h>
+#include <suturo_perception_rosnode/SuturoPerceptionConfig.h>
 
 #include "suturo_perception.h"
 #include "perceived_object.h"
 #include "point.h"
 #include "suturo_perception_msgs/GetClusters.h"
 
+/*
+ * Callback for the dynamic reconfigure service
+ */
+void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level)
+{
+  ROS_INFO("Reconfigure request : %i",
+           config.int_param);
+  
+  // do nothing for now
+}
 
 class SuturoPerceptionROSNode
 {
@@ -113,6 +125,13 @@ int main (int argc, char** argv)
   ros::init(argc, argv, "suturo_perception");
   ros::NodeHandle nh;
   SuturoPerceptionROSNode spr(nh);
+
+  // Initialize dynamic reconfigure
+  dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> srv;
+  dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig>::CallbackType f;
+  f = boost::bind(&reconfigureCallback, _1, _2);
+  srv.setCallback(f);
+
   ROS_INFO("suturo_perception READY");
     //sp.sayHi();
   ros::MultiThreadedSpinner spinner(2);
