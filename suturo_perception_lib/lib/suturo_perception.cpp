@@ -69,6 +69,9 @@ SuturoPerception::SuturoPerception()
 	ecMaxClusterSize = 200000;  
 	prismZMin = 0.;
 	prismZMax = 0.50; // cutoff 50 cm above plane
+	ecObjClusterTolerance = 0.03; // 3cm
+	ecObjMinClusterSize = 100;
+	ecObjMaxClusterSize = 25000;
 	
 }
 
@@ -231,9 +234,9 @@ SuturoPerception::extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
 
 	std::vector<pcl::PointIndices> cluster_indices;
 	pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-	ec.setClusterTolerance (0.03); // 2cm
-	ec.setMinClusterSize (100);
-	ec.setMaxClusterSize (25000);
+	ec.setClusterTolerance (ecObjClusterTolerance); // 2cm
+	ec.setMinClusterSize (ecObjMinClusterSize);
+	ec.setMaxClusterSize (ecObjMaxClusterSize);
 	ec.setSearchMethod (tree);
 	ec.setInputCloud (cloud_in);
 	ec.extract (cluster_indices);
@@ -376,12 +379,18 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> SuturoPerception::getObjects
 	object_clusters = extractObjectCluster(cloud_filtered, inliers);
 
 	// cluster extraction
-	//voxelize cloud
-	cloud_downsampled = downsample(object_clusters);
 
 	// extract objects from downsampled object cloud
-	return extractObjects(cloud_downsampled);
+	return extractObjects(object_clusters);
 
 	// short alternative:
 	//return extractObjects(downsample(extractObjectCluster(filterZAxis(removeNans(cloud_in)), fitPlanarModel(filterZAxis(removeNans(cloud_in))))));
+}
+
+// debug method
+void SuturoPerception::writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects)
+{
+	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin();
+	pcl::PCDWriter writer;
+	writer.write("debug_pcd.pcd", **it);
 }

@@ -25,7 +25,39 @@ namespace suturo_perception_lib
                                pcl::PointIndices::Ptr inliers);
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> getObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    
+
+    // debug
+    void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects);
+
+    // getters and setters
+    void setZAxisFilterMin(float v) {zAxisFilterMin = v;};
+    void setZAxisFilterMax(float v) {zAxisFilterMax = v;};
+    void setDownsampleLeafSize(float v) {downsampleLeafSize = v;};
+    void setPlaneMaxIterations(int v) {planeMaxIterations = v;};
+    void setPlaneDistanceThreshold(double v) {planeDistanceThreshold = v;};
+    void setEcClusterTolerance(double v) {ecClusterTolerance = v;};
+    void setEcMinClusterSize(int v) {ecMinClusterSize = v;};
+    void setEcMaxClusterSize(int v) {ecMaxClusterSize = v;};
+    void setPrismZMin(int v) {prismZMin = v;};
+    void setPrismZMax(int v) {prismZMax = v;};
+    void setEcObjClusterTolerance(double v) {ecObjClusterTolerance = v;};
+    void setEcObjMinClusterSize(int v) {ecObjMinClusterSize = v;};
+    void setEcObjMaxClusterSize(int v) {ecObjMaxClusterSize = v;};
+
+    float getZAxisFilterMin() {return zAxisFilterMin;};
+    float getZAxisFilterMax() {return zAxisFilterMax;};
+    float getDownsampleLeafSize() {return downsampleLeafSize;};
+    int getPlaneMaxIterations() {return planeMaxIterations;};
+    double getPlaneDistanceThreshold() {return planeDistanceThreshold;};
+    double getEcClusterTolerance() {return ecClusterTolerance;};
+    int getEcMinClusterSize() {return ecMinClusterSize;};
+    int getEcMaxClusterSize() {return ecMaxClusterSize;};
+    int getPrismZMin() {return prismZMin;};
+    int getPrismZMax() {return prismZMax;};
+    double getEcObjClusterTolerance() {return ecObjClusterTolerance;};
+    int getEcObjMinClusterSize() {return ecObjMinClusterSize;};
+    int getEcObjMaxClusterSize() {return ecObjMaxClusterSize;};
+
     private:
     // === Parameters ===
     // min and max values for z-axis filtering
@@ -36,12 +68,16 @@ namespace suturo_perception_lib
     // plane fitting parameters
     int planeMaxIterations;
     double planeDistanceThreshold;
-    // extract object parameters
+    // extract object cluster parameters
     double ecClusterTolerance;
     int ecMinClusterSize;
     int ecMaxClusterSize;
     double prismZMin;
     double prismZMax;
+    // extract objects parameters
+    double ecObjClusterTolerance;
+    int ecObjMinClusterSize;
+    int ecObjMaxClusterSize;
 
     // ID counter for the perceived objects
     int objectID;

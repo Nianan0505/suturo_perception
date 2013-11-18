@@ -46,7 +46,7 @@ public:
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
       pcl::fromROSMsg(*inputCloud,*cloud_in);
 
-      sp.processCloud(cloud_in);
+      sp.processCloud(cloud_in); 
       processing = false;
 
       ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
