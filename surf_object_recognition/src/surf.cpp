@@ -14,6 +14,9 @@
 #include <iterator>
 
 #include "object_matcher.h"
+#include "simple_matcher.cpp"
+#include "nndr_matcher.cpp"
+#include "symmetry_nndr_matcher.cpp"
  
 using namespace boost;
 namespace po = boost::program_options;
@@ -36,6 +39,8 @@ int main( int argc, char** argv )
   std::string train_image;
   std::vector<std::string> test_images;
   int min_good_matches;
+  std::string matcher;
+
   try
   {
     // Declare the supported options.
@@ -48,7 +53,9 @@ int main( int argc, char** argv )
       // This gives flag-like behaviour
       ("headless,h", po::value<bool>()->zero_tokens(), "Headless mode -- Dont show images")
       ("min-good-matches,m", po::value<int>(&min_good_matches)->default_value(0), "The minimum amount of good matches which must be present to perform object recognition")
+      ("matcher,a", po::value<std::string>(&matcher), "Choose the strategy for matching the extracted Descriptors. Possible Values: simple, nndr, symmetry_nndr")
     ;
+
     // Use positional_options to allow the passing of test-img filenames without giving
     // the parameters explicitly. Like surf_keypoints testimg1 testimg2 instead of
     // surf_keypoints -i testimg1 -i testimg2 etc.
@@ -80,6 +87,12 @@ int main( int argc, char** argv )
     {
       test_images = vm["test-img"].as<std::vector<std::string> >();
     }
+
+    // Check for valid values for matcher
+    if (vm.count("matcher") && 
+        (!(matcher == "simple" || matcher == "nndr" || matcher == "symmetry_nndr")))
+            throw po::validation_error(po::validation_error::invalid_option_value, "matcher");
+
     if(vm.count("headless"))
     {
       headless_mode = true;
@@ -105,14 +118,30 @@ int main( int argc, char** argv )
   } 
   ObjectMatcher om; // Create ObjectMatcher with SURF as default
   // ObjectMatcher om(detector,extractor);
+  std::cout << "Starting with min_good_matches=" << min_good_matches << std::endl;
   om.setMinGoodMatches(min_good_matches);
 
+  // Set the desired matcher, if the user picked one
+  if(matcher=="simple")
+  {
+    om.setMatcher(new SimpleMatcher);
+  } else if(matcher=="nndr")
+  {
+    om.setMatcher(new NNDRMatcher);
+  } else if(matcher=="symmetry_nndr")
+  {
+    om.setMatcher(new SymmetryNNDRMatcher);
+  }
+
+  int positives=0;
   // Run all test images against Training image
   for(int i=0;i<test_images.size();i++)
   {
-    om.execute(train_image,test_images.at(i),headless_mode);
+    if(om.execute(train_image,test_images.at(i),headless_mode))
+      positives++;
     cout << endl;
   }
+  std::cout << "Found " << positives << " positives in " << test_images.size() << " test images" << std::endl;
   return 0;
 }
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

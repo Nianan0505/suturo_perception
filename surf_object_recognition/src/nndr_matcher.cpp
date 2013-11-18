@@ -1,3 +1,6 @@
+#ifndef NNDR_MATCHER_CPP
+#define NNDR_MATCHER_CPP
+
 #include "matching_strategy.h"
 #include <opencv2/legacy/legacy.hpp>  // Use legacy BruteForce Matcher for now ... 
                                       // TODO: Change to BFMatcher if it works well
@@ -71,5 +74,5 @@ public:
     }
 	}
 };
-
+#endif
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

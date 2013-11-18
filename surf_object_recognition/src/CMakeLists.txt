@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 
 # Name of the executable and the related source files
-add_executable (surf_keypoints surf.cpp object_matcher.cpp simple_matcher.cpp)
+add_executable (surf_keypoints surf.cpp object_matcher.cpp simple_matcher.cpp nndr_matcher.cpp symmetry_nndr_matcher.cpp)
 
 find_package( OpenCV 2.4 REQUIRED )
 # include boost

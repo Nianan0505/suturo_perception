@@ -30,7 +30,6 @@ using namespace std;
 void ObjectMatcher::setMatcher(MatchingStrategy* matching_strategy)
 {
 	this->matching_strategy_ = matching_strategy;
-  min_good_matches_ = 0;
 }
 
 ObjectMatcher::ObjectMatcher()
@@ -48,6 +47,7 @@ ObjectMatcher::ObjectMatcher(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::
   this->detector_ = detector;
   this->extractor_ = extractor;
 	this->matching_strategy_ = new NNDRMatcher();
+  min_good_matches_ = 0;
 }
 
 bool ObjectMatcher::execute(std::string train_image, std::string test_image, bool headless)
@@ -103,9 +103,9 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
   cout << "Training image keypoint count: " <<keypoints_object.size() << endl;
   cout << "Test image keypoint count: " << keypoints_scene.size() << endl;
   cout << "Good match count: " << good_matches.size() << std::endl;
+  cout << "Minimum good matches: " << min_good_matches_ << std::endl;
 
-  // if(good_matches.size() < min_good_matches_)
-  //   return false;
+  bool return_value=false;
 
   // Don't consider object recognition, if the minimum amount of good matches has not been reached
   // But, atleast 4 good matches must be found in order to draw the homography
@@ -135,9 +135,11 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
     float actualInlierRatio = static_cast<float>(inliers) / static_cast<float>(good_matches.size());
     std::cout << "InlierRatio: " << actualInlierRatio << std::endl;
     std::cout << "Recognized the object in the scene: ";
+
     if( good_matches.size() > 0 && actualInlierRatio >= inlierRatio){
       // Object recognized
       cout << "[X]" << endl;
+      return_value = true;
 
       // Only calculate bounding box if running with GUI
       if(!headless){
@@ -180,6 +182,7 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
     imshow( "Good Matches & Object detection", img_matches );
 
   waitKey(0);
+  return return_value;
 }
 
 void ObjectMatcher::setMinGoodMatches(int min){

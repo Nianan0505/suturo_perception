@@ -1,3 +1,6 @@
+#ifndef SIMPLE_MATCHER_CPP
+#define SIMPLE_MATCHER_CPP
+
 #include "matching_strategy.h"
 #include <stdio.h>
 #include <iostream>
@@ -12,6 +15,7 @@ class SimpleMatcher : public MatchingStrategy
 public:
 	void match(Mat &descriptors_object, Mat &descriptors_scene, std::vector<DMatch> &good_matches)
 	{
+		std::cout << "USING SIMPLE MATCHER" << std::endl;
 		 //-- Step 3: Matching descriptor vectors using FLANN matcher
 		FlannBasedMatcher matcher;
 		std::vector< DMatch > matches;
@@ -38,3 +42,7 @@ public:
 		}
 	}
 };
+
+#endif
+
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
