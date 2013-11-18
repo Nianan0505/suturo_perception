@@ -2,6 +2,8 @@
 #include <boost/signals2/mutex.hpp>
 
 #include "suturo_perception.h"
+#include "PerceivedObject.h"
+#include "Point.h"
 #include "suturo_perception_msgs/GetClusters.h"
 
 
@@ -35,7 +37,7 @@ public:
       sp.process_cloud(cloud_in);
       processing = false;
 
-      ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
+      ROS_INFO("Received a new point cloud: size = %du",cloud_in->points.size());
     }
   }
 
@@ -73,7 +75,7 @@ public:
 
     mutex.lock();
     perceivedObjects = sp.getPerceivedObjects();
-    res.perceivedObjs = perceivedObjects;
+    res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects);
     mutex.unlock();
 
     return true;
@@ -82,12 +84,25 @@ public:
 private:
   bool processing; // processing flag
   SuturoPerception sp;
-  std::vector<suturo_perception_msgs::PerceivedObject> perceivedObjects;
+  std::vector<PerceivedObject> perceivedObjects;
   ros::NodeHandle nh;
   boost::signals2::mutex mutex;
   // ID counter for the perceived objects
   int objectID;
   ros::ServiceServer clusterService;  
+  
+  std::vector<suturo_perception_msgs::PerceivedObject> *convertPerceivedObjects(std::vector<PerceivedObject> *objects) {
+    std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
+    for (std::vector<PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it) {
+      suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
+      msgObj->c_id = it->c_id;
+      msgObj->c_volume = it->c_volume;
+      msgObj->c_centroid.x = it->c_centroid.x;
+      msgObj->c_centroid.y = it->c_centroid.y;
+      msgObj->c_centroid.z = it->c_centroid.z;
+    }
+    return result;
+  }
 };
 
 
