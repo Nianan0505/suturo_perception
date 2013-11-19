@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(suturo_perception_2d_object_recognition)
+project(suturo_perception_2d_object_recognition_lib)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package( Boost COMPONENTS program_options thread REQUIRED )
+# find_package( Boost COMPONENTS program_options thread REQUIRED )
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -95,12 +95,12 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include boost
-set(Boost_USE_STATIC_LIBS OFF) 
-set(Boost_USE_MULTITHREADED ON)  
-set(Boost_USE_STATIC_RUNTIME OFF) 
-
-include_directories(${Boost_INCLUDE_DIRS}) 
-link_directories(${Boost_LIBRARY_DIRS})
+#set(Boost_USE_STATIC_LIBS OFF) 
+#set(Boost_USE_MULTITHREADED ON)  
+#set(Boost_USE_STATIC_RUNTIME OFF) 
+#
+#include_directories(${Boost_INCLUDE_DIRS}) 
+#link_directories(${Boost_LIBRARY_DIRS})
 
 include_directories(include)
 include_directories(
@@ -108,67 +108,32 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(suturo_perception_2d_object_recognition
+#add_library(suturo_perception_2d_object_recognition
 #   src/${PROJECT_NAME}/suturo_perception_2d_object_recognition.cpp
-# )
+#)
 
 ## Declare a cpp executable
-add_executable(node src/node.cpp src/object_matcher.cpp src/simple_matcher.cpp src/nndr_matcher.cpp src/symmetry_nndr_matcher.cpp)
+# add_executable(node src/node.cpp )
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(suturo_perception_2d_object_recognition_node suturo_perception_2d_object_recognition_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(node
-  ${Boost_LIBRARIES}
-	${catkin_LIBRARIES}
+# target_link_libraries(node
+#   ${Boost_LIBRARIES}
+# 	${catkin_LIBRARIES}
+# )
+
+# Compile my_class as library
+add_library(suturo_perception_2d_object_recognition_lib 
+  lib/object_matcher.cpp
+  lib/simple_matcher.cpp
+  lib/nndr_matcher.cpp
+  lib/symmetry_nndr_matcher.cpp
 )
 
-#############
-## Install ##
-#############
-
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark executables and/or libraries for installation
-# install(TARGETS suturo_perception_2d_object_recognition suturo_perception_2d_object_recognition_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
-
-#############
-## Testing ##
-#############
-
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_suturo_perception_2d_object_recognition.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+# Link library against PCL and boost
+target_link_libraries(suturo_perception_2d_object_recognition_lib
+	${catkin_LIBRARIES}
+)

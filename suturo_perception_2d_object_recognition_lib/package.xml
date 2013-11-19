@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>suturo_perception_2d_object_recognition</name>
+  <name>suturo_perception_2d_object_recognition_lib</name>
   <version>0.0.0</version>
   <description>The suturo_perception_2d_object_recognition package</description>
 
