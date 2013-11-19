@@ -2,34 +2,20 @@
 // https://code.google.com/p/find-object/source/browse/trunk/find_object/example/main.cpp
 #include <stdio.h>
 #include <iostream>
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/version.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/thread.hpp> 
-#include <boost/timer.hpp>      // For boost::timer class
 #include <boost/program_options.hpp>
 #include <algorithm>
 #include <iterator>
 
 #include "object_matcher.h"
+
+// Include available Matcher Classes
 #include "simple_matcher.h"
 #include "nndr_matcher.h"
-#include "symmetry_nndr_matcher.cpp"
+#include "symmetry_nndr_matcher.h"
  
 using namespace boost;
-namespace po = boost::program_options;
-
-// OpenCV 2.4 moved the SURF and SIFT libraries to a new nonfree/ directory
-#if CV_MINOR_VERSION > 3
-	#include <opencv2/nonfree/features2d.hpp>
-#else
-	#include <opencv2/features2d/features2d.hpp>
-#endif
-
-using namespace cv;
 using namespace std;
+
 namespace po = boost::program_options;
 
 /** @function main */
@@ -138,7 +124,8 @@ int main( int argc, char** argv )
   // Run all test images against Training image
   for(int i=0;i<test_images.size();i++)
   {
-    if(om.execute(train_image,test_images.at(i),headless_mode))
+    ObjectMatcher::ExecutionResult res = om.execute(train_image,test_images.at(i),headless_mode);
+    if(res.object_recognized)
       positives++;
     cout << endl;
   }

@@ -1,3 +1,6 @@
+// TODO
+// If the homography contains crossings, discard the result
+
 #include "object_matcher.h"
 #include <stdio.h>
 #include <iostream>
@@ -49,7 +52,7 @@ ObjectMatcher::ObjectMatcher(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::
   min_good_matches_ = 0;
 }
 
-bool ObjectMatcher::execute(std::string train_image, std::string test_image, bool headless)
+ObjectMatcher::ExecutionResult ObjectMatcher::execute(std::string train_image, std::string test_image, bool headless)
 {
   Mat img_object = imread( train_image, CV_LOAD_IMAGE_GRAYSCALE );
   Mat img_scene = imread( test_image, CV_LOAD_IMAGE_GRAYSCALE );
@@ -104,7 +107,7 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
   cout << "Good match count: " << good_matches.size() << std::endl;
   cout << "Minimum good matches: " << min_good_matches_ << std::endl;
 
-  bool return_value=false;
+  bool return_value = false;
 
   // Don't consider object recognition, if the minimum amount of good matches has not been reached
   // But, atleast 4 good matches must be found in order to draw the homography
@@ -112,60 +115,24 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
 	{
     std::vector<uchar> outlier_mask;  // Used for homography
     Mat H = findHomography( obj, scene, CV_RANSAC, 1.0, outlier_mask);
+
     double homographyElapsedTime = t.elapsed();
-    int inliers=0, outliers=0;
-    for(unsigned int k=0; k<obj.size();++k)
-    {
-      if(outlier_mask.at(k))
-      {
-        ++inliers;
-      }
-      else
-      {
-        ++outliers;
-      }
-    }
 
-    // The homography must contain atleast 70% of the extracted keypoints in the homography
-    // for a "good match"
-    // If the inlier to outlier ratio is above this threshold, we will draw the bounding box
-    // and count the object as recognized
-    float inlierRatio = 0.4;
-    float actualInlierRatio = static_cast<float>(inliers) / static_cast<float>(good_matches.size());
-    std::cout << "InlierRatio: " << actualInlierRatio << std::endl;
-    std::cout << "Recognized the object in the scene: ";
-
-    if( good_matches.size() > 0 && actualInlierRatio >= inlierRatio){
+    // Check the ratio of inliers against the size of good matches
+    if( isInlierRatioHighEnough( outlier_mask, good_matches.size()) ){
       // Object recognized
       cout << "[X]" << endl;
       return_value = true;
 
       // Only calculate bounding box if running with GUI
       if(!headless){
-        //-- Get the corners from the image_1 ( the object to be "detected" on the left)
-        std::vector<Point2f> obj_corners(4);
-        obj_corners[0] = cvPoint(0,0);
-        obj_corners[1] = cvPoint( img_object.cols, 0 );
-        obj_corners[2] = cvPoint( img_object.cols, img_object.rows );
-        obj_corners[3] = cvPoint( 0, img_object.rows );
-        std::vector<Point2f> scene_corners(4);
-
-        perspectiveTransform( obj_corners, scene_corners, H);
-
-        //-- Draw lines between the corners (the mapped object in the scene - image_2 )
-        line( img_matches, scene_corners[0] + Point2f( img_object.cols, 0), scene_corners[1] + Point2f( img_object.cols, 0), Scalar(0, 255, 0), 4 );
-        line( img_matches, scene_corners[1] + Point2f( img_object.cols, 0), scene_corners[2] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
-        line( img_matches, scene_corners[2] + Point2f( img_object.cols, 0), scene_corners[3] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
-        line( img_matches, scene_corners[3] + Point2f( img_object.cols, 0), scene_corners[0] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
+        drawBoundingBoxFromHomography(H, img_object, img_matches);
       }
     }
     else
     {
       cout << "[ ]"<<endl;
     }
-
-    std::cout << "Homography Inlier count: " << inliers << endl;
-    std::cout << "Homography Outlier count: " << outliers << endl;
   }else{
     std::cout << "Didn't try to compute homography. Either good_matches is not greater than 4 or min_good_matches_ is not reached" << endl;
   }
@@ -178,13 +145,71 @@ bool ObjectMatcher::execute(std::string train_image, std::string test_image, boo
 
   //-- Show detected matches
   if(!headless)
+  {
     imshow( "Good Matches & Object detection", img_matches );
-
-  waitKey(0);
-  return return_value;
+    waitKey(0);
+  }
+  ExecutionResult result;
+  result.object_recognized = return_value;
+  result.match_image = img_matches;
+  return result;
 }
 
-void ObjectMatcher::setMinGoodMatches(int min){
+// Take the outlier_mask output of findHomography and calculate how many
+// of the good matches are inliers of the homography
+// @return true, if the amount of inliers divided by good_match_count is higher
+// then ObjectMatcher::inlier_ratio_
+bool ObjectMatcher::isInlierRatioHighEnough(std::vector<uchar> &outlier_mask, int good_match_count){
+    int inliers=0, outliers=0;
+    for(unsigned int k = 0; k < good_match_count; ++k)
+    {
+      if(outlier_mask.at(k))
+      {
+        ++inliers;
+      }
+      else
+      {
+        ++outliers;
+      }
+    }
+
+  // The homography must contain atleast 40% of the extracted keypoints in the homography
+  // for a "good match"
+  // If the inlier to outlier ratio is above this threshold, we will draw the bounding box
+  // and count the object as recognized
+  float actualInlierRatio = static_cast<float>(inliers) / static_cast<float>(good_match_count);
+
+  std::cout << "Homography Inlier count: " << inliers << endl;
+  std::cout << "Homography Outlier count: " << outliers << endl;
+  std::cout << "InlierRatio: " << actualInlierRatio << std::endl;
+  std::cout << "Recognized the object in the scene: ";
+
+  if( actualInlierRatio >= inlier_ratio_)
+    return true;
+  return false;
+}
+
+void ObjectMatcher::setMinGoodMatches(int min)
+{
  min_good_matches_ = min;
+}
+
+void ObjectMatcher::drawBoundingBoxFromHomography(Mat &H, Mat &img_object, Mat &img_matches)
+{
+  //-- Get the corners from the image_1 ( the object to be "detected" on the left)
+  std::vector<Point2f> obj_corners(4);
+  obj_corners[0] = cvPoint(0,0);
+  obj_corners[1] = cvPoint( img_object.cols, 0 );
+  obj_corners[2] = cvPoint( img_object.cols, img_object.rows );
+  obj_corners[3] = cvPoint( 0, img_object.rows );
+  std::vector<Point2f> scene_corners(4);
+
+  perspectiveTransform( obj_corners, scene_corners, H);
+
+  //-- Draw lines between the corners (the mapped object in the scene - image_2 )
+  line( img_matches, scene_corners[0] + Point2f( img_object.cols, 0), scene_corners[1] + Point2f( img_object.cols, 0), Scalar(0, 255, 0), 4 );
+  line( img_matches, scene_corners[1] + Point2f( img_object.cols, 0), scene_corners[2] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
+  line( img_matches, scene_corners[2] + Point2f( img_object.cols, 0), scene_corners[3] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
+  line( img_matches, scene_corners[3] + Point2f( img_object.cols, 0), scene_corners[0] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
 }
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
