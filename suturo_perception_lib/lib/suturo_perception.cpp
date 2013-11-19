@@ -38,6 +38,7 @@
 #include <pcl/surface/convex_hull.h>
 
 #include <boost/thread/thread.hpp>
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
@@ -72,7 +73,7 @@ SuturoPerception::SuturoPerception()
 	ecObjClusterTolerance = 0.03; // 3cm
 	ecObjMinClusterSize = 100;
 	ecObjMaxClusterSize = 25000;
-	
+	debug = true;
 }
 
 /*
@@ -82,9 +83,14 @@ SuturoPerception::SuturoPerception()
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
 SuturoPerception::removeNans(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
+	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
 	std::vector<int> nans;
 	pcl::removeNaNFromPointCloud(*cloud_in,*cloud_nanles,nans);
+	
+	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+	logTime(s, e, "removeNans()");
 	return cloud_nanles;
 }
 
@@ -95,6 +101,8 @@ SuturoPerception::removeNans(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
 SuturoPerception::filterZAxis(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
+	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
 	
 	pcl::PassThrough<pcl::PointXYZRGB> pass;
@@ -102,6 +110,9 @@ SuturoPerception::filterZAxis(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 	pass.setFilterFieldName("z");
 	pass.setFilterLimits(zAxisFilterMin, zAxisFilterMax);
 	pass.filter(*cloud_filtered);
+
+	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+	logTime(s, e, "filterZAxis()");
 
 	return cloud_filtered;
 }
@@ -113,6 +124,8 @@ SuturoPerception::filterZAxis(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
 SuturoPerception::downsample(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
+	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
 	
 	pcl::VoxelGrid <pcl::PointXYZRGB> vg;
@@ -120,6 +133,8 @@ SuturoPerception::downsample(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 	vg.setLeafSize(downsampleLeafSize,downsampleLeafSize,downsampleLeafSize);
 	vg.filter(*cloud_filtered);
 
+	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+	logTime(s, e, "downsample()");
 	return cloud_filtered;
 }
 
@@ -130,6 +145,8 @@ SuturoPerception::downsample(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 pcl::PointIndices::Ptr 
 SuturoPerception::fitPlanarModel(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {	
+	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
 	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
 	pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
 
@@ -145,6 +162,9 @@ SuturoPerception::fitPlanarModel(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
     std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
 	}
 
+	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+	logTime(s, e, "fitPlanarModel()");
+
 	return inliers;
 }
 
@@ -155,6 +175,8 @@ SuturoPerception::fitPlanarModel(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
 SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointIndices::Ptr inliers)
 {	
+	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -215,6 +237,9 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 	extract.setNegative (false);
 	extract.filter (*object_clusters);
 
+	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+	logTime(s, e, "extractObjectCluster()");
+
 	return object_clusters;
 }
 
@@ -226,6 +251,8 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> 
 SuturoPerception::extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
+	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
 
 	// Creating the KdTree object for the search method of the extraction
@@ -256,6 +283,10 @@ SuturoPerception::extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
 		cloud_cluster->is_dense = true;
 		extractedObjects.push_back(cloud_cluster);
 	}
+
+	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+	logTime(s, e, "extractObjects()");
+	
 	return extractedObjects; 
 }
 
@@ -269,13 +300,16 @@ SuturoPerception::extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
  */
 void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
+	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
 	//point cloud objects
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>());
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered_downsampled;
 
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
@@ -286,18 +320,21 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 	//filtering cloud on z axis
 	cloud_filtered = filterZAxis(cloud_nanles);
 
+	cloud_filtered_downsampled = downsample(cloud_filtered);
+
 	//fitting a plane to the filtered cloud
-	pcl::PointIndices::Ptr inliers = fitPlanarModel(cloud_filtered);
+	pcl::PointIndices::Ptr inliers = fitPlanarModel(cloud_filtered_downsampled);
 
 	// filter out biggest surface and return cloud above it
-	object_clusters = extractObjectCluster(cloud_filtered, inliers);
+	object_clusters = extractObjectCluster(cloud_filtered_downsampled, inliers);
 
 	// cluster extraction
 	//voxelize cloud
-	cloud_downsampled = downsample(object_clusters);
+	object_clusters_downsampled = downsample(object_clusters);
 
 	// extract objects from downsampled object cloud
-	extractedObjects = extractObjects(cloud_downsampled);
+	extractedObjects = extractObjects(object_clusters_downsampled);
+	writeCloudToDisk(extractedObjects);
 
 	// temporary list of perceived objects
 	std::vector<PerceivedObject> tmpPerceivedObjects;
@@ -344,6 +381,9 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 	mutex.lock();
 	perceivedObjects = tmpPerceivedObjects;
 	mutex.unlock();
+
+	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+	logTime(s, e, "TOTAL");
 }
 
 std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
@@ -357,7 +397,7 @@ std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
  */
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> SuturoPerception::getObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
-		//point cloud objects
+	//point cloud objects
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -385,6 +425,17 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> SuturoPerception::getObjects
 
 	// short alternative:
 	//return extractObjects(downsample(extractObjectCluster(filterZAxis(removeNans(cloud_in)), fitPlanarModel(filterZAxis(removeNans(cloud_in))))));
+}
+
+// debug timelog for profiling
+void SuturoPerception::logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string text)
+{
+	if(debug)
+	{
+		boost::posix_time::time_duration d = e - s;
+		float diff = (float)d.total_microseconds() / (float)1000;
+		std::cout << "[perception_lib] Time for " << text << ": " << diff << " ms" << std::endl;
+	}
 }
 
 // debug method

@@ -86,6 +86,11 @@ namespace suturo_perception_lib
     
     // Mutex for buffer locking
     boost::signals2::mutex mutex;
+
+    // debug var for time profiling
+    bool debug;
+    // log time for profiling
+    void logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string text);
   };
 }
 
