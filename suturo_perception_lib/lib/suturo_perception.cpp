@@ -305,7 +305,6 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 	//point cloud objects
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -329,11 +328,8 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 	object_clusters = extractObjectCluster(cloud_filtered_downsampled, inliers);
 
 	// cluster extraction
-	//voxelize cloud
-	object_clusters_downsampled = downsample(object_clusters);
-
 	// extract objects from downsampled object cloud
-	extractedObjects = extractObjects(object_clusters_downsampled);
+	extractedObjects = extractObjects(object_clusters);
 
 	// temporary list of perceived objects
 	std::vector<PerceivedObject> tmpPerceivedObjects;
