@@ -334,7 +334,6 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 
 	// extract objects from downsampled object cloud
 	extractedObjects = extractObjects(object_clusters_downsampled);
-	writeCloudToDisk(extractedObjects);
 
 	// temporary list of perceived objects
 	std::vector<PerceivedObject> tmpPerceivedObjects;
