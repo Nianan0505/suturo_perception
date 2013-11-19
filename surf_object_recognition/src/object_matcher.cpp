@@ -12,8 +12,7 @@
 #include <iterator>
 
 // Include concrete Matching Strategies
-#include "simple_matcher.cpp"
-#include "nndr_matcher.cpp"
+#include "nndr_matcher.h"
 
 using namespace boost;
 

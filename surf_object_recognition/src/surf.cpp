@@ -14,8 +14,8 @@
 #include <iterator>
 
 #include "object_matcher.h"
-#include "simple_matcher.cpp"
-#include "nndr_matcher.cpp"
+#include "simple_matcher.h"
+#include "nndr_matcher.h"
 #include "symmetry_nndr_matcher.cpp"
  
 using namespace boost;
