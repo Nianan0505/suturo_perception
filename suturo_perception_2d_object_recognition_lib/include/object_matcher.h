@@ -35,20 +35,41 @@ private:
 	// void match(Mat &descriptors_object, Mat &descriptors_scene, std::vector<DMatch> &good_matches);
 	
 public:
+		struct TrainingImageData
+		{
+			std::string label;
+			std::vector<KeyPoint> keypoints;
+		  Mat descriptors;
+			Mat img;
+		};
+		
 		struct ExecutionResult
 		{
 			bool object_recognized; // true if the object has been recognized
 			Mat match_image; // an Image produced by cv::drawMatches for debugging purposes
 		};
 
+		// Vector of training images
+		std::vector<TrainingImageData> training_images_;
+
 		ObjectMatcher();
 		ObjectMatcher(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::DescriptorExtractor> extractor);
+
 		/**
 		 * Try to recognize the Object given in train_image in the test_image
 		 * @param headless If this is set to true, no Windows will be opened to display the matches.
-		 * @returns True, if Object has been recognized
+		 * @returns ExecutionResult with result=True, if Object has been recognized
 		 */
 		ObjectMatcher::ExecutionResult execute(std::string train_image, std::string test_image, bool headless);
+		/**
+		 * Try to recognize the trained images (trained via ObjectMatcher::trainImages) in a given
+		 * test image
+		 *
+		 * @param headless If this is set to true, no Windows will be opened to display the matches.
+		 * @returns ExecutionResult with result=True, if Object has been recognized
+		 */
+		ObjectMatcher::ExecutionResult recognizeTrainedImages(std::string test_image, bool headless);
+
 		void setMatcher(MatchingStrategy* matching_strategy);
 		void setMinGoodMatches(int min);
 
@@ -56,6 +77,10 @@ public:
 		// according to a given Homography h
 		void drawBoundingBoxFromHomography(Mat &H, Mat &img_object, Mat &img_matches);
 		bool isInlierRatioHighEnough(std::vector<uchar> &outlier_mask, int good_match_count);
+		void computeKeyPointsAndDescriptors(Mat &img, std::vector<cv::KeyPoint> &keypoints, Mat &descriptors);
+		void calculateHomography(std::vector<cv::KeyPoint> &keypoints_object, std::vector<cv::KeyPoint> &keypoints_scene, std::vector<DMatch> &good_matches, Mat &H, std::vector<uchar> &outlier_mask );
+		bool objectRecognized(std::vector< DMatch > &good_matches, std::vector<cv::KeyPoint> &keypoints_object, std::vector<cv::KeyPoint> &keypoints_scene, Mat &H);
+		void trainImages(vector<string> file_names);
 };
 
 #endif
