@@ -83,9 +83,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES suturo_perception_2d_object_recognition
-  CATKIN_DEPENDS cv_bridge image_transport opencv2 roscpp std_msgs
-#  DEPENDS opencv
+  LIBRARIES suturo_perception_2d_object_recognition_lib
+  CATKIN_DEPENDS cv_bridge image_transport roscpp std_msgs
+  DEPENDS opencv
 )
 
 ###########
