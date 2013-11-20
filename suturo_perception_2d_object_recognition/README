@@ -1,0 +1,8 @@
+Run the object recognition module with a single training image:
+
+rosrun suturo_perception_2d_object_recognition cli_node -m 10 --train-img /perception/images/closeups/muesli_train_front.jpg /perception/images/closeups/muesli*
+
+Run the object recognition module with multiple training images
+for one instance:
+
+rosrun suturo_perception_2d_object_recognition cli_node -m 10 --train-img /perception/images/closeups/muesli_train_front.jpg --train-img /perception/images/closeups/muesli_train_back.jpg /perception/images/closeups/muesli*
