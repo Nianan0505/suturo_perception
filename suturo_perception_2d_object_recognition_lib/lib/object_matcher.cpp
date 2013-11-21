@@ -115,6 +115,65 @@ void ObjectMatcher::trainImages(vector<string> file_names)
   }
 }
 
+void ObjectMatcher::trainImagesToDatabase(string database_filename, vector<string> training_img_file, vector<string> training_img_label)
+{
+  // vector of training images should be equally sized
+  // to the vector of labels for it
+  if(training_img_file.size() != training_img_label.size())
+    return;
+
+  cv::FileStorage fs(database_filename, cv::FileStorage::WRITE);
+ 
+  // Save everything in a mapping "training_data", which contains
+  // a list (e.g. sequence in YAML terms) of
+  // keypoints,descriptors and the training image itself
+  // fs << "uber_keypoints " << 
+  fs << "training_data" << "[";
+  for(int i = 0; i < training_img_file.size(); i++)
+  {
+    // Read in training images
+    Mat img, descriptors;
+    img = imread( training_img_file.at(i), CV_LOAD_IMAGE_GRAYSCALE );
+    vector<KeyPoint> keypoints;
+
+    computeKeyPointsAndDescriptors(img, keypoints, descriptors);
+    cout << "Trained " << keypoints.size() << " keypoints" << endl;
+
+    // fs << "{:" << "keypoints" << keypoints << "descriptors" << descriptors;
+    fs << "{" << "label" << training_img_label.at(i) << "keypoints" << keypoints ;
+    fs << "img" << img;
+    fs << "descriptors" << descriptors;
+    fs << "}";
+  }
+  fs << "]";
+  fs.release();
+
+}
+
+void ObjectMatcher::readTrainImagesFromDatabase(string database_filename)
+{
+  cout << "Reading training data from " << database_filename << endl;
+  cv::FileStorage fs(database_filename, FileStorage::READ);
+  FileNode training_data = fs["training_data"];
+
+  int idx=0;
+  FileNodeIterator it = training_data.begin(), it_end = training_data.end();
+  for( ; it != it_end; ++it, idx++ )
+  {
+    TrainingImageData ti;
+
+    (*it)["label"] >> ti.label;
+    // (*it)["keypoints"] >> kp; // doesn't work ?
+    read( (*it)["keypoints"] , ti.keypoints); // works
+    (*it)["img"] >> ti.img;
+    (*it)["descriptors"] >> ti.descriptors;
+
+    cout << "feature #" << idx << ": " << ti.label << " - Keypoints: " << ti.keypoints.size() << endl;
+    training_images_.push_back(ti);
+  }
+  fs.release();
+}
+
 ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(std::string test_image, bool headless)
 {
   Mat img_scene = imread( test_image, CV_LOAD_IMAGE_GRAYSCALE );

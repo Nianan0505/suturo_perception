@@ -81,6 +81,8 @@ public:
 		void calculateHomography(std::vector<cv::KeyPoint> &keypoints_object, std::vector<cv::KeyPoint> &keypoints_scene, std::vector<DMatch> &good_matches, Mat &H, std::vector<uchar> &outlier_mask );
 		bool objectRecognized(std::vector< DMatch > &good_matches, std::vector<cv::KeyPoint> &keypoints_object, std::vector<cv::KeyPoint> &keypoints_scene, Mat &H);
 		void trainImages(vector<string> file_names);
+		void trainImagesToDatabase(string database_filename, vector<string> training_img_file, vector<string> training_img_label);
+		void readTrainImagesFromDatabase(string database_filename);
 };
 
 #endif

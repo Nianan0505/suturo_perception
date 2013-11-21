@@ -118,6 +118,7 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(cli_node src/node.cpp )
+add_executable(train_images src/train_images.cpp )
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -127,6 +128,11 @@ add_executable(cli_node src/node.cpp )
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(cli_node
+  ${Boost_LIBRARIES} 
+	${catkin_LIBRARIES}
+)
+
+target_link_libraries(train_images
   ${Boost_LIBRARIES} 
 	${catkin_LIBRARIES}
 )
