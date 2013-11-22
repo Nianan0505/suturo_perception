@@ -89,17 +89,55 @@ public:
       ros::spinOnce();
       r.sleep();
     }
-    
+
     mutex.lock();
     perceivedObjects = sp.getPerceivedObjects();
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects);
     mutex.unlock();
 
+    publishVisualizationMarkers(res.perceivedObjs);
+    
+    return true;
+  }
+
+private:
+  bool processing; // processing flag
+  suturo_perception_lib::SuturoPerception sp;
+  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+  ros::NodeHandle nh;
+  boost::signals2::mutex mutex;
+  // ID counter for the perceived objects
+  int objectID;
+  ros::ServiceServer clusterService;
+  ros::Publisher vis_pub;
+  int maxMarkerId;
+  
+  /*
+   * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
+   */
+  std::vector<suturo_perception_msgs::PerceivedObject> *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects)
+  {
+    std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
+    for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
+    {
+      suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
+      msgObj->c_id = it->c_id;
+      msgObj->c_volume = it->c_volume;
+      msgObj->c_centroid.x = it->c_centroid.x;
+      msgObj->c_centroid.y = it->c_centroid.y;
+      msgObj->c_centroid.z = it->c_centroid.z;
+      result->push_back(*msgObj);
+    }
+    return result;
+  }
+
+  void publishVisualizationMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs)
+  {
     ROS_INFO("Publishing centroid visualization markers");
     int markerId = 0;
-    std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin();
-    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin(); 
-         it != res.perceivedObjs.end (); ++it)
+    std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = objs.begin();
+    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = objs.begin(); 
+         it != objs.end (); ++it)
     {
       visualization_msgs::Marker marker;
       marker.header.frame_id = "camera_rgb_optical_frame";
@@ -123,39 +161,24 @@ public:
       marker.color.g = 1.0;
       marker.color.b = 0.0;
       markerId++;
+      maxMarkerId++;
       vis_pub.publish(marker);
     }
-    return true;
-  }
-
-private:
-  bool processing; // processing flag
-  suturo_perception_lib::SuturoPerception sp;
-  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
-  ros::NodeHandle nh;
-  boost::signals2::mutex mutex;
-  // ID counter for the perceived objects
-  int objectID;
-  ros::ServiceServer clusterService;
-  ros::Publisher vis_pub;
-  
-  /*
-   * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
-   */
-  std::vector<suturo_perception_msgs::PerceivedObject> *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects)
-  {
-    std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
-    for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
+    // remove markers that have not been updated
+    std::cerr << "MaxMarkerID: " << maxMarkerId << std::endl;
+    std::cerr << "CurMarkerID: " << markerId << std::endl;
+    for(int i = markerId; i <= maxMarkerId; ++i)
     {
-      suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
-      msgObj->c_id = it->c_id;
-      msgObj->c_volume = it->c_volume;
-      msgObj->c_centroid.x = it->c_centroid.x;
-      msgObj->c_centroid.y = it->c_centroid.y;
-      msgObj->c_centroid.z = it->c_centroid.z;
-      result->push_back(*msgObj);
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = "camera_rgb_optical_frame";
+      marker.header.stamp = ros::Time();
+      marker.ns = "suturo_perception";
+      marker.id = i;
+      marker.action = visualization_msgs::Marker::DELETE;
+      vis_pub.publish(marker);
     }
-    return result;
+    maxMarkerId = markerId;
+    std::cerr << "MarkerID: " << markerId << std::endl;
   }
 };
 
