@@ -228,6 +228,7 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 	hull.setInputCloud (plane_cluster);
 	hull.reconstruct (*hull_points);
 	
+	// org cloud hier rein. org cloud zusätzlich übergeben
 	pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
 	prism.setInputCloud (cloud_clusters);
 	prism.setInputPlanarHull (hull_points);

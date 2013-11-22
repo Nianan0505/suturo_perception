@@ -70,6 +70,7 @@ public:
   {
     ros::Subscriber sub;
     processing = true;
+    std::cerr << "called" << std::endl;
 
     // signal failed call, if request string does not match
     if (req.s.compare("get") != 0)
@@ -84,7 +85,7 @@ public:
     ROS_INFO("Waiting for processed cloud");
     ros::Rate r(20); // 20 hz
     // cancel service call, if no cloud is received after 5s
-    boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(5);
+    boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
     while(processing)
     {
       if(boost::posix_time::second_clock::local_time() >= cancelTime) processing = false;
@@ -130,6 +131,7 @@ private:
       msgObj->c_centroid.x = it->c_centroid.x;
       msgObj->c_centroid.y = it->c_centroid.y;
       msgObj->c_centroid.z = it->c_centroid.z;
+      msgObj->frame_id = frameId;
       result->push_back(*msgObj);
     }
     return result;
@@ -169,8 +171,6 @@ private:
       vis_pub.publish(marker);
     }
     // remove markers that have not been updated
-    std::cerr << "MaxMarkerID: " << maxMarkerId << std::endl;
-    std::cerr << "CurMarkerID: " << markerId << std::endl;
     for(int i = markerId; i <= maxMarkerId; ++i)
     {
       visualization_msgs::Marker marker;
@@ -182,7 +182,6 @@ private:
       vis_pub.publish(marker);
     }
     maxMarkerId = markerId;
-    std::cerr << "MarkerID: " << markerId << std::endl;
   }
 };
 
@@ -195,17 +194,14 @@ int main (int argc, char** argv)
   // get parameters
   std::string pointTopic;
   std::string frameId;
-  if(nh.getParam("/suturo_perception/point_topic", pointTopic) && nh.getParam("/suturo_perception/frame_id", frameId))
-  {
-    ROS_INFO_STREAM("Using parameters from Parameter Server");
-    SuturoPerceptionROSNode spr(nh, pointTopic, frameId);
-  }
-  else // use default values
-  {
-    ROS_INFO_STREAM("Using default parameters");
-    SuturoPerceptionROSNode spr(nh, "/camera/depth_registered/points", "camera_rgb_optical_frame");
-  }
+
+  // ros strangeness strikes again. don't try to && these!
+  if(ros::param::get("/suturo_perception/point_topic", pointTopic)) ROS_INFO("Using parameters from Parameter Server");
+  else pointTopic = "/camera/depth_registered/points"; ROS_INFO("Using default parameters");
+  if(ros::param::get("/suturo_perception/frame_id", frameId));
+  else frameId = "camera_rgb_optical_frame";
   
+  SuturoPerceptionROSNode spr(nh, pointTopic, frameId);  
 
   // Initialize dynamic reconfigure
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> srv;
@@ -214,7 +210,6 @@ int main (int argc, char** argv)
   srv.setCallback(f);
 
   ROS_INFO("suturo_perception READY");
-    //sp.sayHi();
   ros::MultiThreadedSpinner spinner(2);
   spinner.spin();
   return (0);

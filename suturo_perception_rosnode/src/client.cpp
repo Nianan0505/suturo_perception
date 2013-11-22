@@ -39,6 +39,7 @@ int main(int argc, char **argv)
 
       for(int i=0; i < clusterSrv.response.perceivedObjs.size(); i++ ) {
         ROS_INFO("ID of perceived object is: %d", clusterSrv.response.perceivedObjs[i].c_id);
+        ROS_INFO("Frame of perceived object is: %s", clusterSrv.response.perceivedObjs[i].frame_id.c_str());
         ROS_INFO("Volume of perceived object is: %f", clusterSrv.response.perceivedObjs[i].c_volume);
         ROS_INFO("Centroid(x) of perceived object is: %f , %f , %f ",
           clusterSrv.response.perceivedObjs[i].c_centroid.x,
