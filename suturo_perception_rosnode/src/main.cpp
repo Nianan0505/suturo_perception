@@ -26,13 +26,15 @@ public:
   /*
    * Constructor
    */
-  SuturoPerceptionROSNode(ros::NodeHandle& n) : nh(n)
+  SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string fi) : 
+    nh(n), 
+    pointTopic(pt), 
+    frameId(fi)
   {
     clusterService = nh.advertiseService("GetClusters", 
       &SuturoPerceptionROSNode::getClusters, this);
     vis_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 0);
     objectID = 0;
-    //processing = false;
   }
 
    /*
@@ -76,7 +78,7 @@ public:
     }
 
     // Subscribe to the depth information topic
-    sub = nh.subscribe("/camera/depth_registered/points", 1, 
+    sub = nh.subscribe(pointTopic, 1, 
       &SuturoPerceptionROSNode::receive_cloud, this);
 
     ROS_INFO("Waiting for processed cloud");
@@ -111,6 +113,8 @@ private:
   ros::ServiceServer clusterService;
   ros::Publisher vis_pub;
   int maxMarkerId;
+  std::string pointTopic;
+  std::string frameId;
   
   /*
    * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
@@ -140,7 +144,7 @@ private:
          it != objs.end (); ++it)
     {
       visualization_msgs::Marker marker;
-      marker.header.frame_id = "camera_rgb_optical_frame";
+      marker.header.frame_id = frameId;
       marker.header.stamp = ros::Time();
       marker.ns = "suturo_perception";
       marker.id = markerId;
@@ -187,7 +191,21 @@ int main (int argc, char** argv)
 {
   ros::init(argc, argv, "suturo_perception");
   ros::NodeHandle nh;
-  SuturoPerceptionROSNode spr(nh);
+
+  // get parameters
+  std::string pointTopic;
+  std::string frameId;
+  if(nh.getParam("/suturo_perception/point_topic", pointTopic) && nh.getParam("/suturo_perception/frame_id", frameId))
+  {
+    ROS_INFO_STREAM("Using parameters from Parameter Server");
+    SuturoPerceptionROSNode spr(nh, pointTopic, frameId);
+  }
+  else // use default values
+  {
+    ROS_INFO_STREAM("Using default parameters");
+    SuturoPerceptionROSNode spr(nh, "/camera/depth_registered/points", "camera_rgb_optical_frame");
+  }
+  
 
   // Initialize dynamic reconfigure
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> srv;
