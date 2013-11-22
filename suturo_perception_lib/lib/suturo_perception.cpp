@@ -202,13 +202,18 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 
 	// Extract the biggest cluster (e.g. the table) in the plane cloud
 	std::vector<pcl::PointIndices>::const_iterator it = table_cluster_indices.begin ();
+	if(table_cluster_indices.size() == 0)
+	{
+		std::cerr << "table indice size 0. skipping" << std::endl;
+		return object_clusters; // return nothing. plane not found
+	}
 	for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
 		plane_cluster->points.push_back (cloud_plane->points[*pit]);
 	plane_cluster->width = plane_cluster->points.size ();
 	plane_cluster->height = 1;
 	plane_cluster->is_dense = true;
 
-	//std::cout << "Table point cloud " << plane_cluster->points.size () << " data points." << std::endl;
+	//std::cerr << "Table point cloud " << plane_cluster->points.size () << " data points." << std::endl;
 
 	// Remove the plane from the rest of the point cloud
 	extract.setNegative(true);
@@ -254,11 +259,11 @@ SuturoPerception::extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
 	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
+	if(cloud_in->size() == 0) return extractedObjects; // cloud_in was empty
 
 	// Creating the KdTree object for the search method of the extraction
 	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
 	tree->setInputCloud (cloud_in);
-
 	std::vector<pcl::PointIndices> cluster_indices;
 	pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
 	ec.setClusterTolerance (ecObjClusterTolerance); // 2cm
@@ -283,6 +288,7 @@ SuturoPerception::extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
 		cloud_cluster->is_dense = true;
 		extractedObjects.push_back(cloud_cluster);
 	}
+	std::cerr << "after iteration of extracted clusters" << std::endl;
 
 	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
 	logTime(s, e, "extractObjects()");
