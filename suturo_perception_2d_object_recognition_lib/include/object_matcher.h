@@ -31,6 +31,10 @@ private:
   cv::Ptr<cv::FeatureDetector> detector_;
   cv::Ptr<cv::DescriptorExtractor> extractor_;
   MatchingStrategy* matching_strategy_;
+
+  // Should we draw the bounding box if it contains crossings?
+  // Crossing indicates that a object has not been correctly matched
+  bool draw_bounding_box_with_crossings_;
   // result will be put into good_matches by reference
   // void match(Mat &descriptors_object, Mat &descriptors_scene, std::vector<DMatch> &good_matches);
 	
@@ -71,9 +75,11 @@ public:
      * @returns ExecutionResult with result=True, if Object has been recognized
      */
     ObjectMatcher::ExecutionResult recognizeTrainedImages(std::string test_image, bool headless);
+    ObjectMatcher::ExecutionResult recognizeTrainedImages(cv::Mat &test_image, bool headless);
     
     void setMatcher(MatchingStrategy* matching_strategy);
     void setMinGoodMatches(int min);
+    void drawBoundingBoxWithCrossings(bool draw);
     
     // Draw the bounding box of a given object in cv::drawMatches image
     // according to a given Homography h

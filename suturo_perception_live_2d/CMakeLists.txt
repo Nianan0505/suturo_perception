@@ -9,10 +9,12 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   roscpp
   std_msgs
+	suturo_perception_2d_object_recognition_lib
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package( Boost COMPONENTS program_options thread REQUIRED )
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -91,6 +93,13 @@ catkin_package(
 ## Build ##
 ###########
 
+set(Boost_USE_STATIC_LIBS OFF) 
+set(Boost_USE_MULTITHREADED ON)  
+set(Boost_USE_STATIC_RUNTIME OFF) 
+
+include_directories(${Boost_INCLUDE_DIRS}) 
+link_directories(${Boost_LIBRARY_DIRS})
+
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
@@ -112,6 +121,7 @@ add_executable(suturo_perception_live_2d src/main.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_live_2d
+  ${Boost_LIBRARIES} 
   ${catkin_LIBRARIES}
 )
 
