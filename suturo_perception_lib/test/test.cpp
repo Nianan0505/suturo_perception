@@ -23,7 +23,7 @@ TEST(suturo_perception_test, box_1_test)
   }
   
   suturo_perception_lib::SuturoPerception sp;
-  sp.process_cloud(cloud);
+  sp.processCloud(cloud);
   
   std::vector<suturo_perception_lib::PerceivedObject> objects = sp.getPerceivedObjects();
   
@@ -38,12 +38,12 @@ TEST(suturo_perception_test, box_1_test)
   ASSERT_EQ(1, objects.size());
   ASSERT_LT(0.0032, objects.at(0).c_volume);
   ASSERT_GT(0.0036, objects.at(0).c_volume);
-  ASSERT_LT(0.00523330, objects.at(0).c_centroid.x);
-  ASSERT_GT(0.00523334, objects.at(0).c_centroid.x);
-  ASSERT_LT(0.106525, objects.at(0).c_centroid.y);
-  ASSERT_GT(0.106529, objects.at(0).c_centroid.y);
-  ASSERT_LT(0.948483, objects.at(0).c_centroid.z);
-  ASSERT_GT(0.948487, objects.at(0).c_centroid.z);
+  ASSERT_LT(-0.00453912, objects.at(0).c_centroid.x);
+  ASSERT_GT(-0.00453904, objects.at(0).c_centroid.x);
+  ASSERT_LT(0.108890, objects.at(0).c_centroid.y);
+  ASSERT_GT(0.108898, objects.at(0).c_centroid.y);
+  ASSERT_LT(0.948475, objects.at(0).c_centroid.z);
+  ASSERT_GT(0.948483, objects.at(0).c_centroid.z);
   
   SUCCEED();
 }
