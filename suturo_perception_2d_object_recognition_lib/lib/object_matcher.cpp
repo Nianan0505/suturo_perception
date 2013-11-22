@@ -13,6 +13,7 @@
 #include <boost/timer.hpp>      // For boost::timer class
 #include <algorithm>
 #include <iterator>
+#include "math2d.h"
 
 // Include concrete Matching Strategies
 #include "nndr_matcher.h"
@@ -84,6 +85,7 @@ bool ObjectMatcher::objectRecognized(std::vector< DMatch > &good_matches, std::v
 
     std::vector<uchar> outlier_mask;  // Used for homography
     calculateHomography(keypoints_object, keypoints_scene, good_matches, H, outlier_mask );
+    
 
     // Check the ratio of inliers against the size of good matches
     if( isInlierRatioHighEnough( outlier_mask, good_matches.size()) )
@@ -203,11 +205,6 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(std::string
                  vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
 
-    // // cout << "Training image keypoint count: " <<keypoints_object.size() << endl;
-    // // cout << "Test image keypoint count: " << keypoints_scene.size() << endl;
-    // // cout << "Good match count: " << good_matches.size() << std::endl;
-    // // cout << "Minimum good matches: " << min_good_matches_ << std::endl;
-
     bool return_value = false;
 
     // Mat for the computed homography, if the object has been found
@@ -216,10 +213,16 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(std::string
     {
         cout << "Object recognized: [X]" << endl;
         // Only calculate bounding box if running with GUI
-        if(!headless){
-          drawBoundingBoxFromHomography(H, ti.img, img_matches);
+        bool crossings = drawBoundingBoxFromHomography(H, ti.img, img_matches);
+        // if(!headless){
+        if(crossings){
+          cout << "Bounding Box lines contain crossings. Discard the result... " << endl;
+          return_value=false;
         }
-        return_value=true;
+        else
+        {
+          return_value=true;
+        }
         //-- Show detected matches
         if(!headless)
         {
@@ -231,6 +234,9 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(std::string
         ExecutionResult result;
         result.object_recognized = return_value;
         result.match_image = img_matches;
+        if(!ti.label.empty() && return_value ){
+          result.label = ti.label; // Do we have to copy the string here?
+        }
         return result;
     }else{
         cout << "Object recognized:[ ]"<<endl;
@@ -295,7 +301,8 @@ ObjectMatcher::ExecutionResult ObjectMatcher::execute(std::string train_image, s
       cout << "Object recognized: [X]" << endl;
       // Only calculate bounding box if running with GUI
       if(!headless){
-        drawBoundingBoxFromHomography(H, img_object, img_matches);
+        bool crossings = drawBoundingBoxFromHomography(H, img_object, img_matches);
+        cout << "Does the bounding box have intersections? " << crossings << endl;
       }
       return_value=true;
   }else{
@@ -351,8 +358,8 @@ void ObjectMatcher::setMinGoodMatches(int min)
 {
  min_good_matches_ = min;
 }
-
-void ObjectMatcher::drawBoundingBoxFromHomography(Mat &H, Mat &img_object, Mat &img_matches)
+// return true, if bounding box contains crossings
+bool ObjectMatcher::drawBoundingBoxFromHomography(Mat &H, Mat &img_object, Mat &img_matches)
 {
   //-- Get the corners from the image_1 ( the object to be "detected" on the left)
   std::vector<Point2f> obj_corners(4);
@@ -365,9 +372,16 @@ void ObjectMatcher::drawBoundingBoxFromHomography(Mat &H, Mat &img_object, Mat &
   perspectiveTransform( obj_corners, scene_corners, H);
 
   //-- Draw lines between the corners (the mapped object in the scene - image_2 )
-  line( img_matches, scene_corners[0] + Point2f( img_object.cols, 0), scene_corners[1] + Point2f( img_object.cols, 0), Scalar(0, 255, 0), 4 );
-  line( img_matches, scene_corners[1] + Point2f( img_object.cols, 0), scene_corners[2] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
-  line( img_matches, scene_corners[2] + Point2f( img_object.cols, 0), scene_corners[3] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
-  line( img_matches, scene_corners[3] + Point2f( img_object.cols, 0), scene_corners[0] + Point2f( img_object.cols, 0), Scalar( 0, 255, 0), 4 );
+  line( img_matches, scene_corners[0] + Point2f( img_object.cols, 0), scene_corners[1] + Point2f( img_object.cols, 0), Scalar(0, 255, 0), 1 );
+  line( img_matches, scene_corners[1] + Point2f( img_object.cols, 0), scene_corners[2] + Point2f( img_object.cols, 0), Scalar( 0, 255, 255), 1 );
+  line( img_matches, scene_corners[2] + Point2f( img_object.cols, 0), scene_corners[3] + Point2f( img_object.cols, 0), Scalar( 255, 0, 0), 1 );
+  line( img_matches, scene_corners[3] + Point2f( img_object.cols, 0), scene_corners[0] + Point2f( img_object.cols, 0), Scalar( 255, 255, 0), 1 );
+
+  cv::Point2f intersection;
+  if(intersectLineSegments(scene_corners[0], scene_corners[1], scene_corners[2], scene_corners[3], intersection)
+      || intersectLineSegments(scene_corners[0], scene_corners[3], scene_corners[1], scene_corners[2], intersection)
+      )
+    return true;
+  return false;
 }
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

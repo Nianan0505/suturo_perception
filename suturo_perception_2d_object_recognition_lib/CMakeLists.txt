@@ -131,6 +131,7 @@ add_library(suturo_perception_2d_object_recognition_lib
   lib/simple_matcher.cpp
   lib/nndr_matcher.cpp
   lib/symmetry_nndr_matcher.cpp
+  lib/math2d.cpp
 )
 
 # Link library against PCL and boost
