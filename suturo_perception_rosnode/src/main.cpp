@@ -48,10 +48,11 @@ public:
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
       pcl::fromROSMsg(*inputCloud,*cloud_in);
 
+      ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
       sp.processCloud(cloud_in); 
       processing = false;
 
-      ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
+      ROS_INFO("Cloud processed. Lock buffer and return the results");      
     }
   }
 
@@ -80,13 +81,15 @@ public:
 
     ROS_INFO("Waiting for processed cloud");
     ros::Rate r(20); // 20 hz
+    // cancel service call, if no cloud is received after 5s
+    boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(5);
     while(processing)
     {
+      if(boost::posix_time::second_clock::local_time() >= cancelTime) processing = false;
       ros::spinOnce();
       r.sleep();
     }
-    ROS_INFO("Cloud processed. Lock buffer and return the results");
-
+    
     mutex.lock();
     perceivedObjects = sp.getPerceivedObjects();
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects);
