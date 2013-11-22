@@ -12,7 +12,7 @@ TEST(suturo_perception_test, box_1_test)
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   
   std::stringstream boxpath;
-  boxpath << "box1.pcd";
+  boxpath << "basketball.pcd";
 
   if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (boxpath.str().c_str(), *cloud) == -1) //* load the file
   {
