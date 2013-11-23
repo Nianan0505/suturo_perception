@@ -81,80 +81,76 @@ SuturoPerception::SuturoPerception()
  * Remove NaNs from given pointcloud. 
  * Return the nanles cloud.
  */
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
-SuturoPerception::removeNans(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+void
+SuturoPerception::removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+														 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles)
 {
 	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
+	//pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
 	std::vector<int> nans;
 	pcl::removeNaNFromPointCloud(*cloud_in,*cloud_nanles,nans);
 	
 	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
 	logTime(s, e, "removeNans()");
-	return cloud_nanles;
+	//return cloud_nanles;
 }
 
 /*
  * Filter cloud on z-axis. aka cut off cloud at given distance.
  * Return the filtered cloud.
  */
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
-SuturoPerception::filterZAxis(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+void 
+SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+															pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
 {
 	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
 	
 	pcl::PassThrough<pcl::PointXYZRGB> pass;
 	pass.setInputCloud(cloud_in);
 	pass.setFilterFieldName("z");
 	pass.setFilterLimits(zAxisFilterMin, zAxisFilterMax);
-	pass.filter(*cloud_filtered);
+	pass.filter(*cloud_out);
 
 	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
 	logTime(s, e, "filterZAxis()");
-
-	return cloud_filtered;
 }
 
 /*
  * Downsample the input cloud
  * Return the filtered cloud.
  */
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
-SuturoPerception::downsample(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+void 
+SuturoPerception::downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+														 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
 {
 	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
 	
 	pcl::VoxelGrid <pcl::PointXYZRGB> vg;
 	vg.setInputCloud(cloud_in);
 	vg.setLeafSize(downsampleLeafSize,downsampleLeafSize,downsampleLeafSize);
-	vg.filter(*cloud_filtered);
+	vg.filter(*cloud_out);
 
 	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
 	logTime(s, e, "downsample()");
-	return cloud_filtered;
 }
 
 /*
  * Fit plane to the input cloud
  * Return the inliers.
  */
-pcl::PointIndices::Ptr 
-SuturoPerception::fitPlanarModel(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+void 
+SuturoPerception::fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+																 pcl::PointIndices::Ptr inliers)
 {	
 	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
 	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
-	pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
 
 	if(cloud_in->points.size() == 0)
 	{
 		std::cerr << "Could not estimate a planar model for the given dataset. input cloud empty" << std::endl;
-		return inliers;
+		return;
 	}
 	
 	pcl::SACSegmentation<pcl::PointXYZRGB> seg;
@@ -171,28 +167,27 @@ SuturoPerception::fitPlanarModel(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
 
 	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
 	logTime(s, e, "fitPlanarModel()");
-
-	return inliers;
 }
 
 /*
  * Filter out points above biggest plane
  * Return filtered cloud.
  */
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
-SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointIndices::Ptr inliers)
+void 
+SuturoPerception::extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+																			 const pcl::PointIndices::Ptr inliers,
+																			 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
 {	
 	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
 
 	if(cloud_in->points.size() == 0 || inliers->indices.size() == 0)
 	{
 		std::cerr << "extractObjectCluster: cloud or inliers empty" << std::endl;
-		return object_clusters;
+		return;
 	}
 
 	// splitting the cloud in two: plane + other
@@ -218,7 +213,7 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 	if(table_cluster_indices.size() == 0)
 	{
 		std::cerr << "table indice size 0. skipping" << std::endl;
-		return object_clusters; // return nothing. plane not found
+		return; // return nothing. plane not found
 	}
 	for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
 		plane_cluster->points.push_back (cloud_plane->points[*pit]);
@@ -227,7 +222,7 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 	plane_cluster->is_dense = true;
 
 	//std::cerr << "Table point cloud " << plane_cluster->points.size () << " data points." << std::endl;
-
+	
 	// Remove the plane from the rest of the point cloud
 	extract.setNegative(true);
 	extract.filter(*cloud_clusters);
@@ -254,12 +249,10 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 	extract.setInputCloud (cloud_clusters);
 	extract.setIndices (object_indices);
 	extract.setNegative (false);
-	extract.filter (*object_clusters);
+	extract.filter (*cloud_out);
 
 	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
 	logTime(s, e, "extractObjectCluster()");
-
-	return object_clusters;
 }
 
 
@@ -267,14 +260,15 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
  * Filter out points above biggest plane
  * Return filtered cloud.
  */
-std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> 
-SuturoPerception::extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+void 
+SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+																 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects)
 {
 	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+	std::cerr << "extractObjects 0" << std::endl;
+	if(cloud_in->size() == 0) {std::cerr<<"extractedObjects inputcloud empty" <<std::endl; return;} // cloud_in was empty
 
-	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
-	if(cloud_in->size() == 0) return extractedObjects; // cloud_in was empty
-
+	std::cerr << "extractObjects 1" << std::endl;
 	// Creating the KdTree object for the search method of the extraction
 	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
 	tree->setInputCloud (cloud_in);
@@ -289,25 +283,24 @@ SuturoPerception::extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
 
 	// temporary list of perceived objects
 	std::vector<PerceivedObject> tmpPerceivedObjects;
-
+	std::cerr << "extractObjects 2" << std::endl;
 	// Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
 	int j = 0;
 	for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
 	{
+		std::cerr << "extractObjects 3" << std::endl;
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
 		for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
 		    cloud_cluster->points.push_back (cloud_in->points[*pit]); //*
 		cloud_cluster->width = cloud_cluster->points.size ();
 		cloud_cluster->height = 1;
 		cloud_cluster->is_dense = true;
+		std::cerr << "push_back" << std::endl;
 		extractedObjects.push_back(cloud_cluster);
 	}
-	std::cerr << "after iteration of extracted clusters" << std::endl;
 
 	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
 	logTime(s, e, "extractObjects()");
-	
-	return extractedObjects; 
 }
 
 /*
@@ -326,30 +319,33 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>());
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered_downsampled;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
+
+	pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
 
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
 
 	//removing nans from point clouds
-	cloud_nanles = removeNans(cloud_in);
+	removeNans(cloud_in, cloud_nanles);
 
 	//filtering cloud on z axis
-	cloud_filtered = filterZAxis(cloud_nanles);
+	filterZAxis(cloud_nanles, cloud_filtered);
 
-	cloud_filtered_downsampled = downsample(cloud_filtered);
+	downsample(cloud_filtered, cloud_filtered_downsampled);
 
 	//fitting a plane to the filtered cloud
-	pcl::PointIndices::Ptr inliers = fitPlanarModel(cloud_filtered_downsampled);
+	fitPlanarModel(cloud_filtered_downsampled, inliers);
 
 	// filter out biggest surface and return cloud above it
-	object_clusters = extractObjectCluster(cloud_filtered_downsampled, inliers);
+	extractObjectCluster(cloud_filtered_downsampled, inliers, object_clusters);
 
 	// cluster extraction
 	// extract objects from downsampled object cloud
-	extractedObjects = extractObjects(object_clusters);
+	extractObjects(object_clusters, extractedObjects);
+	std::cerr << "extractVector size" << extractedObjects.size() << std::endl;
 
 	// temporary list of perceived objects
 	std::vector<PerceivedObject> tmpPerceivedObjects;
@@ -410,33 +406,35 @@ std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
  * Convenience method to get separated object pointclouds.
  * Return a point cloud vector containing a cloud for each extracted object
  */
-std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> SuturoPerception::getObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+void SuturoPerception::getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+																	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects)
 {
 	//point cloud objects
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
+
+	pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
 
 	pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
 
 	//removing nans from point clouds
-	cloud_nanles = removeNans(cloud_in);
+	removeNans(cloud_in, cloud_nanles);
 
 	//filtering cloud on z axis
-	cloud_filtered = filterZAxis(cloud_nanles);
+	filterZAxis(cloud_nanles, cloud_filtered);
 
 	//fitting a plane to the filtered cloud
-	pcl::PointIndices::Ptr inliers = fitPlanarModel(cloud_filtered);
+	fitPlanarModel(cloud_filtered, inliers);
 
 	// filter out biggest surface and return cloud above it
-	object_clusters = extractObjectCluster(cloud_filtered, inliers);
+	extractObjectCluster(cloud_filtered, inliers, object_clusters);
 
 	// cluster extraction
 
 	// extract objects from downsampled object cloud
-	return extractObjects(object_clusters);
+	extractObjects(object_clusters, extractedObjects);
 
 	// short alternative:
 	//return extractObjects(downsample(extractObjectCluster(filterZAxis(removeNans(cloud_in)), fitPlanarModel(filterZAxis(removeNans(cloud_in))))));

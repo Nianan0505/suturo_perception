@@ -17,14 +17,21 @@ namespace suturo_perception_lib
     void processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<PerceivedObject> getPerceivedObjects();
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr removeNans(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filterZAxis(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsample(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    pcl::PointIndices::Ptr fitPlanarModel(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr  extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-                               pcl::PointIndices::Ptr inliers);
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> getObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+    void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
+    void filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
+    void downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
+    void fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+                        pcl::PointIndices::Ptr indices_out);
+    void extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+                              const pcl::PointIndices::Ptr inliers, 
+                              pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
+    void extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+                        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
+    void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+                    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
 
     // debug
     void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects);

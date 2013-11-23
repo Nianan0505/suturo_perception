@@ -67,7 +67,6 @@ public:
   {
     ros::Subscriber sub;
     processing = true;
-    std::cerr << "called" << std::endl;
 
     // signal failed call, if request string does not match
     if (req.s.compare("get") != 0)
