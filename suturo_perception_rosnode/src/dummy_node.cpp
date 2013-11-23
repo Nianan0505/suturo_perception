@@ -33,93 +33,57 @@ public:
     clusterService = nh.advertiseService("GetClusters", 
       &SuturoDummyPerceptionROSNode::getClusters, this);
     vis_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 0);
+
     objectID = 0;
+
+    // Fill the dummy data vector
+    suturo_perception_msgs::PerceivedObject msgObj;
+    msgObj.c_id = 0;
+    msgObj.c_volume = 23;
+    msgObj.c_centroid.x = 1;
+    msgObj.c_centroid.y = 2;
+    msgObj.c_centroid.z = 3;
+    msgObj.frame_id = frameId;
+    perceivedObjects.push_back(msgObj);
+
+    suturo_perception_msgs::PerceivedObject msgObj2;
+    msgObj2.c_id = 0;
+    msgObj2.c_volume = 42;
+    msgObj2.c_centroid.x = 0.5f;
+    msgObj2.c_centroid.y = 0.5f;
+    msgObj2.c_centroid.z = 0.6f;
+    msgObj2.frame_id = frameId;
+
+    perceivedObjects.push_back(msgObj2);
   }
-
-   /*
-    * Receive callback for the /camera/depth_registered/points subscription
-    */
-  //  void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
-  //  {
-  //   // process only one cloud
-  //   ROS_INFO("Receiving cloud");
-  //   if(processing)
-  //   {
-  //     ROS_INFO("processing...");
-  //     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
-  //     pcl::fromROSMsg(*inputCloud,*cloud_in);
-
-  //     ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
-  //     sp.processCloud(cloud_in); 
-  //     processing = false;
-
-  //     ROS_INFO("Cloud processed. Lock buffer and return the results");      
-  //   }
-  // }
 
   /*
    * Implementation of the GetClusters Service.
    *
-   * This method will subscribe to the /camera/depth_registered/points topic, 
-   * wait for the processing of a single point cloud, and return the result from
-   * the calulations as a list of PerceivedObjects.
+   * This method will simply return a list of pre-defined
+   * objects.
    */
   bool getClusters(suturo_perception_msgs::GetClusters::Request &req,
     suturo_perception_msgs::GetClusters::Response &res)
   {
-    // ros::Subscriber sub;
-    // processing = true;
-    // std::cerr << "called" << std::endl;
+    // Push all stored fake Objects into the response
+    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = perceivedObjects.begin(); it != perceivedObjects.end (); ++it)
+    {
+      (*it).c_id = objectID;
+      res.perceivedObjs.push_back(*it); 
+      objectID++;
+    }
 
-    // // signal failed call, if request string does not match
-    // if (req.s.compare("get") != 0)
-    // {
-    //   return false;
-    // }
-
-    // // Subscribe to the depth information topic
-    // sub = nh.subscribe(pointTopic, 1, 
-    //   &SuturoPerceptionROSNode::receive_cloud, this);
-
-    // ROS_INFO("Waiting for processed cloud");
-    // ros::Rate r(20); // 20 hz
-    // // cancel service call, if no cloud is received after 5s
-    // boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
-    // while(processing)
-    // {
-    //   if(boost::posix_time::second_clock::local_time() >= cancelTime) processing = false;
-    //   ros::spinOnce();
-    //   r.sleep();
-    // }
-
-    // mutex.lock();
-    // perceivedObjects = sp.getPerceivedObjects();
-    // res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects);
-    // mutex.unlock();
-    // std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
-		// suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
-		suturo_perception_msgs::PerceivedObject msgObj;
-		msgObj.c_id = 1;
-		msgObj.c_volume = 23;
-		msgObj.c_centroid.x = 1;
-		msgObj.c_centroid.y = 2;
-		msgObj.c_centroid.z = 3;
-		msgObj.frame_id = frameId;
-		// result->push_back(*msgObj);
-    // res.perceivedObjs = result;
-    res.perceivedObjs.push_back(msgObj); 
-
-    // publishVisualizationMarkers(res.perceivedObjs);
+    publishVisualizationMarkers(res.perceivedObjs);
+    // objectID++;
     
     return true;
   }
 
 private:
-  // bool processing; // processing flag
-  // suturo_perception_lib::SuturoPerception sp;
-  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   ros::NodeHandle nh;
   boost::signals2::mutex mutex;
+  std::vector<suturo_perception_msgs::PerceivedObject> perceivedObjects;
   // ID counter for the perceived objects
   int objectID;
   ros::ServiceServer clusterService;
@@ -128,26 +92,6 @@ private:
   // std::string pointTopic;
   std::string frameId;
   
-  /*
-   * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
-   */
-  std::vector<suturo_perception_msgs::PerceivedObject> *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects)
-  {
-    std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
-    for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
-    {
-      suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
-      msgObj->c_id = it->c_id;
-      msgObj->c_volume = it->c_volume;
-      msgObj->c_centroid.x = it->c_centroid.x;
-      msgObj->c_centroid.y = it->c_centroid.y;
-      msgObj->c_centroid.z = it->c_centroid.z;
-      msgObj->frame_id = frameId;
-      result->push_back(*msgObj);
-    }
-    return result;
-  }
-
   void publishVisualizationMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs)
   {
     ROS_INFO("Publishing centroid visualization markers");
@@ -185,7 +129,7 @@ private:
     for(int i = markerId; i <= maxMarkerId; ++i)
     {
       visualization_msgs::Marker marker;
-      marker.header.frame_id = "camera_rgb_optical_frame";
+      marker.header.frame_id = "camera_rgb_optical_frame"; // TODO shouldn't we use frameID here?
       marker.header.stamp = ros::Time();
       marker.ns = "suturo_perception";
       marker.id = i;
