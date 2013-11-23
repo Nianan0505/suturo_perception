@@ -129,7 +129,7 @@ private:
     for(int i = markerId; i <= maxMarkerId; ++i)
     {
       visualization_msgs::Marker marker;
-      marker.header.frame_id = "camera_rgb_optical_frame"; // TODO shouldn't we use frameID here?
+      marker.header.frame_id = frameId;
       marker.header.stamp = ros::Time();
       marker.ns = "suturo_perception";
       marker.id = i;
