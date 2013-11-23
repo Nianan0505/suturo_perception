@@ -62,7 +62,7 @@ SuturoPerception::SuturoPerception()
 	// Set default parameters
 	zAxisFilterMin = 0.0;
 	zAxisFilterMax = 1.5;
-	downsampleLeafSize = 0.01f;
+	downsampleLeafSize = 0.01;
 	planeMaxIterations = 1000;
 	planeDistanceThreshold = 0.01;
 	ecClusterTolerance = 0.02; // 2cm
