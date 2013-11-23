@@ -1,0 +1,12 @@
+<launch>
+
+  <include file="$(find openni_launch)/launch/openni.launch">
+    <arg name="load_driver" value="false" />
+    <arg name="depth_registration" value="true" />
+  </include>
+
+  <node pkg="suturo_perception_rosnode" name="suturo_perception_rosnode" type="suturo_perception_rosnode" output="screen"></node>
+  <param name="suturo_perception/point_topic" type="string" value="/kinect_head/depth_registered/points" />
+  <param name="suturo_perception/frame_id" type="string" value="baselink" />
+
+</launch>
