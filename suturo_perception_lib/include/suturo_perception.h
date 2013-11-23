@@ -38,8 +38,8 @@ namespace suturo_perception_lib
     void setEcClusterTolerance(double v) {ecClusterTolerance = v;};
     void setEcMinClusterSize(int v) {ecMinClusterSize = v;};
     void setEcMaxClusterSize(int v) {ecMaxClusterSize = v;};
-    void setPrismZMin(int v) {prismZMin = v;};
-    void setPrismZMax(int v) {prismZMax = v;};
+    void setPrismZMin(float v) {prismZMin = v;};
+    void setPrismZMax(float v) {prismZMax = v;};
     void setEcObjClusterTolerance(double v) {ecObjClusterTolerance = v;};
     void setEcObjMinClusterSize(int v) {ecObjMinClusterSize = v;};
     void setEcObjMaxClusterSize(int v) {ecObjMaxClusterSize = v;};
