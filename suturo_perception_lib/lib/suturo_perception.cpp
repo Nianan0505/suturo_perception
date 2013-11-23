@@ -150,6 +150,12 @@ SuturoPerception::fitPlanarModel(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in
 	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
 	pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
 
+	if(cloud_in->points.size() == 0)
+	{
+		std::cerr << "Could not estimate a planar model for the given dataset. input cloud empty" << std::endl;
+		return inliers;
+	}
+	
 	pcl::SACSegmentation<pcl::PointXYZRGB> seg;
 	seg.setModelType(pcl::SACMODEL_PLANE); // TODO: parameterize
 	seg.setMethodType(pcl::SAC_RANSAC);    // TODO: parameterize
@@ -181,6 +187,12 @@ SuturoPerception::extractObjectCluster(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
+
+	if(cloud_in->points.size() == 0 || inliers->indices.size() == 0)
+	{
+		std::cerr << "extractObjectCluster: cloud or inliers empty" << std::endl;
+		return object_clusters;
+	}
 
 	// splitting the cloud in two: plane + other
 	pcl::ExtractIndices<pcl::PointXYZRGB> extract;
