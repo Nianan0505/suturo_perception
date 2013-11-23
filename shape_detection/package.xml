@@ -1,0 +1,15 @@
+<package>
+    <name>suturo_perception_shape_detection</name>
+    <version>0.0.1</version>
+    <description>
+        Simple shape detection from pointclouds.
+        The three shapes that can be detected are cylinder, sphere and box.
+        The box is found using two perpendicular planes.
+    </description>
+    <maintainer email="drkk@cs.uni-bremen.de">Jöran Schlömer</maintainer>
+    <license>TODO</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+    <build_depend>pcl</build_depend>
+    <run_depend>pcl</run_depend>
+</package>
