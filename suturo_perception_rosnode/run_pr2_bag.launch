@@ -7,6 +7,6 @@
 
   <node pkg="suturo_perception_rosnode" name="suturo_perception_rosnode" type="suturo_perception_rosnode" output="screen"></node>
   <param name="suturo_perception/point_topic" type="string" value="/kinect_head/depth_registered/points" />
-  <param name="suturo_perception/frame_id" type="string" value="baselink" />
+  <param name="suturo_perception/frame_id" type="string" value="/head_mount_kinect_rgb_optical_frame" />
 
 </launch>

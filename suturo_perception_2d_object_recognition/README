@@ -13,3 +13,7 @@ rosrun suturo_perception_2d_object_recognition train_images -t /perception/image
 # Run object recognizer with trained database
 rosrun suturo_perception_2d_object_recognition cli_node -f /tmp/database.yml -m 10 /perception/images/closeups/muesli_*
 
+
+# How to obtain 2d training images with the kinect
+rosrun image_view image_view image:=/camera/rgb/image_color
+Right-Click to save images to the current dir

@@ -17,6 +17,10 @@
 
 using namespace cv;
 
+#define VERBOSE_MINIMAL 0
+#define VERBOSE_NORMAL 1
+#define VERBOSE_EXTRA 2
+
 class ObjectMatcher
 {
 private:
@@ -31,6 +35,8 @@ private:
   cv::Ptr<cv::FeatureDetector> detector_;
   cv::Ptr<cv::DescriptorExtractor> extractor_;
   MatchingStrategy* matching_strategy_;
+
+  int verbose_level;
 
   // Should we draw the bounding box if it contains crossings?
   // Crossing indicates that a object has not been correctly matched
@@ -79,6 +85,7 @@ public:
     
     void setMatcher(MatchingStrategy* matching_strategy);
     void setMinGoodMatches(int min);
+    void setVerboseLevel(int level);
     void drawBoundingBoxWithCrossings(bool draw);
     
     // Draw the bounding box of a given object in cv::drawMatches image

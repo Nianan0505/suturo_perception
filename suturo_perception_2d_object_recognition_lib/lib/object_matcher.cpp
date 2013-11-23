@@ -49,6 +49,7 @@ ObjectMatcher::ObjectMatcher()
 	this->matching_strategy_ = new NNDRMatcher();
   min_good_matches_ = 0;
   draw_bounding_box_with_crossings_ = true;
+  verbose_level = VERBOSE_EXTRA;
 }
 
 ObjectMatcher::ObjectMatcher(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::DescriptorExtractor> extractor)
@@ -58,6 +59,7 @@ ObjectMatcher::ObjectMatcher(cv::Ptr<cv::FeatureDetector> detector, cv::Ptr<cv::
 	this->matching_strategy_ = new NNDRMatcher();
   min_good_matches_ = 0;
   draw_bounding_box_with_crossings_ = true;
+  verbose_level = VERBOSE_EXTRA;
 }
 
 void ObjectMatcher::computeKeyPointsAndDescriptors(Mat &img, std::vector<cv::KeyPoint> &keypoints, Mat &descriptors)
@@ -100,12 +102,12 @@ bool ObjectMatcher::objectRecognized(std::vector< DMatch > &good_matches, std::v
     return false;
 
   }else{
-    std::cout << "Didn't try to compute homography. Either good_matches is not greater than 4 or min_good_matches_ is not reached" << endl;
+    if(verbose_level>=VERBOSE_NORMAL)
+      std::cout << "Didn't try to compute homography. Either good_matches is not greater than 4 or min_good_matches_ is not reached. Good matches: " << good_matches.size() << " min_good_matches_ : " << min_good_matches_ << endl;
   }
   return false;
 }
-// TODO Save keypoints
-// http://answers.opencv.org/question/323/how-to-write-keypoints-into-document-of-txt/
+
 void ObjectMatcher::trainImages(vector<string> file_names)
 {
   std::cout << "Train given training images" << std::endl;
@@ -217,13 +219,17 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
     Mat H;
     if(objectRecognized(good_matches, ti.keypoints, keypoints_scene, H))
     {
-        cout << "Object recognized: [X]" << endl;
         // Only calculate bounding box if running with GUI
         bool crossings = drawBoundingBoxFromHomography(H, ti.img, img_matches);
         // if(!headless){
         if(crossings){
-          cout << "Bounding Box lines contain crossings. Discard the result... " << endl;
-          return_value=false;
+          if(verbose_level>=VERBOSE_NORMAL){
+            cout << "Bounding Box lines contain crossings. Discard the result... " << endl;
+            // Skip this iteration if crossings occured
+            cout << "Object recognized: [ ]" << endl;
+          }
+          continue;
+          // return_value=false;
         }
         else
         {
@@ -236,16 +242,19 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
           waitKey(0);
         }
 
-        // Exit on the first match (for now)
+        // Exit on the first non-crossing match (for now)
         ExecutionResult result;
         result.object_recognized = return_value;
         result.match_image = img_matches;
         if(!ti.label.empty() && return_value ){
           result.label = ti.label; // Do we have to copy the string here?
         }
+        if(verbose_level>=VERBOSE_NORMAL)
+          cout << "Object recognized: [x]" << endl;
         return result;
     }else{
-        cout << "Object recognized:[ ]"<<endl;
+        if(verbose_level>=VERBOSE_NORMAL)
+          cout << "Object recognized:[ ]"<<endl;
     }
   }
 
@@ -357,9 +366,12 @@ bool ObjectMatcher::isInlierRatioHighEnough(std::vector<uchar> &outlier_mask, in
   // and count the object as recognized
   float actualInlierRatio = static_cast<float>(inliers) / static_cast<float>(good_match_count);
 
-  std::cout << "Homography Inlier count: " << inliers << endl;
-  std::cout << "Homography Outlier count: " << outliers << endl;
-  std::cout << "InlierRatio: " << actualInlierRatio << std::endl;
+  if(verbose_level>=VERBOSE_NORMAL)
+  {
+    std::cout << "Homography Inlier count: " << inliers << endl;
+    std::cout << "Homography Outlier count: " << outliers << endl;
+    std::cout << "InlierRatio: " << actualInlierRatio << std::endl;
+  }
 
   if( actualInlierRatio >= inlier_ratio_)
     return true;
@@ -370,6 +382,12 @@ void ObjectMatcher::setMinGoodMatches(int min)
 {
  min_good_matches_ = min;
 }
+
+void ObjectMatcher::setVerboseLevel(int level)
+{
+ verbose_level = level;
+}
+
 // return true, if bounding box contains crossings
 bool ObjectMatcher::drawBoundingBoxFromHomography(Mat &H, Mat &img_object, Mat &img_matches)
 {

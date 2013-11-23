@@ -69,6 +69,18 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
     //Display the image using OpenCV
 		if(res.match_image.data && !playback_paused)
 		{
+
+      if(res.object_recognized){
+				if(!res.label.empty()){
+					cout << "Recognized an object with the label " << res.label << endl;
+				}
+				else
+				{
+					cout << "Recognized an object with an empty label" << endl;
+				}
+			}else{
+				cout << "No object recognized" << endl;
+			}
 			cv::imshow(WINDOW, res.match_image);
 			cv::setMouseCallback(WINDOW, onMouseClick, 0 );
 		}
@@ -143,6 +155,7 @@ int main(int argc, char **argv)
   om.setMinGoodMatches(min_good_matches);
 	om.readTrainImagesFromDatabase(database_file);
   om.drawBoundingBoxWithCrossings(false);
+	om.setVerboseLevel(0);
 
 	ros::NodeHandle nh;
 	//Create an ImageTransport instance, initializing it with our NodeHandle.
@@ -157,3 +170,5 @@ int main(int argc, char **argv)
 	pub = it.advertise("camera/rgb/image_processed", 1);
 	ros::spin();
 }
+
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
