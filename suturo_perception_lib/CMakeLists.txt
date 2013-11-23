@@ -18,6 +18,7 @@ SET(POINTCLOUD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/pointclouds" CACHE STRING "Path
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS suturo_perception_shape_detection)
 link_directories(${suturo_perception_lib_LIBRARY_DIRS})
+link_directories(${suturo_perception_shape_detection_LIBRARY_DIRS})
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -163,7 +164,7 @@ catkin_add_gtest(${PROJECT_NAME}-test
   WORKING_DIRECTORY ${POINTCLOUD_PATH}
 )
 if(TARGET ${PROJECT_NAME}-test)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} suturo_perception_shape_detection)
   
   # other stuff neded for the test
   #configure_file( test/pointcloud_path.h.in ${CMAKE_BINARY_DIR}/generated/pointcloud_path.h )
