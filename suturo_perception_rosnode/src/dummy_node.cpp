@@ -14,8 +14,7 @@
  */
 void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level)
 {
-  ROS_INFO("Reconfigure request : %i",
-           config.int_param);
+  ROS_INFO("Reconfigure request");
   
   // do nothing for now
 }
