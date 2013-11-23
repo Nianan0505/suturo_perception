@@ -350,7 +350,12 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 	// temporary list of perceived objects
 	std::vector<PerceivedObject> tmpPerceivedObjects;
 
-	// Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
+	// shape detector to detect shape
+    // int to represent the shape
+    suturo_perception_shape_detection::RandomSampleConsensus rsc;
+    int ptShape;
+
+    // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
 	for (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
 		   it != extractedObjects.end(); ++it)
   {  
@@ -363,6 +368,10 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 		hull.setDimension(3);
 		hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
 		hull.reconstruct (*hull_points);
+
+        // Detect the shape of the object
+        rsc.detectShape(*it);
+        ptShape = rsc.getShape();
 
 		// Centroid calulcation
 		Eigen::Vector4f centroid;
@@ -379,6 +388,7 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 		ptCentroid.y=centroid[1];
 		ptCentroid.z=centroid[2];
 		percObj.c_centroid = ptCentroid;
+        percObj.c_shape = ptShape;
 		percObj.c_volume = hull.getTotalVolume();
 
 		tmpPerceivedObjects.push_back(percObj);

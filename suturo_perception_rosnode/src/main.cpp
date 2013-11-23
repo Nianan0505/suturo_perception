@@ -172,6 +172,7 @@ private:
     {
       suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
       msgObj->c_id = it->c_id;
+      msgObj->c_shape = it->c_shape;
       msgObj->c_volume = it->c_volume;
       msgObj->c_centroid.x = it->c_centroid.x;
       msgObj->c_centroid.y = it->c_centroid.y;
@@ -179,7 +180,6 @@ private:
       msgObj->frame_id = frameId;
       // these are not set for now
       msgObj->recognition_label_2d = "";
-      msgObj->shape = suturo_perception_msgs::PerceivedObject::NONE;
       result->push_back(*msgObj);
     }
     return result;

@@ -11,6 +11,7 @@ namespace suturo_perception_lib
     int c_id;
     Point c_centroid;
     double c_volume;
+    int c_shape;
   };
 }
 

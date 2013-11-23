@@ -9,4 +9,4 @@ uint8 BOX=1
 uint8 CYLINDER=2
 uint8 SPHERE=3
 
-int32 shape
+int32 c_shape
