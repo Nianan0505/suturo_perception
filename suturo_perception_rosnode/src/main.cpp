@@ -1,5 +1,7 @@
 #include "ros/ros.h"
 #include <boost/signals2/mutex.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/date_time.hpp>
 #include <dynamic_reconfigure/server.h>
 #include <suturo_perception_rosnode/SuturoPerceptionConfig.h>
 #include <visualization_msgs/Marker.h>
@@ -9,16 +11,6 @@
 #include "point.h"
 #include "suturo_perception_msgs/GetClusters.h"
 
-/*
- * Callback for the dynamic reconfigure service
- */
-void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level)
-{
-  ROS_INFO("Reconfigure request : %i",
-           config.int_param);
-  
-  // do nothing for now
-}
 
 class SuturoPerceptionROSNode
 {
@@ -26,13 +18,20 @@ public:
   /*
    * Constructor
    */
-  SuturoPerceptionROSNode(ros::NodeHandle& n) : nh(n)
+  SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string fi) : 
+    nh(n), 
+    pointTopic(pt), 
+    frameId(fi)
   {
     clusterService = nh.advertiseService("GetClusters", 
       &SuturoPerceptionROSNode::getClusters, this);
     vis_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 0);
     objectID = 0;
-    //processing = false;
+    maxMarkerId = 0;
+
+    // Initialize dynamic reconfigure
+    reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
+    reconfSrv.setCallback(reconfCb);
   }
 
    /*
@@ -68,6 +67,7 @@ public:
   {
     ros::Subscriber sub;
     processing = true;
+    std::cerr << "called" << std::endl;
 
     // signal failed call, if request string does not match
     if (req.s.compare("get") != 0)
@@ -76,33 +76,124 @@ public:
     }
 
     // Subscribe to the depth information topic
-    sub = nh.subscribe("/camera/depth_registered/points", 1, 
+    sub = nh.subscribe(pointTopic, 1, 
       &SuturoPerceptionROSNode::receive_cloud, this);
 
     ROS_INFO("Waiting for processed cloud");
     ros::Rate r(20); // 20 hz
     // cancel service call, if no cloud is received after 5s
-    boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(5);
+    boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
     while(processing)
     {
       if(boost::posix_time::second_clock::local_time() >= cancelTime) processing = false;
       ros::spinOnce();
       r.sleep();
     }
-    
+
     mutex.lock();
     perceivedObjects = sp.getPerceivedObjects();
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects);
     mutex.unlock();
 
+    ROS_INFO("Shutting down subscriber");
+    sub.shutdown(); // shutdown subscriber, to mitigate funky behavior
+    publishVisualizationMarkers(res.perceivedObjs);
+    
+    ROS_INFO("Service call finished. return");
+    return true;
+  }
+
+  /*
+   * Callback for the dynamic reconfigure service
+   */
+  void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level)
+  {
+    ROS_INFO("Reconfigure request : \n"
+              "zAxisFilterMin: %f \n"
+              "zAxisFilterMax: %f \n"
+              "downsampleLeafSize: %f \n"
+              "planeMaxIterations: %i \n"
+              "planeDistanceThreshold: %f \n"
+              "ecClusterTolerance: %f \n"
+              "ecMinClusterSize: %i \n"
+              "ecMaxClusterSize: %i \n"
+              "prismZMin: %f \n"
+              "prismZMax: %f \n"
+              "ecObjClusterTolerance: %f \n"
+              "ecObjMinClusterSize: %i \n"
+              "ecObjMaxClusterSize: %i \n",
+              config.zAxisFilterMin, config.zAxisFilterMax, config.downsampleLeafSize,
+              config.planeMaxIterations, config.planeDistanceThreshold, config.ecClusterTolerance,
+              config.ecMinClusterSize, config.ecMaxClusterSize, config.prismZMin, config.prismZMax,
+              config.ecObjClusterTolerance, config.ecObjMinClusterSize, config.ecObjMaxClusterSize);
+    /*while(processing) // wait until current processing run is completed 
+    { 
+      boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    }*/
+    sp.setZAxisFilterMin(config.zAxisFilterMin);
+    sp.setZAxisFilterMax(config.zAxisFilterMax);
+    sp.setDownsampleLeafSize(config.downsampleLeafSize);
+    sp.setPlaneMaxIterations(config.planeMaxIterations);
+    sp.setPlaneDistanceThreshold(config.planeDistanceThreshold);
+    sp.setEcClusterTolerance(config.ecClusterTolerance);
+    sp.setEcMinClusterSize(config.ecMinClusterSize);
+    sp.setEcMaxClusterSize(config.ecMaxClusterSize);
+    sp.setPrismZMin(config.prismZMin);
+    sp.setPrismZMax(config.prismZMax);
+    sp.setEcObjClusterTolerance(config.ecObjClusterTolerance);
+    sp.setEcObjMinClusterSize(config.ecObjMinClusterSize);
+    sp.setEcObjMaxClusterSize(config.ecObjMaxClusterSize);
+    ROS_INFO("Reconfigure successful");
+  }
+
+private:
+  bool processing; // processing flag
+  suturo_perception_lib::SuturoPerception sp;
+  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+  ros::NodeHandle nh;
+  boost::signals2::mutex mutex;
+  // ID counter for the perceived objects
+  int objectID;
+  ros::ServiceServer clusterService;
+  ros::Publisher vis_pub;
+  int maxMarkerId;
+  std::string pointTopic;
+  std::string frameId;
+  // dynamic reconfigure
+  dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> reconfSrv;
+  dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig>::CallbackType reconfCb;
+  
+  /*
+   * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
+   */
+  std::vector<suturo_perception_msgs::PerceivedObject> *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects)
+  {
+    std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
+    for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
+    {
+      suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
+      msgObj->c_id = it->c_id;
+      msgObj->c_volume = it->c_volume;
+      msgObj->c_centroid.x = it->c_centroid.x;
+      msgObj->c_centroid.y = it->c_centroid.y;
+      msgObj->c_centroid.z = it->c_centroid.z;
+      msgObj->frame_id = frameId;
+      result->push_back(*msgObj);
+    }
+    return result;
+  }
+
+  void publishVisualizationMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs)
+  {
     ROS_INFO("Publishing centroid visualization markers");
     int markerId = 0;
-    std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin();
-    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin(); 
-         it != res.perceivedObjs.end (); ++it)
+    std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = objs.begin();
+    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = objs.begin(); 
+         it != objs.end (); ++it)
     {
+      ROS_DEBUG("Publishing single visualization marker");
       visualization_msgs::Marker marker;
-      marker.header.frame_id = "camera_rgb_optical_frame";
+      marker.header.frame_id = frameId;
       marker.header.stamp = ros::Time();
       marker.ns = "suturo_perception";
       marker.id = markerId;
@@ -123,39 +214,21 @@ public:
       marker.color.g = 1.0;
       marker.color.b = 0.0;
       markerId++;
+      maxMarkerId++;
       vis_pub.publish(marker);
     }
-    return true;
-  }
-
-private:
-  bool processing; // processing flag
-  suturo_perception_lib::SuturoPerception sp;
-  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
-  ros::NodeHandle nh;
-  boost::signals2::mutex mutex;
-  // ID counter for the perceived objects
-  int objectID;
-  ros::ServiceServer clusterService;
-  ros::Publisher vis_pub;
-  
-  /*
-   * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
-   */
-  std::vector<suturo_perception_msgs::PerceivedObject> *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects)
-  {
-    std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
-    for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
+    // remove markers that have not been updated
+    for(int i = markerId; i <= maxMarkerId; ++i)
     {
-      suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
-      msgObj->c_id = it->c_id;
-      msgObj->c_volume = it->c_volume;
-      msgObj->c_centroid.x = it->c_centroid.x;
-      msgObj->c_centroid.y = it->c_centroid.y;
-      msgObj->c_centroid.z = it->c_centroid.z;
-      result->push_back(*msgObj);
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = frameId;
+      marker.header.stamp = ros::Time();
+      marker.ns = "suturo_perception";
+      marker.id = i;
+      marker.action = visualization_msgs::Marker::DELETE;
+      vis_pub.publish(marker);
     }
-    return result;
+    maxMarkerId = markerId;
   }
 };
 
@@ -164,16 +237,20 @@ int main (int argc, char** argv)
 {
   ros::init(argc, argv, "suturo_perception");
   ros::NodeHandle nh;
-  SuturoPerceptionROSNode spr(nh);
 
-  // Initialize dynamic reconfigure
-  dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> srv;
-  dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig>::CallbackType f;
-  f = boost::bind(&reconfigureCallback, _1, _2);
-  srv.setCallback(f);
+  // get parameters
+  std::string pointTopic;
+  std::string frameId;
+
+  // ros strangeness strikes again. don't try to && these!
+  if(ros::param::get("/suturo_perception/point_topic", pointTopic)) ROS_INFO("Using parameters from Parameter Server");
+  else { pointTopic = "/camera/depth_registered/points"; ROS_INFO("Using default parameters");}
+  if(ros::param::get("/suturo_perception/frame_id", frameId));
+  else frameId = "camera_rgb_optical_frame";
+  
+  SuturoPerceptionROSNode spr(nh, pointTopic, frameId);
 
   ROS_INFO("suturo_perception READY");
-    //sp.sayHi();
   ros::MultiThreadedSpinner spinner(2);
   spinner.spin();
   return (0);

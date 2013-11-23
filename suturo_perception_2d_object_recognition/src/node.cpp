@@ -21,11 +21,13 @@ namespace po = boost::program_options;
 /** @function main */
 int main( int argc, char** argv )
 {
-  bool headless_mode=false;
+  bool headless_mode = false;
   std::string train_image;
   std::vector<std::string> test_images;
   int min_good_matches;
   std::string matcher;
+  bool database_mode = false;
+  std::string database_file;
 
   // Should we match multiple training images against the test images?
   bool multi_train_mode=false;
@@ -38,13 +40,14 @@ int main( int argc, char** argv )
     po::options_description desc("Allowed options");
     desc.add_options()
       ("help", "produce help message")
-      ("train-img,t", po::value<std::vector<std::string> >()->required(), "The training image, that should be matched in the test images")
+      ("train-img,t", po::value<std::vector<std::string> >(), "The training image, that should be matched in the test images")
       ("test-img,i", po::value<std::vector<std::string> >()->required(), "A set of images where train-img should be recognized")
       // zero_tokens tells program_options to not require an argument to a parameter switch
       // This gives flag-like behaviour
       ("headless,h", po::value<bool>()->zero_tokens(), "Headless mode -- Dont show images")
       ("min-good-matches,m", po::value<int>(&min_good_matches)->default_value(0), "The minimum amount of good matches which must be present to perform object recognition")
       ("matcher,a", po::value<std::string>(&matcher), "Choose the strategy for matching the extracted Descriptors. Possible Values: simple, nndr, symmetry_nndr")
+      ("database-file,f", po::value<std::string>(&database_file), "Give a database file with training images and their keypoints/descriptors. By using a database, you don't need to specify your training images every time you call this node")
     ;
 
     // Use positional_options to allow the passing of test-img filenames without giving
@@ -67,16 +70,6 @@ int main( int argc, char** argv )
     // if required parameters are not given
     po::notify(vm);
 
-    if(vm.count("train-img"))
-    {
-      if(vm["train-img"].as<std::vector<std::string> >().size()>1)
-      {
-        multi_train_mode = true;
-      }else{
-        // Take the first train-image in normal matching mode
-        train_image = vm["train-img"].as<std::vector<std::string> >().at(0);
-      }
-    }
     if(vm.count("test-img"))
     {
       test_images = vm["test-img"].as<std::vector<std::string> >();
@@ -87,6 +80,26 @@ int main( int argc, char** argv )
         (!(matcher == "simple" || matcher == "nndr" || matcher == "symmetry_nndr")))
             throw po::validation_error(po::validation_error::invalid_option_value, "matcher");
 
+    if(vm.count("database-file"))
+    {
+      database_mode = true;
+    }
+
+    if(vm.count("train-img"))
+    {
+      if(vm["train-img"].as<std::vector<std::string> >().size()>1)
+      {
+        multi_train_mode = true;
+      }else{
+        // Take the first train-image in normal matching mode
+        train_image = vm["train-img"].as<std::vector<std::string> >().at(0);
+      }
+    }else{
+      // No train images given. Are we in database mode? Otherwise, abort program
+      if(!database_mode)
+            throw po::validation_error(po::validation_error::at_least_one_value_required, "matcher");
+
+    }
     if(vm.count("headless"))
     {
       headless_mode = true;
@@ -129,22 +142,38 @@ int main( int argc, char** argv )
   }
 
   int positives = 0;
-  if(multi_train_mode){
+  if(database_mode)
+  {
+    cout << "Running in database mode" << endl;
+    // Train images from file
+		om.readTrainImagesFromDatabase(database_file);
+  }
+  else if(multi_train_mode)
+  {
+    // Train multiple images from the command line
     std::cout << "Running in multi training mode" << std::endl;
-    // Train given images
     om.trainImages(vm["train-img"].as<std::vector<std::string> >());
-  }else{
+  }
+  else
+  {
     std::cout << "Running in single training mode" << std::endl;
   }
   std::cout << "Starting matching phase" << std::endl;
   // Run all test images against Training image
   for(int i=0;i<test_images.size();i++)
   {
-    if(multi_train_mode)
+    if(multi_train_mode || database_mode)
     {
       ObjectMatcher::ExecutionResult res = om.recognizeTrainedImages(test_images.at(i), headless_mode);
       if(res.object_recognized)
         positives++;
+      if(!res.label.empty()){
+        cout << "Recognized a object with the label " << res.label << endl;
+      }
+      else
+      {
+        cout << "Empty label" << endl;
+      }
     }else{
       ObjectMatcher::ExecutionResult res = om.execute(train_image,test_images.at(i),headless_mode);
       if(res.object_recognized)
@@ -152,7 +181,8 @@ int main( int argc, char** argv )
     }
     cout << endl;
   }
-  std::cout << "Found " << positives << " positives in " << test_images.size() << " test images" << std::endl;
+    std::cout << "Found " << positives << " positives in " << test_images.size() << " test images" << std::endl;
+
   return 0;
 }
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

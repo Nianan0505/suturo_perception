@@ -14,15 +14,37 @@
 //Include headers for OpenCV GUI handling
 #include <opencv2/highgui/highgui.hpp>
  
+#include <boost/program_options.hpp>
+#include <algorithm>
+#include <iterator>
+
+#include "object_matcher.h"
 //Store all constants for image encodings in the enc namespace to be used later.
 namespace enc = sensor_msgs::image_encodings;
+namespace po = boost::program_options;
+
+using namespace boost;
+using namespace std;
  
 //Declare a string with the name of the window that we will create using OpenCV where processed images will be displayed.
 static const char WINDOW[] = "Image Processed";
  
 //Use method of ImageTransport to create image publisher
 image_transport::Publisher pub;
- 
+
+// The image processing class
+ObjectMatcher om;
+
+bool playback_paused = false;
+
+static void onMouseClick( int event, int x, int y, int, void* )
+{
+	if( event != EVENT_LBUTTONDOWN )
+    return;
+	cout << "Clicked" << endl;
+	playback_paused = !playback_paused;
+}
+
 //This function is called everytime a new image is published
 void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 {
@@ -40,26 +62,20 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
+
  
-    //Invert Image
-    //Go through all the rows
-    for(int i=0; i<cv_ptr->image.rows; i++)
-    {
-        //Go through all the columns
-        for(int j=0; j<cv_ptr->image.cols; j++)
-        {
-            //Go through all the channels (b, g, r)
-            for(int k=0; k<cv_ptr->image.channels(); k++)
-            {
-                //Invert the image by subtracting image data from 255               
-                cv_ptr->image.data[i*cv_ptr->image.rows*4+j*3 + k] = 255-cv_ptr->image.data[i*cv_ptr->image.rows*4+j*3 + k];
-            }
-        }
-    }
+		ObjectMatcher::ExecutionResult res = om.recognizeTrainedImages(cv_ptr->image, true);
+
+    //Display the image using OpenCV
+		if(res.match_image.data && !playback_paused)
+		{
+			cv::imshow(WINDOW, res.match_image);
+			cv::setMouseCallback(WINDOW, onMouseClick, 0 );
+		}
      
  
     //Display the image using OpenCV
-    cv::imshow(WINDOW, cv_ptr->image);
+    // cv::imshow(WINDOW, cv_ptr->image);
     //Add some delay in miliseconds. The function only works if there is at least one HighGUI window created and the window is active. If there are several HighGUI windows, any of them can be active.
     cv::waitKey(3);
     /**
@@ -69,67 +85,75 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
     * in the constructor in main().
     */
     //Convert the CvImage to a ROS image message and publish it on the "camera/image_processed" topic.
-        pub.publish(cv_ptr->toImageMsg());
+    pub.publish(cv_ptr->toImageMsg());
 }
- 
-/**
-* This tutorial demonstrates simple image conversion between ROS image message and OpenCV formats and image processing
-*/
+
+// class MouseClick
+// {
+// 	public:
+// };
+//
 int main(int argc, char **argv)
 {
-    /**
-    * The ros::init() function needs to see argc and argv so that it can perform
-    * any ROS arguments and name remapping that were provided at the command line. For programmatic
-    * remappings you can use a different version of init() which takes remappings
-    * directly, but for most command-line programs, passing argc and argv is the easiest
-    * way to do it.  The third argument to init() is the name of the node. Node names must be unique in a running system.
-    * The name used here must be a base name, ie. it cannot have a / in it.
-    * You must call one of the versions of ros::init() before using any other
-    * part of the ROS system.
-    */
-        ros::init(argc, argv, "image_processor");
-    /**
-    * NodeHandle is the main access point to communications with the ROS system.
-    * The first NodeHandle constructed will fully initialize this node, and the last
-    * NodeHandle destructed will close down the node.
-    */
-        ros::NodeHandle nh;
-    //Create an ImageTransport instance, initializing it with our NodeHandle.
-        image_transport::ImageTransport it(nh);
-    //OpenCV HighGUI call to create a display window on start-up.
-    cv::namedWindow(WINDOW, CV_WINDOW_AUTOSIZE);
-    /**
-    * Subscribe to the "camera/image_raw" base topic. The actual ROS topic subscribed to depends on which transport is used. 
-    * In the default case, "raw" transport, the topic is in fact "camera/image_raw" with type sensor_msgs/Image. ROS will call 
-    * the "imageCallback" function whenever a new image arrives. The 2nd argument is the queue size.
-    * subscribe() returns an image_transport::Subscriber object, that you must hold on to until you want to unsubscribe. 
-    * When the Subscriber object is destructed, it will automatically unsubscribe from the "camera/image_raw" base topic.
-    */
-        image_transport::Subscriber sub = it.subscribe("camera/rgb/image_raw", 1, imageCallback);
-    //OpenCV HighGUI call to destroy a display window on shut-down.
-    cv::destroyWindow(WINDOW);
-    /**
-    * The advertise() function is how you tell ROS that you want to
-    * publish on a given topic name. This invokes a call to the ROS
-    * master node, which keeps a registry of who is publishing and who
-    * is subscribing. After this advertise() call is made, the master
-    * node will notify anyone who is trying to subscribe to this topic name,
-    * and they will in turn negotiate a peer-to-peer connection with this
-    * node.  advertise() returns a Publisher object which allows you to
-    * publish messages on that topic through a call to publish().  Once
-    * all copies of the returned Publisher object are destroyed, the topic
-    * will be automatically unadvertised.
-    *
-    * The second parameter to advertise() is the size of the message queue
-    * used for publishing messages.  If messages are published more quickly
-    * than we can send them, the number here specifies how many messages to
-    * buffer up before throwing some away.
-    */
-        pub = it.advertise("camera/rgb/image_processed", 1);
-    /**
-    * In this application all user callbacks will be called from within the ros::spin() call. 
-    * ros::spin() will not return until the node has been shutdown, either through a call 
-    * to ros::shutdown() or a Ctrl-C.
-    */
-        ros::spin();
+	std::string database_file;
+  int min_good_matches;
+
+	ros::init(argc, argv, "image_processor");
+
+  // "HashMap" for program parameters
+   po::variables_map vm;
+  try
+  {
+    // Declare the supported options.
+    po::options_description desc("Allowed options");
+    desc.add_options()
+      ("help", "produce help message")
+      ("min-good-matches,m", po::value<int>(&min_good_matches)->default_value(0), "The minimum amount of good matches which must be present to perform object recognition")
+      ("database-file,f", po::value<std::string>(&database_file)->required(), "Give a database file with training images and their keypoints/descriptors. By using a database, you don't need to specify your training images every time you call this node")
+    ;
+
+    po::positional_options_description p;
+    po::store(po::command_line_parser(argc, argv).
+    options(desc).positional(p).run(), vm); 
+
+    if (vm.count("help")) {
+      cout << "Usage: suturo_perception_live_2d -f database-file" << endl << endl;
+      cout << desc << "\n";
+      return 1;
+    }
+
+    // Put notify after the help check, so help is display even
+    // if required parameters are not given
+    po::notify(vm);
+
+  }
+  catch(std::exception& e)
+  {
+		cout << "Usage: suturo_perception_live_2d -f database-file" << endl << endl;
+    std::cerr << "Error: " << e.what() << "\n";
+    return false;
+  }
+  catch(...)
+  {
+    std::cerr << "Unknown error!" << "\n";
+    return false;
+  } 
+
+	// Configure Object Recognition Module
+  om.setMinGoodMatches(min_good_matches);
+	om.readTrainImagesFromDatabase(database_file);
+  om.drawBoundingBoxWithCrossings(false);
+
+	ros::NodeHandle nh;
+	//Create an ImageTransport instance, initializing it with our NodeHandle.
+	image_transport::ImageTransport it(nh);
+	cv::namedWindow(WINDOW, CV_WINDOW_AUTOSIZE);
+
+	cv::setMouseCallback(WINDOW, onMouseClick, 0 );
+	image_transport::Subscriber sub = it.subscribe("camera/rgb/image_raw", 1, imageCallback);
+	//OpenCV HighGUI call to destroy a display window on shut-down.
+	cv::destroyWindow(WINDOW);
+
+	pub = it.advertise("camera/rgb/image_processed", 1);
+	ros::spin();
 }

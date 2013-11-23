@@ -131,6 +131,7 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(suturo_perception_rosnode src/main.cpp)
+add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
 
 ## Add cmake target dependencies of the executable/library
@@ -140,6 +141,10 @@ add_dependencies(suturo_perception_rosclient suturo_perception_lib suturo_percep
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_rosnode
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(suturo_perception_dummynode
   ${catkin_LIBRARIES}
 )
 
