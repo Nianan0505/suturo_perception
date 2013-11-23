@@ -1,6 +1,7 @@
 #include "suturo_perception.h"
 #include "perceived_object.h"
 #include "point.h"
+#include "random_sample_consensus.h"
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
@@ -445,4 +446,11 @@ void SuturoPerception::writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXY
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin();
 	pcl::PCDWriter writer;
 	writer.write("debug_pcd.pcd", **it);
+}
+
+void 
+SuturoPerception::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn)
+{   
+    suturo_perception_shape_detection::RandomSampleConsensus rsc;
+    rsc.detectShape(cloudIn);
 }

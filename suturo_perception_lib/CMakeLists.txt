@@ -13,12 +13,11 @@ SET(POINTCLOUD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/pointclouds" CACHE STRING "Path
 #)
 
 #add_dependencies(suturo_perception_lib suturo_pcd_files)
-
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS)
-
+find_package(catkin REQUIRED COMPONENTS suturo_perception_shape_detection)
+link_directories(${suturo_perception_lib_LIBRARY_DIRS})
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -87,7 +86,7 @@ find_package(catkin REQUIRED COMPONENTS)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_lib
-  CATKIN_DEPENDS pcl
+  CATKIN_DEPENDS pcl suturo_perception_shape_detection
 #  DEPENDS system_lib
 )
 

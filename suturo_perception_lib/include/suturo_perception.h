@@ -29,6 +29,9 @@ namespace suturo_perception_lib
     // debug
     void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects);
 
+    // shape detection
+    void detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn);
+
     // getters and setters
     void setZAxisFilterMin(float v) {zAxisFilterMin = v;};
     void setZAxisFilterMax(float v) {zAxisFilterMax = v;};
