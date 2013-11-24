@@ -35,6 +35,8 @@ namespace suturo_perception_lib
 
     // debug
     void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects);
+		void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects, std::string filename);
+		void writeCloudToDisk(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud, std::string filename);
 
     // shape detection
     void detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn);

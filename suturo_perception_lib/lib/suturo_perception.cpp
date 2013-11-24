@@ -292,6 +292,7 @@ SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 		cloud_cluster->height = 1;
 		cloud_cluster->is_dense = true;
 		extractedObjects.push_back(cloud_cluster);
+		// writeCloudToDisk(hull_points, "hull_points.pcd");
 	}
 
 	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
@@ -357,11 +358,40 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
   	// Calculate the volume of each cluster
 		// Create a convex hull around the cluster and calculate the total volume
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr obj_points_from_hull (new pcl::PointCloud<pcl::PointXYZRGB> ());
+
 		pcl::ConvexHull<pcl::PointXYZRGB> hull;
 		hull.setInputCloud (*it);
 		hull.setDimension(3);
 		hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
 		hull.reconstruct (*hull_points);
+		
+		writeCloudToDisk(hull_points, "hull_points.pcd");
+		/************************************
+		 * EXTRACT OBJECTS FROM HULL *
+		 * **********************************/
+
+		pcl::PointIndices::Ptr object_hull_indices (new pcl::PointIndices);
+		// org cloud hier rein. org cloud zusätzlich übergeben
+		pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+		prism.setInputCloud (cloud_in);
+		prism.setHeightLimits (-2,5);
+		prism.setInputPlanarHull (hull_points);
+		prism.segment (*object_hull_indices);
+
+		// Create the filtering object
+		pcl::ExtractIndices<pcl::PointXYZRGB> extract_hull_objects;
+		// Extract the inliers of the prism
+		extract_hull_objects.setInputCloud (cloud_in);
+		extract_hull_objects.setIndices (object_hull_indices);
+		extract_hull_objects.setNegative (false);
+		extract_hull_objects.filter (*obj_points_from_hull);
+
+		std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> ex_obj;
+		ex_obj.push_back(obj_points_from_hull);
+		
+		cout << "Write to file " << endl;
+		writeCloudToDisk(ex_obj, "hull_object.pcd");
 
     // Detect the shape of the object
     rsc.detectShape(*it);
@@ -466,6 +496,14 @@ void SuturoPerception::logTime(boost::posix_time::ptime s, boost::posix_time::pt
 	}
 }
 
+void SuturoPerception::writeCloudToDisk(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud, std::string filename="")
+{
+	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> ex_obj;
+	ex_obj.push_back(point_cloud);
+	writeCloudToDisk(ex_obj, filename);
+}
+
+ 
 // debug method
 void SuturoPerception::writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects)
 {
@@ -480,6 +518,13 @@ void SuturoPerception::writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXY
 		writer.write(ss.str(), **it);
 		++cnt;
 	}
+}
+
+void SuturoPerception::writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects, std::string filename)
+{
+	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin();
+	pcl::PCDWriter writer;
+	writer.write(filename, **it);
 }
 
 void 
