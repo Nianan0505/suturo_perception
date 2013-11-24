@@ -57,10 +57,6 @@ void logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string
                 float diff = (float)d.total_microseconds() / (float)1000;
                 std::cout << "[perception_lib] Time for " << text << ": " << diff << " ms" << std::endl;
 }
-// void 
-// extractImages(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-//                                std::vector<pcl::PointIndices> *extracted_indices,
-//                                std::vector<int> *nan_indices, int file_index = 0)
 
 void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered)
 {
