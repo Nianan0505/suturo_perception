@@ -32,6 +32,7 @@ namespace suturo_perception_lib
                         std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
     void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
+    uint32_t getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
 
     // debug
     void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects);

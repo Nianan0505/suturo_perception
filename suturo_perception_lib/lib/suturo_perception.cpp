@@ -361,7 +361,7 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr obj_points_from_hull (new pcl::PointCloud<pcl::PointXYZRGB> ());
 
 		pcl::ConvexHull<pcl::PointXYZRGB> hull;
-		hull.setInputCloud (*it);
+		hull.setInputCloud(*it);
 		hull.setDimension(3);
 		hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
 		hull.reconstruct (*hull_points);
@@ -532,4 +532,34 @@ SuturoPerception::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn)
 {   
     suturo_perception_shape_detection::RandomSampleConsensus rsc;
     rsc.detectShape(cloudIn);
+}
+
+/*
+ * Get average color for the points in the given point cloud
+ */
+uint32_t
+SuturoPerception::getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+{
+	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+	
+	if(cloud_in->points.size() == 0) return 0;
+
+	double average_r = 0;
+	double average_g = 0;
+	double average_b = 0;
+	for(int i = 0; i < cloud_in->points.size(); ++i)
+	{
+		uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
+		uint8_t r = (rgb >> 16) & 0x0000ff;
+		uint8_t g = (rgb >> 8) & 0x0000ff;
+		uint8_t b = (rgb) & 0x0000ff;
+		average_r += (double)r / (double)cloud_in->points.size();
+		average_g += (double)g / (double)cloud_in->points.size();
+		average_b += (double)b / (double)cloud_in->points.size();
+	}
+	
+	boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+	logTime(s, e, "getAverageColor()");
+
+	return ((uint32_t)average_r << 16 | (uint32_t)average_g << 8 | (uint32_t)average_b);
 }

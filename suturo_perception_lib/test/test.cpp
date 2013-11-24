@@ -48,6 +48,42 @@ TEST(suturo_perception_test, box_1_test)
   SUCCEED();
 }
 
+TEST(suturo_perception_test, color_1_test)
+{
+  suturo_perception_lib::SuturoPerception sp;
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZRGB>());
+  
+  pcl::PointXYZRGB point1, point2, point3, point4, point5, point6;
+  uint8_t r = 255, g = 0, b = 0;
+  uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
+  point1.rgb = *reinterpret_cast<float*>(&rgb);
+  point2.rgb = *reinterpret_cast<float*>(&rgb);
+  point3.rgb = *reinterpret_cast<float*>(&rgb);
+  cloud->points.push_back(point1);
+  cloud->points.push_back(point2);
+  cloud->points.push_back(point3);
+  
+  uint32_t averageColor = sp.getAverageColor(cloud);
+  ASSERT_EQ(255, (averageColor >> 16) & 0x0000ff);
+
+  r = 0, g = 200, b = 100;
+  uint8_t g1 = 150, b1=50;
+  uint32_t rgb1 = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
+  uint32_t rgb2 = ((uint32_t)r << 16 | (uint32_t)g1 << 8 | (uint32_t)b1);
+  point4.rgb = *reinterpret_cast<float*>(&rgb1);
+  point5.rgb = *reinterpret_cast<float*>(&rgb2);
+  point6.rgb = *reinterpret_cast<float*>(&rgb2);
+  cloud2->points.push_back(point4);
+  cloud2->points.push_back(point5);
+  cloud2->points.push_back(point6);
+
+  averageColor = sp.getAverageColor(cloud2);
+  ASSERT_EQ(166, (averageColor >> 8) & 0x0000ff);
+  ASSERT_EQ(66, (averageColor) & 0x0000ff);
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
