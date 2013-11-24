@@ -45,7 +45,8 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 
-bool writer_pcd = false;
+// Should we write debug pcds?
+bool writer_pcd = true;
 
 using namespace std;
 // debug timelog for profiling
