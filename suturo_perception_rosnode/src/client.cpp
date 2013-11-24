@@ -42,6 +42,10 @@ int main(int argc, char **argv)
         ROS_INFO("Frame of perceived object is: %s", clusterSrv.response.perceivedObjs[i].frame_id.c_str());
         ROS_INFO("Volume of perceived object is: %f", clusterSrv.response.perceivedObjs[i].c_volume);
         ROS_INFO("Shape of perceived object is: %i", clusterSrv.response.perceivedObjs[i].c_shape);
+        ROS_INFO("Average RGB color of perceived object is: r: %i  g: %i  b: %i", 
+                  clusterSrv.response.perceivedObjs[i].c_color_average_r,
+                  clusterSrv.response.perceivedObjs[i].c_color_average_g,
+                  clusterSrv.response.perceivedObjs[i].c_color_average_b);
         ROS_INFO("2D recognition label perceived object is: %s", clusterSrv.response.perceivedObjs[i].recognition_label_2d.c_str());
         ROS_INFO("Centroid(x) of perceived object is: %f , %f , %f ",
           clusterSrv.response.perceivedObjs[i].c_centroid.x,

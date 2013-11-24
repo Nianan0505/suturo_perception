@@ -365,33 +365,9 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 		hull.setDimension(3);
 		hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
 		hull.reconstruct (*hull_points);
-		
-		writeCloudToDisk(hull_points, "hull_points.pcd");
-		/************************************
-		 * EXTRACT OBJECTS FROM HULL *
-		 * **********************************/
 
-		pcl::PointIndices::Ptr object_hull_indices (new pcl::PointIndices);
-		// org cloud hier rein. org cloud zusätzlich übergeben
-		pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-		prism.setInputCloud (cloud_in);
-		prism.setHeightLimits (-2,5);
-		prism.setInputPlanarHull (hull_points);
-		prism.segment (*object_hull_indices);
-
-		// Create the filtering object
-		pcl::ExtractIndices<pcl::PointXYZRGB> extract_hull_objects;
-		// Extract the inliers of the prism
-		extract_hull_objects.setInputCloud (cloud_in);
-		extract_hull_objects.setIndices (object_hull_indices);
-		extract_hull_objects.setNegative (false);
-		extract_hull_objects.filter (*obj_points_from_hull);
-
-		std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> ex_obj;
-		ex_obj.push_back(obj_points_from_hull);
-		
-		cout << "Write to file " << endl;
-		writeCloudToDisk(ex_obj, "hull_object.pcd");
+		// Get average color of the object
+    uint32_t averageColor = getAverageColor(*it);
 
     // Detect the shape of the object
     rsc.detectShape(*it);
@@ -429,6 +405,9 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 		percObj.c_centroid = ptCentroid;
 		percObj.c_shape = ptShape;
 		percObj.c_volume = hull.getTotalVolume();
+		percObj.c_color_average_r = (averageColor >> 16) & 0x0000ff;
+		percObj.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
+		percObj.c_color_average_b = (averageColor)       & 0x0000ff;
 
 		tmpPerceivedObjects.push_back(percObj);
 	}

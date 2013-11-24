@@ -12,6 +12,9 @@ namespace suturo_perception_lib
     Point c_centroid;
     double c_volume;
     int c_shape;
+    uint8_t c_color_average_r;
+    uint8_t c_color_average_g;
+    uint8_t c_color_average_b;
   };
 }
 

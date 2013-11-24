@@ -10,3 +10,7 @@ uint8 CYLINDER=2
 uint8 SPHERE=3
 
 int32 c_shape
+
+uint8 c_color_average_r
+uint8 c_color_average_g
+uint8 c_color_average_b
