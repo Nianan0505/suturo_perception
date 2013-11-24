@@ -230,8 +230,8 @@ private:
       textMarker.id = markerId + 1000;
       textMarker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
       textMarker.action = visualization_msgs::Marker::ADD;
-      textMarker.pose.position.x = it->c_centroid.x - 0.05;
-      textMarker.pose.position.y = it->c_centroid.y - 0.2;
+      textMarker.pose.position.x = it->c_centroid.x - 0.0;
+      textMarker.pose.position.y = it->c_centroid.y - 0.1;
       textMarker.pose.position.z = it->c_centroid.z - 0.4;
       textMarker.scale.x = 0.025;
       textMarker.scale.y = 0.025;
@@ -241,7 +241,10 @@ private:
       textMarker.color.g = 0.0;
       textMarker.color.b = 0.0;
       std::stringstream ss;
-      ss << "Volume: " << it->c_volume << "\n" << "Shape: ";
+      ss << "Volume: " << it->c_volume << "\n" 
+         << "rgb: " << (int)it->c_color_average_r << "." << 
+            (int)it->c_color_average_g << "." << (int)it->c_color_average_b << "\n"
+         << "Shape: ";
       switch(it->c_shape)
       {
         case 0: ss << "None"; break;
