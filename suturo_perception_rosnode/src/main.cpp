@@ -48,9 +48,9 @@ public:
       pcl::fromROSMsg(*inputCloud,*cloud_in);
 
       ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
-      sp.processCloud(cloud_in); 
+      sp.processCloud(cloud_in);
       processing = false;
-
+      //sp.writeCloudToDisk(objects);
       ROS_INFO("Cloud processed. Lock buffer and return the results");      
     }
   }

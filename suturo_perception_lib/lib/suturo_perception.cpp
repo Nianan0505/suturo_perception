@@ -11,6 +11,7 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/filter.h>
+#include <pcl/filters/crop_hull.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/voxel_grid.h>
 
@@ -236,7 +237,6 @@ SuturoPerception::extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::
 	hull.setInputCloud (plane_cluster);
 	hull.reconstruct (*hull_points);
 	
-	// org cloud hier rein. org cloud zusätzlich übergeben
 	pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
 	prism.setInputCloud (cloud_clusters);
 	prism.setInputPlanarHull (hull_points);
@@ -265,10 +265,8 @@ SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 																 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects)
 {
 	boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-	std::cerr << "extractObjects 0" << std::endl;
 	if(cloud_in->size() == 0) {std::cerr<<"extractedObjects inputcloud empty" <<std::endl; return;} // cloud_in was empty
 
-	std::cerr << "extractObjects 1" << std::endl;
 	// Creating the KdTree object for the search method of the extraction
 	pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
 	tree->setInputCloud (cloud_in);
@@ -283,19 +281,16 @@ SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 
 	// temporary list of perceived objects
 	std::vector<PerceivedObject> tmpPerceivedObjects;
-	std::cerr << "extractObjects 2" << std::endl;
 	// Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
 	int j = 0;
 	for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
 	{
-		std::cerr << "extractObjects 3" << std::endl;
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
 		for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
 		    cloud_cluster->points.push_back (cloud_in->points[*pit]); //*
 		cloud_cluster->width = cloud_cluster->points.size ();
 		cloud_cluster->height = 1;
 		cloud_cluster->is_dense = true;
-		std::cerr << "push_back" << std::endl;
 		extractedObjects.push_back(cloud_cluster);
 	}
 
@@ -351,15 +346,14 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 	std::vector<PerceivedObject> tmpPerceivedObjects;
 
 	// shape detector to detect shape
-    // int to represent the shape
-    suturo_perception_shape_detection::RandomSampleConsensus rsc;
-    int ptShape;
+  // int to represent the shape
+  suturo_perception_shape_detection::RandomSampleConsensus rsc;
+  int ptShape;
 
-    // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
+  // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
 	for (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
 		   it != extractedObjects.end(); ++it)
   {  
-  	//std::cout << ' ' << *it;
   	// Calculate the volume of each cluster
 		// Create a convex hull around the cluster and calculate the total volume
 		pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -369,15 +363,30 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 		hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
 		hull.reconstruct (*hull_points);
 
-        // Detect the shape of the object
-        rsc.detectShape(*it);
-        ptShape = rsc.getShape();
+    // Detect the shape of the object
+    rsc.detectShape(*it);
+    ptShape = rsc.getShape();
 
 		// Centroid calulcation
 		Eigen::Vector4f centroid;
 		pcl::compute3DCentroid (*hull_points, centroid);  
     
-    std::cout << "Centroid: " << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << ", ";
+    std::cout << "[suturo_perception_lib] Centroid: "
+    					<< centroid[0] << ", " << centroid[1] << ", " << centroid[2] << ", " << std::endl;
+
+    // used in getObjects. Left here for reference. incredibly slow
+		/*
+		std::vector<pcl::Vertices> hull_polygons;
+		hull.reconstruct (*hull_points, hull_polygons);
+
+		pcl::CropHull<pcl::PointXYZRGB> crophull;
+		crophull.setHullCloud(hull_points);
+		crophull.setInputCloud(cloud_in);
+		crophull.setHullIndices(hull_polygons);
+		crophull.setDim(3);
+		crophull.filter(*object);
+		boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+		logTime(s, e, "crop hull");*/
 
 		// Add the detected cluster to the list of perceived objects
 		PerceivedObject percObj;
@@ -388,11 +397,10 @@ void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 		ptCentroid.y=centroid[1];
 		ptCentroid.z=centroid[2];
 		percObj.c_centroid = ptCentroid;
-        percObj.c_shape = ptShape;
+		percObj.c_shape = ptShape;
 		percObj.c_volume = hull.getTotalVolume();
 
 		tmpPerceivedObjects.push_back(percObj);
-
 	}
 
 	// Sort by volume
@@ -432,6 +440,7 @@ void SuturoPerception::getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
 	//removing nans from point clouds
 	removeNans(cloud_in, cloud_nanles);
 
+	//downsample(cloud_nanles, cloud_downsampled);
 	//filtering cloud on z axis
 	filterZAxis(cloud_nanles, cloud_filtered);
 
@@ -442,12 +451,8 @@ void SuturoPerception::getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
 	extractObjectCluster(cloud_filtered, inliers, object_clusters);
 
 	// cluster extraction
-
 	// extract objects from downsampled object cloud
 	extractObjects(object_clusters, extractedObjects);
-
-	// short alternative:
-	//return extractObjects(downsample(extractObjectCluster(filterZAxis(removeNans(cloud_in)), fitPlanarModel(filterZAxis(removeNans(cloud_in))))));
 }
 
 // debug timelog for profiling
@@ -466,7 +471,15 @@ void SuturoPerception::writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXY
 {
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin();
 	pcl::PCDWriter writer;
-	writer.write("debug_pcd.pcd", **it);
+	int cnt = 0;
+	for(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
+			it != extractedObjects.end(); ++it)
+	{
+		std::stringstream ss;
+		ss << "debug_pcd_" << cnt << ".pcd" << std::endl;
+		writer.write(ss.str(), **it);
+		++cnt;
+	}
 }
 
 void 
