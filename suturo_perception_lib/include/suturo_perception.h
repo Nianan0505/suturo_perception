@@ -15,7 +15,10 @@ namespace suturo_perception_lib
     public:
     SuturoPerception();
     void processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+		void processCloudWithProjections(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<PerceivedObject> getPerceivedObjects();
+
+		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects);
 
     void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
@@ -92,6 +95,10 @@ namespace suturo_perception_lib
     int ecObjMinClusterSize;
     int ecObjMaxClusterSize;
 
+		// Set this flag to true to write partial pcds
+		// while processing a cloud
+		bool writer_pcd;
+
     // ID counter for the perceived objects
     int objectID;
     // Buffer for the last perceived objects
@@ -108,3 +115,4 @@ namespace suturo_perception_lib
 }
 
 #endif
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
