@@ -107,7 +107,7 @@ RandomSampleConsensus::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudI
 
     // find a plane perpendicular to the z axis, accepting points up to 30°
     p_modelcustom->setAxis (Eigen::Vector3f (0.0, 0.0, 1.0));
-    p_modelcustom->setEpsAngle (0.524); 
+    p_modelcustom->setEpsAngle (0.564); 
     pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransacBox (p_modelcustom);
     ransacBox.setDistanceThreshold (.01);
     ransacBox.computeModel();
@@ -117,7 +117,7 @@ RandomSampleConsensus::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudI
     
     // find a plane perpendicular to the x axis, accepting points up to 30°
     p_modelcustom->setAxis (Eigen::Vector3f (0.0, 1.0, 0.0));
-    p_modelcustom->setEpsAngle (0.524);
+    p_modelcustom->setEpsAngle (0.564);
     ransacBox.setDistanceThreshold (.01);
     ransacBox.computeModel();
     ransacBox.getInliers(inliers); 
@@ -149,7 +149,7 @@ RandomSampleConsensus::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudI
     else
     {
         shape = None;
-        std::cout << "No shape could be extracted";
+        std::cout << "No shape could be extracted" << "\n";
     }
 
  }
