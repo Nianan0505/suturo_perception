@@ -45,6 +45,7 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 
+bool writer_pcd = false;
 
 using namespace std;
 // debug timelog for profiling
@@ -64,6 +65,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
 {
   cout << "Cluster 2d started";
   pcl::PCDWriter writer;
+  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
   // Creating the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
   tree->setInputCloud (object_clusters);
@@ -84,6 +86,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
   int i=0;
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
   {
+    boost::posix_time::ptime s1 = boost::posix_time::microsec_clock::local_time();
     cout << "Read first cloud";
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
@@ -95,7 +98,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
 
     std::ostringstream fn;
     fn << "2dcluster_" << i << ".pcd";
-    writer.write(fn.str(), *cloud_cluster, false);
+    if(writer_pcd) writer.write(fn.str(), *cloud_cluster, false);
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::ConvexHull<pcl::PointXYZRGB> chull;
@@ -132,11 +135,15 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
     extract.setNegative (false);
     extract.filter (*object_points);
 
+    boost::posix_time::ptime e1 = boost::posix_time::microsec_clock::local_time();
+    logTime(s1, e1, "Extracted Object Points");
+
     std::ostringstream cl_file;
     cl_file << "2d_Z_cluster_" << i << ".pcd";
-    writer.write(cl_file.str(), *object_points, false);
+    if(writer_pcd) writer.write(cl_file.str(), *object_points, false);
     cout << "2d_Z_cluster_" << i << " has " << object_points->size() << " points" << endl;
 
+    boost::posix_time::ptime s2 = boost::posix_time::microsec_clock::local_time();
     // create black cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr image_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
     image_cloud->resize(640*480);
@@ -153,7 +160,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
       cout << "indice mappings are NULL. Can't calculate image" << endl;
     }
 
-    int ex_count=0;
+    int ex_count = 0;
     // fill in color of extracted object points
     for (std::vector<int>::const_iterator pit = object_indices->indices.begin(); pit != object_indices->indices.end(); pit++)
     {
@@ -166,6 +173,9 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
       image_cloud->at(index % 640, index / 640).rgb = original_cloud->points[index].rgb;
       ex_count++;
     }
+    boost::posix_time::ptime e2 = boost::posix_time::microsec_clock::local_time();
+    logTime(s2, e2, "Extracted Object Points");
+
     cout << "Tried to map " << ex_count << " points to the image" << endl;
     // pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
     // for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
@@ -183,7 +193,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
     std::stringstream extracted_path;
     extracted_path << "img_object_" << i << ".pcd";
 
-    writer.write(extracted_path.str(), *image_cloud, false); // eigentlich *
+    if(writer_pcd) writer.write(extracted_path.str(), *image_cloud, false); // eigentlich *
 
     // std::stringstream real_cloud_path;
     // real_cloud_path << "img_object" << i << "_real.pcd";
@@ -191,7 +201,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
     i++;
   }
 
-  writer.write ("TwoDee_object_clusters.pcd", *object_clusters, false);
+  if(writer_pcd) writer.write ("TwoDee_object_clusters.pcd", *object_clusters, false);
 
 }
 
@@ -231,6 +241,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
 
 int main( int argc, char** argv )
 {
+  boost::posix_time::ptime s0 = boost::posix_time::microsec_clock::local_time();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>), 
                                       cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>), 
                                       cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>),
@@ -240,6 +251,9 @@ int main( int argc, char** argv )
   pcl::PCDWriter writer;
 
   reader.read ("cup_tape_box.pcd", *cloud);
+  boost::posix_time::ptime e0 = boost::posix_time::microsec_clock::local_time();
+  logTime(s0, e0, "initial reading");
+
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
   // cloud_filtered = cloud;
@@ -313,7 +327,7 @@ int main( int argc, char** argv )
   proj.filter (*cloud_projected);
   std::cerr << "PointCloud after projection has: "
             << cloud_projected->points.size () << " data points." << std::endl;
-  writer.write ("cloud_projected.pcd", *cloud_projected, false);
+  if(writer_pcd) writer.write ("cloud_projected.pcd", *cloud_projected, false);
 
   // Create a convex Hull representation of the projected inliers
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -329,7 +343,7 @@ int main( int argc, char** argv )
   std::cerr << "Convex hull has: " << cloud_hull->points.size ()
             << " data points." << std::endl;
 
-  writer.write ("cloud_hull.pcd", *cloud_hull, false);
+  if(writer_pcd) writer.write ("cloud_hull.pcd", *cloud_hull, false);
 
   boost::posix_time::ptime s4 = boost::posix_time::microsec_clock::local_time();
   pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
@@ -349,7 +363,7 @@ int main( int argc, char** argv )
   extract.setIndices (object_indices);
   extract.setNegative (false);
   extract.filter (*object_clusters);
-  writer.write ("object_clusters.pcd", *object_clusters, false);
+  if(writer_pcd) writer.write ("object_clusters.pcd", *object_clusters, false);
 
         // Project the model inliers
         pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
@@ -360,7 +374,7 @@ int main( int argc, char** argv )
         proj_objs.filter (*objects_cloud_projected);
         std::cerr << "Object PointCloud after projection has: "
                   << objects_cloud_projected->points.size () << " data points." << std::endl;
-        writer.write ("objects_cloud_projected.pcd", *objects_cloud_projected, false);
+        if(writer_pcd) writer.write ("objects_cloud_projected.pcd", *objects_cloud_projected, false);
 
   boost::posix_time::ptime e4 = boost::posix_time::microsec_clock::local_time();
   logTime(s4, e4, "filter the objects above the plane");
