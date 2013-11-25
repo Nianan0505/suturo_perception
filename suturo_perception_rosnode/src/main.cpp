@@ -133,7 +133,9 @@ public:
     perceived_cluster_images = sp.getPerceivedClusterImages();
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
+// <<<<<<< HEAD
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_publish = sp.getPlaneCloud();
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_publish = sp.getObjectsOnPlaneCloud();
     // sensor_msgs::PointCloud2 table_plane_message;
     // if(plane_cloud_publish != NULL){
     //   pcl::toROSMsg(*plane_cloud_publish, table_plane_message );
@@ -141,14 +143,26 @@ public:
     //   std::cerr << "Publishing cloud with " << sp.getPlaneCloud()->points.size() << " points" << std::endl;
     //   table_plane_pub.publish(table_plane_message);
     // }
-    publish_pointcloud(table_plane_pub, plane_cloud_publish, "camera_rgb_optical_frame");
+    publish_pointcloud(table_plane_pub, plane_cloud_publish, frameId);
+    publish_pointcloud(objects_on_plane_pub, object_cloud_publish, frameId);
 
-    sensor_msgs::PointCloud2 objects_on_plane_message;
-    pcl::toROSMsg(*sp.getObjectsOnPlaneCloud(), objects_on_plane_message );
-    objects_on_plane_message.header.frame_id = "camera_rgb_optical_frame";
-    std::cerr << "Publishing object cloud with " << sp.getObjectsOnPlaneCloud()->points.size() << " points" << std::endl;
-
-    objects_on_plane_pub.publish(objects_on_plane_message);
+//     sensor_msgs::PointCloud2 objects_on_plane_message;
+//     pcl::toROSMsg(*sp.getObjectsOnPlaneCloud(), objects_on_plane_message );
+//     objects_on_plane_message.header.frame_id = "camera_rgb_optical_frame";
+//     std::cerr << "Publishing object cloud with " << sp.getObjectsOnPlaneCloud()->points.size() << " points" << std::endl;
+// =======
+//     sensor_msgs::PointCloud2 table_plane_message;
+//     pcl::toROSMsg(*sp.getPlaneCloud(), table_plane_message );
+//     table_plane_message.header.frame_id = frameId;
+// 
+//     table_plane_pub.publish(table_plane_message);
+// 
+//     sensor_msgs::PointCloud2 objects_on_plane_message;
+//     pcl::toROSMsg(*sp.getObjectsOnPlaneCloud(), objects_on_plane_message );
+//     objects_on_plane_message.header.frame_id = frameId;
+// >>>>>>> 346255646988e0fc6f65dc8c41b9d020dd6df400
+// 
+//     objects_on_plane_pub.publish(objects_on_plane_message);
 
 
     // boost::this_thread::sleep(boost::posix_time::seconds(1)); // This will cause the long sequences of "Receiving cloud" messages
