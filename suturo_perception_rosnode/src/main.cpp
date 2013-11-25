@@ -56,6 +56,22 @@ public:
     object_matcher_.setMinGoodMatches(7);
   }
 
+
+  void publish_pointcloud(ros::Publisher &publisher, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame)
+  {
+
+    sensor_msgs::PointCloud2 pub_message;
+    if(cloud_to_publish != NULL)
+    {
+      pcl::toROSMsg(*cloud_to_publish, pub_message );
+      pub_message.header.frame_id = frame;
+      publisher.publish(pub_message);
+    }
+    else
+    {
+      std::cerr << "publish_pointcloud : Input cloud is NULL" << std::endl;
+    }
+  }
    /*
     * Receive callback for the /camera/depth_registered/points subscription
     */
@@ -117,15 +133,20 @@ public:
     perceived_cluster_images = sp.getPerceivedClusterImages();
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
-    sensor_msgs::PointCloud2 table_plane_message;
-    pcl::toROSMsg(*sp.getPlaneCloud(), table_plane_message );
-    table_plane_message.header.frame_id = "camera_rgb_optical_frame";
-
-    table_plane_pub.publish(table_plane_message);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_publish = sp.getPlaneCloud();
+    // sensor_msgs::PointCloud2 table_plane_message;
+    // if(plane_cloud_publish != NULL){
+    //   pcl::toROSMsg(*plane_cloud_publish, table_plane_message );
+    //   table_plane_message.header.frame_id = "camera_rgb_optical_frame";
+    //   std::cerr << "Publishing cloud with " << sp.getPlaneCloud()->points.size() << " points" << std::endl;
+    //   table_plane_pub.publish(table_plane_message);
+    // }
+    publish_pointcloud(table_plane_pub, plane_cloud_publish, "camera_rgb_optical_frame");
 
     sensor_msgs::PointCloud2 objects_on_plane_message;
     pcl::toROSMsg(*sp.getObjectsOnPlaneCloud(), objects_on_plane_message );
     objects_on_plane_message.header.frame_id = "camera_rgb_optical_frame";
+    std::cerr << "Publishing object cloud with " << sp.getObjectsOnPlaneCloud()->points.size() << " points" << std::endl;
 
     objects_on_plane_pub.publish(objects_on_plane_message);
 
