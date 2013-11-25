@@ -184,7 +184,7 @@ private:
       msgObj->c_color_average_g = it->c_color_average_g;
       msgObj->c_color_average_b = it->c_color_average_b;
       // these are not set for now
-      msgObj->recognition_label_2d = "";
+      msgObj->c_recognition_label_2d = "";
       result->push_back(*msgObj);
     }
     return result;
@@ -255,6 +255,7 @@ private:
         case 3: ss << "Sphere"; break;
         default: ss << "None"; break;
       }
+      ss << "\nLabel: " << it->c_recognition_label_2d;
       textMarker.text = ss.str();
       vis_pub.publish(textMarker);
     }
