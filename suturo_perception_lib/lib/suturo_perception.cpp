@@ -645,8 +645,12 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, extractedImages);
 	std::cerr << "extractedObjects Vector size" << extractedObjects.size() << std::endl;
 	std::cerr << "extractedImages Vector size" << extractedImages.size() << std::endl;
-	if(extractedImages.size() > 0){
-		cv::imwrite("/tmp/first_cluster.jpg", extractedImages.at(0));
+	for(int i = 0; i < extractedImages.size(); i++)
+	{
+	
+    std::ostringstream fn;
+    fn << "2dcluster_" << i << ".jpg";
+		cv::imwrite(fn.str(), extractedImages.at(i));
 	}
 
     
@@ -974,3 +978,5 @@ SuturoPerception::getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
 
 	return ((uint32_t)average_r << 16 | (uint32_t)average_g << 8 | (uint32_t)average_b);
 }
+
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
