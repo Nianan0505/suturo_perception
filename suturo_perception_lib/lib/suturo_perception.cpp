@@ -636,42 +636,81 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // Extract all objects above
   // the table plane
 
-  // Project the model inliers
-  pcl::ProjectInliers<pcl::PointXYZRGB> proj;
-  proj.setModelType (pcl::SACMODEL_PLANE);
-  proj.setIndices (inliers);
-  proj.setInputCloud (cloud_filtered);
-  proj.setModelCoefficients (coefficients);
-  proj.filter (*cloud_projected);
-  std::cerr << "PointCloud after projection has: "
-            << cloud_projected->points.size () << " data points." << std::endl;
-  if(writer_pcd) writer.write ("cloud_projected.pcd", *cloud_projected, false);
-
-  // Create a convex Hull representation of the projected inliers
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::ConvexHull<pcl::PointXYZRGB> chull;
-  chull.setInputCloud (cloud_projected);
-  // chull.setAlpha (0.1); // Only in Concave Hulls
-  // Note: Concave Hulls are much more detailed
-  chull.reconstruct (*cloud_hull);
-
-  boost::posix_time::ptime e3 = boost::posix_time::microsec_clock::local_time();
-  logTime(s3, e3, "create hull from plane");
-
-  std::cerr << "Convex hull has: " << cloud_hull->points.size ()
-            << " data points." << std::endl;
-
-  if(writer_pcd) writer.write ("cloud_hull.pcd", *cloud_hull, false);
-
   boost::posix_time::ptime s4 = boost::posix_time::microsec_clock::local_time();
-  pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::ConvexHull<pcl::PointXYZRGB> hull;
+  pcl::PointIndices::Ptr object_indices (new pcl::PointIndices);
 
-  // Extract everything above the plane
+  hull.setDimension (2); 
+  hull.setInputCloud (plane_cluster);
+  hull.reconstruct (*hull_points);
+
   pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
   prism.setInputCloud (cloud_filtered);
-  prism.setInputPlanarHull (cloud_hull); //??
-  prism.setHeightLimits (0.01, 0.5);
+  prism.setInputPlanarHull (hull_points);
+  prism.setHeightLimits (prismZMin, prismZMax);
   prism.segment (*object_indices);
+
+  // // Create the filtering object
+  // pcl::ExtractIndices<pcl::PointXYZRGB> extractObjects;
+  // // Extract the inliers of the prism
+  // extract.setInputCloud (cloud_filtered);
+  // extract.setIndices (object_indices);
+  // extract.setNegative (false);
+  // extract.filter (*object_clusters);
+
+
+
+
+
+
+
+
+
+
+          // // Project the model inliers
+          // pcl::ProjectInliers<pcl::PointXYZRGB> proj;
+          // proj.setModelType (pcl::SACMODEL_PLANE);
+          // proj.setIndices (inliers);
+          // proj.setInputCloud (cloud_filtered);
+          // proj.setModelCoefficients (coefficients);
+          // proj.filter (*cloud_projected);
+          // std::cerr << "PointCloud after projection has: "
+          //   << cloud_projected->points.size () << " data points." << std::endl;
+          // if(writer_pcd) writer.write ("cloud_projected.pcd", *cloud_projected, false);
+
+
+          // // Create a convex Hull representation of the projected inliers
+          // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
+          // pcl::ConvexHull<pcl::PointXYZRGB> chull;
+          // chull.setInputCloud (cloud_projected);
+          // // chull.setAlpha (0.1); // Only in Concave Hulls
+          // // Note: Concave Hulls are much more detailed
+          // chull.reconstruct (*cloud_hull);
+
+          // boost::posix_time::ptime e3 = boost::posix_time::microsec_clock::local_time();
+          // logTime(s3, e3, "create hull from plane");
+
+          // std::cerr << "Convex hull has: " << cloud_hull->points.size ()
+          //           << " data points." << std::endl;
+
+          // if(writer_pcd) writer.write ("cloud_hull.pcd", *cloud_hull, false);
+
+          // boost::posix_time::ptime s4 = boost::posix_time::microsec_clock::local_time();
+          // pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
+
+          // // Extract everything above the plane
+          // pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+          // prism.setInputCloud (cloud_filtered);
+          // prism.setInputPlanarHull (cloud_hull); //??
+          // prism.setHeightLimits (0.01, 0.5);
+          // prism.segment (*object_indices);
+
+
+
+
+
+
 
   // Create the filtering object
   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
