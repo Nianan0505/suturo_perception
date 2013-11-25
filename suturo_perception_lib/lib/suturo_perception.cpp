@@ -76,7 +76,7 @@ SuturoPerception::SuturoPerception()
   ecClusterTolerance = 0.02; // 2cm
   ecMinClusterSize = 10000;
   ecMaxClusterSize = 200000;  
-  prismZMin = 0.;
+  prismZMin = 0.01;
   prismZMax = 0.50; // cutoff 50 cm above plane
   ecObjClusterTolerance = 0.03; // 3cm
   ecObjMinClusterSize = 100;
@@ -321,7 +321,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-  ec.setClusterTolerance (0.03); // 2cm
+  ec.setClusterTolerance (ecObjClusterTolerance);
   ec.setMinClusterSize (ecObjMinClusterSize);
   ec.setMaxClusterSize (ecObjMaxClusterSize);
   // ec.setMinClusterSize (100);
@@ -363,7 +363,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
     prism.setInputCloud (original_cloud);
     prism.setInputPlanarHull (cloud_hull); 
-    prism.setHeightLimits (0.01, 0.5);
+    prism.setHeightLimits (prismZMin, prismZMax);
     prism.segment (*object_indices);
 
     // Create the filtering object
@@ -481,7 +481,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   pass.setInputCloud (cloud_in);
   pass.setFilterFieldName ("z");
   // pass.setFilterLimits (0, 1.4); // fine tuned! Warning // TODO Clustering for biggest plane
-  pass.setFilterLimits (0, 1.8); // fine tuned! Warning // TODO Clustering for biggest plane
+  pass.setFilterLimits (zAxisFilterMin, zAxisFilterMax); // fine tuned! Warning // TODO Clustering for biggest plane
   pass.filter (*cloud_filtered);
   pass.setKeepOrganized(true);
   std::cerr << "PointCloud after filtering has: "
@@ -498,12 +498,12 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
   pcl::VoxelGrid <pcl::PointXYZRGB> vg;
   vg.setInputCloud(cloud_filtered);
-  vg.setLeafSize(0.01f,0.01f,0.01f);
+  vg.setLeafSize(downsampleLeafSize,downsampleLeafSize,downsampleLeafSize);
   vg.filter(*cloud_downsampled);
   cloud_filtered = cloud_downsampled;
 
   boost::posix_time::ptime e1 = boost::posix_time::microsec_clock::local_time();
-  logTime(s1, e1, "voxeld()");
+  logTime(s1, e1, "downsampling()");
   // cloud_filtered = cloud_downsampled; // Use the downsampled cloud now
 
 
@@ -517,8 +517,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // Mandatory
   seg.setModelType (pcl::SACMODEL_PLANE);
   seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations(1000);
-  seg.setDistanceThreshold (0.01);
+  seg.setMaxIterations(planeMaxIterations);
+  seg.setDistanceThreshold (planeDistanceThreshold);
 
   seg.setInputCloud (cloud_filtered);
   seg.segment (*inliers, *coefficients);
@@ -544,9 +544,9 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   treeTable->setInputCloud (cloud_plane);  
   std::vector<pcl::PointIndices> table_cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ecTable;
-  ecTable.setClusterTolerance (0.02); // 2cm
-  ecTable.setMinClusterSize (10000); // TODO Parameterize
-  ecTable.setMaxClusterSize (200000); // TODO Parameterize
+  ecTable.setClusterTolerance (ecClusterTolerance); // 2cm
+  ecTable.setMinClusterSize (ecMinClusterSize);
+  ecTable.setMaxClusterSize (ecMaxClusterSize);
   ecTable.setSearchMethod (treeTable);
   ecTable.setInputCloud (cloud_plane);
   ecTable.extract (table_cluster_indices);
