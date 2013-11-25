@@ -2,7 +2,7 @@ uint32 c_id
 geometry_msgs/Point c_centroid
 float32 c_volume
 string frame_id
-string c_recognition_label_2d
+string recognition_label_2d
 
 uint8 NONE=0
 uint8 BOX=1

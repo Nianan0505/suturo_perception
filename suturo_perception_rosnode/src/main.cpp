@@ -181,7 +181,7 @@ public:
           std::cout << "Tried to set label " << om_res.label << " at idx: " << i << std::endl;
           std::cout << "perceivedObjects.size()" << perceivedObjects.size() << " perceived_cluster_images.size()" << perceived_cluster_images.size() << std::endl;
 
-          res.perceivedObjs.at(i).c_recognition_label_2d = om_res.label;
+          res.perceivedObjs.at(i).recognition_label_2d = om_res.label;
         }else{
           std::cout << "No Label for " << i << std::endl;
         }
@@ -338,7 +338,7 @@ private:
       msgObj->c_color_average_g = it->c_color_average_g;
       msgObj->c_color_average_b = it->c_color_average_b;
       // these are not set for now
-      msgObj->c_recognition_label_2d = "";
+      msgObj->recognition_label_2d = "";
       result->push_back(*msgObj);
     }
     return result;
@@ -409,7 +409,7 @@ private:
         case 3: ss << "Sphere"; break;
         default: ss << "None"; break;
       }
-      ss << "\nLabel: " << it->c_recognition_label_2d;
+      ss << "\nLabel: " << it->recognition_label_2d;
       textMarker.text = ss.str();
       vis_pub.publish(textMarker);
     }
