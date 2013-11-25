@@ -5,6 +5,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <suturo_perception_rosnode/SuturoPerceptionConfig.h>
 #include <visualization_msgs/Marker.h>
+#include <pcl_ros/point_cloud.h>
 
 #include "suturo_perception.h"
 #include "perceived_object.h"
@@ -31,6 +32,9 @@ public:
     vis_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 0);
     objectID = 0;
     maxMarkerId = 0;
+
+    // Init the topic for the plane segmentation result
+    table_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_table", 1);
 
     // Initialize dynamic reconfigure
     reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
@@ -103,6 +107,7 @@ public:
     perceivedObjects = sp.getPerceivedObjects();
     perceived_cluster_images = sp.getPerceivedClusterImages();
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
+    table_plane_pub.publish((*sp.getPlaneCloud()).makeShared());
 
     // boost::this_thread::sleep(boost::posix_time::seconds(1)); // This will cause the long sequences of "Receiving cloud" messages
     if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
@@ -200,6 +205,7 @@ private:
   int objectID;
   ros::ServiceServer clusterService;
   ros::Publisher vis_pub;
+  ros::Publisher table_plane_pub;
   int maxMarkerId;
   std::string pointTopic;
   std::string frameId;

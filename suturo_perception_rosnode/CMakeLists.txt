@@ -16,6 +16,8 @@ image_transport
 roscpp
 std_msgs
 suturo_perception_2d_object_recognition_lib
+pcl
+pcl_ros
 )
 
 find_package(OpenCV REQUIRED)

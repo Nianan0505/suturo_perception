@@ -242,6 +242,7 @@ SuturoPerception::extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::
   extract.setNegative(true);
   extract.filter(*cloud_clusters);
 
+
   // Use ExtractPolygonalPrism to get all the point clouds above the plane in a given range
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
   pcl::ConvexHull<pcl::PointXYZRGB> hull;
@@ -625,6 +626,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     std::cerr << "Second Table Inlier Set is empty. Exiting...." << std::endl;
     return;
   }
+  plane_cloud_ = plane_cluster; // save the reference to the segmented and clustered table plane
+
   // Project the model inliers
   pcl::ProjectInliers<pcl::PointXYZRGB> proj;
   proj.setModelType (pcl::SACMODEL_PLANE);
