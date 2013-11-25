@@ -6,13 +6,13 @@
 #include <suturo_perception_rosnode/SuturoPerceptionConfig.h>
 #include <visualization_msgs/Marker.h>
 #include <pcl_ros/point_cloud.h>
+#include <sensor_msgs/PointCloud.h>
 
 #include "suturo_perception.h"
 #include "perceived_object.h"
 #include "point.h"
 #include "suturo_perception_msgs/GetClusters.h"
 #include "object_matcher.h"  // Include 2d Object recognizer
-
 
 class SuturoPerceptionROSNode
 {
@@ -107,7 +107,14 @@ public:
     perceivedObjects = sp.getPerceivedObjects();
     perceived_cluster_images = sp.getPerceivedClusterImages();
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
-    table_plane_pub.publish((*sp.getPlaneCloud()).makeShared());
+
+    sensor_msgs::PointCloud2 table_plane_message;
+    pcl::toROSMsg(*sp.getPlaneCloud(), table_plane_message );
+    // table_plane_message.header->frameId="base_link";
+    table_plane_message.header.frame_id = "camera_rgb_optical_frame";
+
+    // table_plane_pub.publish((*sp.getPlaneCloud()).makeShared());
+    table_plane_pub.publish(table_plane_message);
 
     // boost::this_thread::sleep(boost::posix_time::seconds(1)); // This will cause the long sequences of "Receiving cloud" messages
     if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
