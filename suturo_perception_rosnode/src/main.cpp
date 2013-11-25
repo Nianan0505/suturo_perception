@@ -10,10 +10,14 @@
 #include "perceived_object.h"
 #include "point.h"
 #include "suturo_perception_msgs/GetClusters.h"
+#include "object_matcher.h"  // Include 2d Object recognizer
 
 
 class SuturoPerceptionROSNode
 {
+
+private: 
+	ObjectMatcher object_matcher_;
 public:
   /*
    * Constructor
@@ -33,6 +37,10 @@ public:
     // Initialize dynamic reconfigure
     reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
     reconfSrv.setCallback(reconfCb);
+
+		object_matcher_.readTrainImagesFromDatabase("/perception/images/train_images_kinect/gls_milka_teabox_pringles_database.yml");
+
+		object_matcher_.setVerboseLevel(0); // TODO use constant
   }
 
    /*
@@ -90,9 +98,31 @@ public:
       r.sleep();
     }
 
+    std::vector<cv::Mat> perceived_cluster_images;
     mutex.lock();
     perceivedObjects = sp.getPerceivedObjects();
-    res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects);
+    perceived_cluster_images = sp.getPerceivedClusterImages();
+    res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
+
+    // boost::this_thread::sleep(boost::posix_time::seconds(1)); // This will cause the long sequences of "Receiving cloud" messages
+    std::cout << "Extracted images vector: " << perceived_cluster_images.size() << std::endl;
+    for(int i = 0; i < perceived_cluster_images.size(); i++)
+    {
+      std::ostringstream fn;
+      // fn << "/tmp/2dcluster_match_" << i << ".jpg";
+      ObjectMatcher::ExecutionResult om_res = object_matcher_.recognizeTrainedImages(perceived_cluster_images.at(i), true); // run headless (true)
+      if(!om_res.label.empty()){
+        std::cout << "Recognized a object with the label " << om_res.label << "object_id: " << i << std::endl;
+        // std::cout << "objects vs. images size" << perceivedObjects.size() << " | " << perceived_cluster_images.size() << std::endl;
+        res.perceivedObjs.at(i).recognition_label_2d = om_res.label;
+      }
+      // else
+      // {
+      //   std::cout << "Empty label" << std::endl;
+      // }
+      // cv::imwrite(fn.str(), om_res.match_image);
+    }
+
     mutex.unlock();
 
     ROS_INFO("Shutting down subscriber");
@@ -307,3 +337,4 @@ int main (int argc, char** argv)
   spinner.spin();
   return (0);
 }
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

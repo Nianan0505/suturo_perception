@@ -313,6 +313,11 @@ SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 
 void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images)
 {
+  mutex.lock();
+  // extracted_images = tmpPerceivedObjects; // TODO use temporary list for images
+  extracted_images.clear();
+  mutex.unlock();
+
   pcl::PCDWriter writer;
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
   // Creating the KdTree object for the search method of the extraction
@@ -640,17 +645,13 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   logTime(s4, e4, "filter the objects above the plane");
 
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
-  std::vector<cv::Mat> extractedImages;
-  clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, extractedImages);
+  // std::vector<cv::Mat> extractedImages;
+  // clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, extractedImages);
+  clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, perceived_cluster_images_);
   std::cerr << "extractedObjects Vector size" << extractedObjects.size() << std::endl;
-  std::cerr << "extractedImages Vector size" << extractedImages.size() << std::endl;
-  for(int i = 0; i < extractedImages.size(); i++)
-  {
-
-    std::ostringstream fn;
-    fn << "2dcluster_" << i << ".jpg";
-    cv::imwrite(fn.str(), extractedImages.at(i));
-  }
+  // std::cerr << "extractedImages Vector size" << extractedImages.size() << std::endl;
+  std::cerr << "extractedImages Vector size" << perceived_cluster_images_.size() << std::endl;
+  // for(int i = 0; i < extractedImages.size(); i++)
 
     
   // temporary list of perceived objects
@@ -864,6 +865,10 @@ std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
   return perceivedObjects;
 }
 
+std::vector<cv::Mat> SuturoPerception::getPerceivedClusterImages()
+{
+  return perceived_cluster_images_;
+}
 /*
  * Convenience method to get separated object pointclouds.
  * Return a point cloud vector containing a cloud for each extracted object

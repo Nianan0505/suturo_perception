@@ -15,13 +15,11 @@ namespace suturo_perception_lib
   {
     public:
 
-    //Use method of ImageTransport to create image publisher of object clusters
-    // image_transport::Publisher pub;
-
     SuturoPerception();
     void processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
 		void processCloudWithProjections(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<PerceivedObject> getPerceivedObjects();
+    std::vector<cv::Mat> getPerceivedClusterImages();
 
 		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images);
 
@@ -99,10 +97,11 @@ namespace suturo_perception_lib
     double ecObjClusterTolerance;
     int ecObjMinClusterSize;
     int ecObjMaxClusterSize;
+    std::vector<cv::Mat> perceived_cluster_images_;
 
-		// Set this flag to true to write partial pcds
-		// while processing a cloud
-		bool writer_pcd;
+    // Set this flag to true to write partial pcds
+    // while processing a cloud
+    bool writer_pcd;
 
     // ID counter for the perceived objects
     int objectID;
