@@ -36,6 +36,9 @@ public:
     // Init the topic for the plane segmentation result
     table_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_table", 1);
 
+    // Init the topic for the segmented objects on the plane
+    objects_on_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_objects_ontable", 1);
+
     // Initialize dynamic reconfigure
     reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
     reconfSrv.setCallback(reconfCb);
@@ -110,11 +113,16 @@ public:
 
     sensor_msgs::PointCloud2 table_plane_message;
     pcl::toROSMsg(*sp.getPlaneCloud(), table_plane_message );
-    // table_plane_message.header->frameId="base_link";
     table_plane_message.header.frame_id = "camera_rgb_optical_frame";
 
-    // table_plane_pub.publish((*sp.getPlaneCloud()).makeShared());
     table_plane_pub.publish(table_plane_message);
+
+    sensor_msgs::PointCloud2 objects_on_plane_message;
+    pcl::toROSMsg(*sp.getObjectsOnPlaneCloud(), objects_on_plane_message );
+    objects_on_plane_message.header.frame_id = "camera_rgb_optical_frame";
+
+    objects_on_plane_pub.publish(objects_on_plane_message);
+
 
     // boost::this_thread::sleep(boost::posix_time::seconds(1)); // This will cause the long sequences of "Receiving cloud" messages
     if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
@@ -213,6 +221,7 @@ private:
   ros::ServiceServer clusterService;
   ros::Publisher vis_pub;
   ros::Publisher table_plane_pub;
+  ros::Publisher objects_on_plane_pub;
   int maxMarkerId;
   std::string pointTopic;
   std::string frameId;

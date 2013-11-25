@@ -23,6 +23,7 @@ namespace suturo_perception_lib
 
     // Get the cloud that is the basis for the object extraction
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getPlaneCloud();
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getObjectsOnPlaneCloud();
 
 		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images);
 
@@ -104,6 +105,9 @@ namespace suturo_perception_lib
 
     // The cloud of the extracted plane in the segmentation process
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_;
+
+    // The cloud of the extracted objects above the plane
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects_on_plane_cloud_;
 
     // Set this flag to true to write partial pcds
     // while processing a cloud

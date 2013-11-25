@@ -88,6 +88,11 @@ SuturoPerception::SuturoPerception()
   // cv::destroyWindow("foobar");
 }
 
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr SuturoPerception::getObjectsOnPlaneCloud()
+{
+  return objects_on_plane_cloud_;
+}
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr SuturoPerception::getPlaneCloud()
 {
   return plane_cloud_;
@@ -628,6 +633,9 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   }
   plane_cloud_ = plane_cluster; // save the reference to the segmented and clustered table plane
 
+  // Extract all objects above
+  // the table plane
+
   // Project the model inliers
   pcl::ProjectInliers<pcl::PointXYZRGB> proj;
   proj.setModelType (pcl::SACMODEL_PLANE);
@@ -674,6 +682,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   extract.setNegative (false);
   extract.filter (*object_clusters);
   if(writer_pcd) writer.write ("object_clusters.pcd", *object_clusters, false);
+  objects_on_plane_cloud_ = object_clusters;
 
         // Project the model inliers
         pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
