@@ -49,6 +49,9 @@ add_message_files(
 add_service_files(
   FILES
   GetClusters.srv
+  PrologQuery.srv
+  PrologNextSolution.srv
+  PrologFinish.srv
 )
 
 ## Generate actions in the 'action' folder

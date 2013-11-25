@@ -694,6 +694,10 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   suturo_perception_shape_detection::RandomSampleConsensus rsc;
   int ptShape;
 
+
+  // hack for collision_objects
+  collision_objects = extractedObjects;
+
   // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
   for (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
       it != extractedObjects.end(); ++it)
@@ -756,7 +760,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   }
 
   // Sort by volume
-  std::sort(tmpPerceivedObjects.begin(), tmpPerceivedObjects.end(), ReceivedObjectGreaterThan);
+  //std::sort(tmpPerceivedObjects.begin(), tmpPerceivedObjects.end(), ReceivedObjectGreaterThan);
+  // not needed anymore, but needed for hack.
 
   // Lock the buffer access to assign the recently perceived objects
   mutex.lock();

@@ -81,6 +81,9 @@ namespace suturo_perception_lib
     int getEcObjMinClusterSize() {return ecObjMinClusterSize;};
     int getEcObjMaxClusterSize() {return ecObjMaxClusterSize;};
 
+    // dirty hack collision_objects
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> collision_objects;
+
     private:
     // === Parameters ===
     // min and max values for z-axis filtering
