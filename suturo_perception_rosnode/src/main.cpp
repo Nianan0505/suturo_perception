@@ -18,10 +18,11 @@ public:
   /*
    * Constructor
    */
-  SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string fi) : 
+  SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string fi, std::string rd) : 
     nh(n), 
     pointTopic(pt), 
-    frameId(fi)
+    frameId(fi),
+    recognitionDir(rd)
   {
     clusterService = nh.advertiseService("GetClusters", 
       &SuturoPerceptionROSNode::getClusters, this);
@@ -158,6 +159,7 @@ private:
   int maxMarkerId;
   std::string pointTopic;
   std::string frameId;
+  std::string recognitionDir;
   // dynamic reconfigure
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> reconfSrv;
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig>::CallbackType reconfCb;
@@ -279,6 +281,13 @@ int main (int argc, char** argv)
 {
   ros::init(argc, argv, "suturo_perception");
   ros::NodeHandle nh;
+  std::string recognitionDir = "";
+  if(argc > 0 && strcmp(argv[1], "_") != 0)
+  {
+    recognitionDir = argv[1];
+    ROS_INFO ("Dir for 2D recognition data set: %s", recognitionDir.c_str());
+  }
+  else ROS_INFO ("Dir for 2D recognition data not set. 2D Recognition will be disabled.");
 
   // get parameters
   std::string pointTopic;
@@ -290,7 +299,7 @@ int main (int argc, char** argv)
   if(ros::param::get("/suturo_perception/frame_id", frameId));
   else frameId = "camera_rgb_optical_frame";
   
-  SuturoPerceptionROSNode spr(nh, pointTopic, frameId);
+  SuturoPerceptionROSNode spr(nh, pointTopic, frameId, recognitionDir);
 
   ROS_INFO("suturo_perception READY");
   ros::MultiThreadedSpinner spinner(2);
