@@ -7,18 +7,23 @@
 #include <pcl/point_types.h>
 #include <boost/signals2/mutex.hpp>
 #include "perceived_object.h"
+#include "opencv2/core/core.hpp"
 
 namespace suturo_perception_lib
 {
   class SuturoPerception
   {
     public:
+
+    //Use method of ImageTransport to create image publisher of object clusters
+    // image_transport::Publisher pub;
+
     SuturoPerception();
     void processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
 		void processCloudWithProjections(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<PerceivedObject> getPerceivedObjects();
 
-		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects);
+		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images);
 
     void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);

@@ -1,3 +1,6 @@
+// TODO: Load 2d objrec Database file via parameter
+//			 Publish the cluster image somewhere .. (we are ROS independent ... :x )	
+
 #include "suturo_perception.h"
 #include "perceived_object.h"
 #include "point.h"
@@ -80,6 +83,9 @@ SuturoPerception::SuturoPerception()
 	ecObjMaxClusterSize = 25000;
 	debug = true;
 	writer_pcd = false;
+	// // Init cv Window 
+	// cv::namedWindow("foobar", CV_WINDOW_AUTOSIZE);
+	// cv::destroyWindow("foobar");
 }
 
 /*
@@ -305,7 +311,7 @@ SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 
 
 
-void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects)
+void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images)
 {
   pcl::PCDWriter writer;
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
@@ -382,69 +388,58 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
 
 		// RGB Values for points
 		int r,g,b;
-		cv::Mat img(cv::Size(original_cloud->width,original_cloud->height),CV_8UC3); // Create a cloud with the size of the original cloud
+		cv::Mat img(cv::Size(original_cloud->width,original_cloud->height),CV_8UC3, cv::Scalar(0,0,0)); // Create a cloud with the size of the original cloud
 		                                                                   // (for now)
     // fill in color of extracted object points
     for (std::vector<int>::const_iterator pit = object_indices->indices.begin(); pit != object_indices->indices.end(); pit++)
     {
       int index = removed_indices_filtered->at(*pit);
-			img.at<cv::Vec3b>( index % 640, index / 640)[0] = original_cloud->points[index].b;
-			img.at<cv::Vec3b>( index % 640, index / 640)[1] = original_cloud->points[index].g;
-			img.at<cv::Vec3b>( index % 640, index / 640)[2] = original_cloud->points[index].r;
-      // image_cloud->at(index % 640, index / 640).x = original_cloud->points[index].x;
-      // image_cloud->at(index % 640, index / 640).y = original_cloud->points[index].y;
-      // image_cloud->at(index % 640, index / 640).z = original_cloud->points[index].z;
-      // image_cloud->at(index % 640, index / 640).rgb = original_cloud->points[index].rgb;
+			img.at<cv::Vec3b>( index / 640, index % 640)[0] = original_cloud->points[index].b;
+			img.at<cv::Vec3b>( index / 640, index % 640)[1] = original_cloud->points[index].g;
+			img.at<cv::Vec3b>( index / 640, index % 640)[2] = original_cloud->points[index].r;
     }
-		// for(int row = 0; row < original_cloud.height; row++){
-		// 	for(int column = 0; column < original_cloud.width; column++){
-		// 		// (row,colum)
-		// 		img.at<Vec3b>(row,column)[0] = cloud.at(column,row).b;
-		// 		img.at<Vec3b>(row,column)[1] = cloud.at(column,row).g;
-		// 		img.at<Vec3b>(row,column)[2] = cloud.at(column,row).r;
-		// 	}
-		// }
+		extracted_images.push_back(img);
 
 		// CREATE THE IMAGE CLOUD - KEEP THAT FOR REFERENCE
     // create black cloud
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr image_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-    image_cloud->resize(640*480);
-    image_cloud->width = 640;
-    image_cloud->height = 480;
-    image_cloud->is_dense = false;
-    for (int x = 0; x < 640; x++) {
-      for (int y = 0; y < 480; y++) {
-        image_cloud->at(x,y).rgb = 0;
-      }
-    }
-    if(removed_indices_filtered == NULL)
-    {
-      cout << "indice mappings are NULL. Can't calculate image" << endl;
-    }
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr image_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    // image_cloud->resize(640*480);
+    // image_cloud->width = 640;
+    // image_cloud->height = 480;
+    // image_cloud->is_dense = false;
+    // for (int x = 0; x < 640; x++) {
+    //   for (int y = 0; y < 480; y++) {
+    //     image_cloud->at(x,y).rgb = 0;
+    //   }
+    // }
+    // if(removed_indices_filtered == NULL)
+    // {
+    //   cout << "indice mappings are NULL. Can't calculate image" << endl;
+    // }
 
-    int ex_count = 0;
-    // fill in color of extracted object points
-    for (std::vector<int>::const_iterator pit = object_indices->indices.begin(); pit != object_indices->indices.end(); pit++)
-    {
-      int index = removed_indices_filtered->at(*pit);
-      // int index = *pit;
-      // std::cout << "index = " << index << " ";
-      image_cloud->at(index % 640, index / 640).x = original_cloud->points[index].x;
-      image_cloud->at(index % 640, index / 640).y = original_cloud->points[index].y;
-      image_cloud->at(index % 640, index / 640).z = original_cloud->points[index].z;
-      image_cloud->at(index % 640, index / 640).rgb = original_cloud->points[index].rgb;
-      ex_count++;
-    }
-    boost::posix_time::ptime e2 = boost::posix_time::microsec_clock::local_time();
-    logTime(s2, e2, "Extracted Object Points");
+    // int ex_count = 0;
+    // // fill in color of extracted object points
+    // for (std::vector<int>::const_iterator pit = object_indices->indices.begin(); pit != object_indices->indices.end(); pit++)
+    // {
+    //   int index = removed_indices_filtered->at(*pit);
+    //   // int index = *pit;
+    //   // std::cout << "index = " << index << " ";
+    //   image_cloud->at(index % 640, index / 640).x = original_cloud->points[index].x;
+    //   image_cloud->at(index % 640, index / 640).y = original_cloud->points[index].y;
+    //   image_cloud->at(index % 640, index / 640).z = original_cloud->points[index].z;
+    //   image_cloud->at(index % 640, index / 640).rgb = original_cloud->points[index].rgb;
+    //   ex_count++;
+    // }
+    // boost::posix_time::ptime e2 = boost::posix_time::microsec_clock::local_time();
+    // logTime(s2, e2, "Extracted Object Points");
 
     // cout << "Went through the for-loops" << endl;
 
-    pcl::PCDWriter writer;
-    std::stringstream extracted_path;
-    extracted_path << "img_object_" << i << ".pcd";
+    // pcl::PCDWriter writer;
+    // std::stringstream extracted_path;
+    // extracted_path << "img_object_" << i << ".pcd";
 
-    if(writer_pcd) writer.write(extracted_path.str(), *image_cloud, false); // eigentlich *
+    // if(writer_pcd) writer.write(extracted_path.str(), *image_cloud, false); // eigentlich *
 
     i++;
   }
@@ -646,9 +641,15 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   // clusterThreeDee(object_clusters);
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
-  clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects);
-	std::cerr << "extractVector size" << extractedObjects.size() << std::endl;
+	std::vector<cv::Mat> extractedImages;
+  clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, extractedImages);
+	std::cerr << "extractedObjects Vector size" << extractedObjects.size() << std::endl;
+	std::cerr << "extractedImages Vector size" << extractedImages.size() << std::endl;
+	if(extractedImages.size() > 0){
+		cv::imwrite("/tmp/first_cluster.jpg", extractedImages.at(0));
+	}
 
+    
 	// temporary list of perceived objects
 	std::vector<PerceivedObject> tmpPerceivedObjects;
 
