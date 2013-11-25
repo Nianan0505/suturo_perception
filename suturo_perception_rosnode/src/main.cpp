@@ -16,8 +16,6 @@
 class SuturoPerceptionROSNode
 {
 
-private: 
-	ObjectMatcher object_matcher_;
 public:
   /*
    * Constructor
@@ -37,10 +35,12 @@ public:
     // Initialize dynamic reconfigure
     reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
     reconfSrv.setCallback(reconfCb);
-
-		object_matcher_.readTrainImagesFromDatabase("/perception/images/train_images_kinect/gls_milka_teabox_pringles_database.yml");
+    
+    if(!recognitionDir.empty())
+      object_matcher_.readTrainImagesFromDatabase(recognitionDir);
 
 		object_matcher_.setVerboseLevel(0); // TODO use constant
+    object_matcher_.setMinGoodMatches(7);
   }
 
    /*
@@ -105,22 +105,35 @@ public:
     res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
     // boost::this_thread::sleep(boost::posix_time::seconds(1)); // This will cause the long sequences of "Receiving cloud" messages
-    std::cout << "Extracted images vector: " << perceived_cluster_images.size() << std::endl;
-    for(int i = 0; i < perceived_cluster_images.size(); i++)
+    if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
     {
-      std::ostringstream fn;
-      // fn << "/tmp/2dcluster_match_" << i << ".jpg";
-      ObjectMatcher::ExecutionResult om_res = object_matcher_.recognizeTrainedImages(perceived_cluster_images.at(i), true); // run headless (true)
-      if(!om_res.label.empty()){
-        std::cout << "Recognized a object with the label " << om_res.label << "object_id: " << i << std::endl;
-        // std::cout << "objects vs. images size" << perceivedObjects.size() << " | " << perceived_cluster_images.size() << std::endl;
-        res.perceivedObjs.at(i).recognition_label_2d = om_res.label;
+      std::cout << "Extracted images vector: " << perceived_cluster_images.size() << std::endl;
+      for(int i = 0; i < perceived_cluster_images.size(); i++)
+      {
+        std::ostringstream fn;
+        // fn << "/tmp/2dcluster_match_" << i << ".jpg";
+        std::cout << "Try to recognize:" << i << std::endl;
+        ObjectMatcher::ExecutionResult om_res = object_matcher_.recognizeTrainedImages(perceived_cluster_images.at(i), true); // run headless (true)
+        if(!om_res.label.empty()){
+          std::cout << "Recognized a object with the label " << om_res.label << "object_id: " << i << std::endl;
+          // std::cout << "objects vs. images size" << perceivedObjects.size() << " | " << perceived_cluster_images.size() << std::endl;
+          std::cout << "Tried to set label " << om_res.label << " at idx: " << i << std::endl;
+          std::cout << "perceivedObjects.size()" << perceivedObjects.size() << " perceived_cluster_images.size()" << perceived_cluster_images.size() << std::endl;
+
+          res.perceivedObjs.at(i).c_recognition_label_2d = om_res.label;
+        }else{
+          std::cout << "No Label for " << i << std::endl;
+        }
+        // else
+        // {
+        //   std::cout << "Empty label" << std::endl;
+        // }
+        // cv::imwrite(fn.str(), om_res.match_image);
       }
-      // else
-      // {
-      //   std::cout << "Empty label" << std::endl;
-      // }
-      // cv::imwrite(fn.str(), om_res.match_image);
+    }
+    else
+    {
+      std::cerr << "!!!!!!!!!!!!!!!!! Image vs. Object Vector differs!!!!!!!!!!!!!!!!!!!!!!! OR NO 2D OBJECT RECOGNITION DATABASE FILE GIVEN" << std::endl;
     }
 
     mutex.unlock();
@@ -178,6 +191,7 @@ public:
 
 private:
   bool processing; // processing flag
+	ObjectMatcher object_matcher_;
   suturo_perception_lib::SuturoPerception sp;
   std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   ros::NodeHandle nh;

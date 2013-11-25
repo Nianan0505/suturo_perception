@@ -21,6 +21,9 @@ namespace suturo_perception_lib
     std::vector<PerceivedObject> getPerceivedObjects();
     std::vector<cv::Mat> getPerceivedClusterImages();
 
+    // Get the cloud that is the basis for the object extraction
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getPlaneCloud();
+
 		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images);
 
     void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
@@ -98,6 +101,9 @@ namespace suturo_perception_lib
     int ecObjMinClusterSize;
     int ecObjMaxClusterSize;
     std::vector<cv::Mat> perceived_cluster_images_;
+
+    // The cloud of the extracted plane in the segmentation process
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_;
 
     // Set this flag to true to write partial pcds
     // while processing a cloud

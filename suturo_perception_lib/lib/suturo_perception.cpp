@@ -88,6 +88,10 @@ SuturoPerception::SuturoPerception()
   // cv::destroyWindow("foobar");
 }
 
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr SuturoPerception::getPlaneCloud()
+{
+  return plane_cloud_;
+}
 /*
  * Remove NaNs from given pointcloud. 
  * Return the nanles cloud.
@@ -525,6 +529,12 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   seg.setMaxIterations(planeMaxIterations);
   seg.setDistanceThreshold (planeDistanceThreshold);
 
+  // Input cloud can't be null
+  if(cloud_filtered->points.size() == 0)
+  {
+    std::cerr << "Could not estimate a planar model for the given dataset. input cloud empty" << std::endl;
+    return;
+  }
   seg.setInputCloud (cloud_filtered);
   seg.segment (*inliers, *coefficients);
 
@@ -534,6 +544,13 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   boost::posix_time::ptime e2 = boost::posix_time::microsec_clock::local_time();
   logTime(s2, e2, "ransac");
 
+  // Input cloud can't be null
+  if(inliers->indices.size () == 0)
+  {
+    std::cerr << "First Table Inlier Set is empty. Exiting...." << std::endl;
+    return;
+  }
+  std::cerr << "Table inlier count" << inliers->indices.size();
 
   boost::posix_time::ptime s3 = boost::posix_time::microsec_clock::local_time();
   //splitting the cloud in two: plane + other
@@ -542,6 +559,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   extract_p.setIndices(inliers);
   extract_p.filter(*cloud_plane);
   if(writer_pcd) writer.write ("cloud_plane.pcd", *cloud_plane, false);
+  
+  std::cerr << "Table extracted" << std::endl;
 
   boost::posix_time::ptime s23 = boost::posix_time::microsec_clock::local_time();
   // Use cluster extraction to get rid of the outliers of the segmented table
@@ -556,9 +575,25 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   ecTable.setInputCloud (cloud_plane);
   ecTable.extract (table_cluster_indices);
 
+  std::cerr << "Cluster Table extracted" << std::endl;
+
   std::vector<int> cluster_get_indices;
   cluster_get_indices = *ecTable.getIndices();
   pcl::PointIndices::Ptr new_inliers (new pcl::PointIndices);
+
+  std::cerr << "table_cluster_indices vector size: " << table_cluster_indices.size() << std::endl;
+
+  if(table_cluster_indices.size() == 0)
+  {
+    std::cout << "No suitable table cluster found. Skip ...";
+    // temporary list of perceived objects
+    std::vector<PerceivedObject> tmpPerceivedObjects;
+    mutex.lock();
+    perceivedObjects = tmpPerceivedObjects;
+    mutex.unlock();
+    return;
+  }
+
 
   // Extract the biggest cluster (e.g. the table) in the plane cloud
   std::vector<pcl::PointIndices>::const_iterator it = table_cluster_indices.begin ();
@@ -575,6 +610,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   plane_cluster->height = 1;
   plane_cluster->is_dense = true;
 
+  std::cerr << "New Inliers calculated: " << new_inliers->indices.size() << std::endl;
+
   if(writer_pcd) writer.write ("plane_cluster.pcd", *plane_cluster, false);
   // std::cout << "Table point cloud " << plane_cluster->points.size () << " data points." << std::endl;
 
@@ -583,6 +620,11 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // NOTE: We need to transform the inliers from table_cluster_indices to inliers
   inliers = new_inliers;
   
+  if(inliers->indices.size () == 0)
+  {
+    std::cerr << "Second Table Inlier Set is empty. Exiting...." << std::endl;
+    return;
+  }
   // Project the model inliers
   pcl::ProjectInliers<pcl::PointXYZRGB> proj;
   proj.setModelType (pcl::SACMODEL_PLANE);
