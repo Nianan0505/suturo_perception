@@ -651,67 +651,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   prism.setHeightLimits (prismZMin, prismZMax);
   prism.segment (*object_indices);
 
-  // // Create the filtering object
-  // pcl::ExtractIndices<pcl::PointXYZRGB> extractObjects;
-  // // Extract the inliers of the prism
-  // extract.setInputCloud (cloud_filtered);
-  // extract.setIndices (object_indices);
-  // extract.setNegative (false);
-  // extract.filter (*object_clusters);
-
-
-
-
-
-
-
-
-
-
-          // // Project the model inliers
-          // pcl::ProjectInliers<pcl::PointXYZRGB> proj;
-          // proj.setModelType (pcl::SACMODEL_PLANE);
-          // proj.setIndices (inliers);
-          // proj.setInputCloud (cloud_filtered);
-          // proj.setModelCoefficients (coefficients);
-          // proj.filter (*cloud_projected);
-          // std::cerr << "PointCloud after projection has: "
-          //   << cloud_projected->points.size () << " data points." << std::endl;
-          // if(writer_pcd) writer.write ("cloud_projected.pcd", *cloud_projected, false);
-
-
-          // // Create a convex Hull representation of the projected inliers
-          // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
-          // pcl::ConvexHull<pcl::PointXYZRGB> chull;
-          // chull.setInputCloud (cloud_projected);
-          // // chull.setAlpha (0.1); // Only in Concave Hulls
-          // // Note: Concave Hulls are much more detailed
-          // chull.reconstruct (*cloud_hull);
-
-          // boost::posix_time::ptime e3 = boost::posix_time::microsec_clock::local_time();
-          // logTime(s3, e3, "create hull from plane");
-
-          // std::cerr << "Convex hull has: " << cloud_hull->points.size ()
-          //           << " data points." << std::endl;
-
-          // if(writer_pcd) writer.write ("cloud_hull.pcd", *cloud_hull, false);
-
-          // boost::posix_time::ptime s4 = boost::posix_time::microsec_clock::local_time();
-          // pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
-
-          // // Extract everything above the plane
-          // pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-          // prism.setInputCloud (cloud_filtered);
-          // prism.setInputPlanarHull (cloud_hull); //??
-          // prism.setHeightLimits (0.01, 0.5);
-          // prism.segment (*object_indices);
-
-
-
-
-
-
-
   // Create the filtering object
   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
   // Extract the inliers of the prism
@@ -723,16 +662,16 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   if(writer_pcd) writer.write ("object_clusters.pcd", *object_clusters, false);
   objects_on_plane_cloud_ = object_clusters;
 
-        // Project the model inliers
-        pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
-        proj_objs.setModelType (pcl::SACMODEL_PLANE);
-        proj_objs.setIndices (object_indices); // project the whole object cloud to the plane
-        proj_objs.setInputCloud (cloud_filtered);
-        proj_objs.setModelCoefficients (coefficients); // project to the plane model
-        proj_objs.filter (*objects_cloud_projected);
-        std::cerr << "Object PointCloud after projection has: "
-                  << objects_cloud_projected->points.size () << " data points." << std::endl;
-        if(writer_pcd) writer.write ("objects_cloud_projected.pcd", *objects_cloud_projected, false);
+  // Project the model inliers
+  pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
+  proj_objs.setModelType (pcl::SACMODEL_PLANE);
+  proj_objs.setIndices (object_indices); // project the whole object cloud to the plane
+  proj_objs.setInputCloud (cloud_filtered);
+  proj_objs.setModelCoefficients (coefficients); // project to the plane model
+  proj_objs.filter (*objects_cloud_projected);
+  std::cerr << "Object PointCloud after projection has: "
+            << objects_cloud_projected->points.size () << " data points." << std::endl;
+  if(writer_pcd) writer.write ("objects_cloud_projected.pcd", *objects_cloud_projected, false);
 
   boost::posix_time::ptime e4 = boost::posix_time::microsec_clock::local_time();
   logTime(s4, e4, "filter the objects above the plane");
