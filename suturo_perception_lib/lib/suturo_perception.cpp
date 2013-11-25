@@ -361,7 +361,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     cloud_cluster->width = cloud_cluster->points.size ();
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
-
+    std::cerr << "Cloud Cluster Size is " << cloud_cluster->points.size () << std::endl;
     std::ostringstream fn;
     fn << "2dcluster_" << i << ".pcd";
     if(writer_pcd) writer.write(fn.str(), *cloud_cluster, false);
@@ -373,6 +373,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     chull.reconstruct (*cloud_hull);
 
     pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
+    std::cerr << "After hull" << std::endl;
 
     // Extract everything above the projection of the object
     pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
@@ -380,6 +381,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     prism.setInputPlanarHull (cloud_hull); 
     prism.setHeightLimits (prismZMin, prismZMax);
     prism.segment (*object_indices);
+    std::cerr << "After segment" << std::endl;
 
     // Create the filtering object
     pcl::ExtractIndices<pcl::PointXYZRGB> extract;
@@ -391,6 +393,8 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     extract.filter (*object_points);
     extracted_objects.push_back(object_points);
 
+    std::cerr << "After extract" << std::endl;
+
     boost::posix_time::ptime e1 = boost::posix_time::microsec_clock::local_time();
     logTime(s1, e1, "Extracted Object Points");
 
@@ -401,6 +405,10 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
 
     boost::posix_time::ptime s2 = boost::posix_time::microsec_clock::local_time();
 
+
+	// TESTING, NO OPENCV
+
+    /*
     // RGB Values for points
     int r,g,b;
     cv::Mat img(cv::Size(original_cloud->width,original_cloud->height),CV_8UC3, cv::Scalar(0,0,0)); // Create a cloud with the size of the original cloud
@@ -414,6 +422,11 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
       img.at<cv::Vec3b>( index / 640, index % 640)[2] = original_cloud->points[index].r;
     }
     extracted_images.push_back(img);
+    */
+
+
+
+
 
     // CREATE THE IMAGE CLOUD - KEEP THAT FOR REFERENCE
     // create black cloud
