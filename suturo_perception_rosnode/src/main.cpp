@@ -119,13 +119,13 @@ public:
 
     sensor_msgs::PointCloud2 table_plane_message;
     pcl::toROSMsg(*sp.getPlaneCloud(), table_plane_message );
-    table_plane_message.header.frame_id = "camera_rgb_optical_frame";
+    table_plane_message.header.frame_id = frameId;
 
     table_plane_pub.publish(table_plane_message);
 
     sensor_msgs::PointCloud2 objects_on_plane_message;
     pcl::toROSMsg(*sp.getObjectsOnPlaneCloud(), objects_on_plane_message );
-    objects_on_plane_message.header.frame_id = "camera_rgb_optical_frame";
+    objects_on_plane_message.header.frame_id = frameId;
 
     objects_on_plane_pub.publish(objects_on_plane_message);
 
