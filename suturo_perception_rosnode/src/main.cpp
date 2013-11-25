@@ -207,44 +207,52 @@ public:
     // dirty demo hack. get objects and plane to merge collision_cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr collision_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
     collision_cloud = sp.getPlaneCloud();
-    // get edible
-    int queryId = 0;
-    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin(); 
-      it != res.perceivedObjs.end(); ++it)
-    {
-      suturo_perception_msgs::PrologQuery pq;
-      suturo_perception_msgs::PrologNextSolution pqn;
-      suturo_perception_msgs::PrologFinish pqf;
-      pq.request.mode = 0;
-      pq.request.id = queryId;
-      std::stringstream ss;
-      ss << "is_edible([[" << queryId << ", '', '" << it->c_volume << "', 0]], Out)"; 
-      std::cerr << "HACK HACK query:" << ss.str() << std::endl; 
-      pq.request.query = ss.str();
-      if(is_edible_service.call(pq))
-      {
-        
-        pqn.request.id = queryId;
-        is_edible_service_next.call(pqn);
-        std::cout << "SOLUTION: " << pqn.response.solution << std::endl;
 
-        if(pqn.response.solution.empty()) std::cout << "Prolog returned fishy results" << std::endl;
-        else
+    if(collision_cloud != NULL)
+    {
+      // get edible
+      int queryId = 0;
+      for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin(); 
+        it != res.perceivedObjs.end(); ++it)
+      {
+        suturo_perception_msgs::PrologQuery pq;
+        suturo_perception_msgs::PrologNextSolution pqn;
+        suturo_perception_msgs::PrologFinish pqf;
+        pq.request.mode = 0;
+        pq.request.id = queryId;
+        std::stringstream ss;
+        ss << "is_edible([[" << queryId << ", '', '" << it->c_volume << "', 0]], Out)"; 
+        std::cerr << "HACK HACK query:" << ss.str() << std::endl; 
+        pq.request.query = ss.str();
+        if(is_edible_service.call(pq))
         {
-          if(pqn.response.solution.substr(8, 1).compare("]") == 0)
+          
+          pqn.request.id = queryId;
+          is_edible_service_next.call(pqn);
+          std::cout << "SOLUTION: " << pqn.response.solution << std::endl;
+
+          if(pqn.response.solution.empty()) std::cout << "Prolog returned fishy results" << std::endl;
+          else
           {
-            std::cout << "Added to collision_cloud: " << std::endl;
-            *collision_cloud += *sp.collision_objects[queryId];  
+            if(pqn.response.solution.substr(8, 1).compare("]") == 0)
+            {
+              std::cout << "Added to collision_cloud: " << std::endl;
+              *collision_cloud += *sp.collision_objects[queryId];  
+            }
           }
+          pqf.request.id = queryId;
+          is_edible_service_finish.call(pqf);
         }
-        pqf.request.id = queryId;
-        is_edible_service_finish.call(pqf);
+        queryId++;
       }
-      queryId++;
+    }
+    else
+    {
+      std::cerr << "collision cloud (aka plane) is NULL ... skipping iteration" << std::endl;
     }
 
-    pcl::PCDWriter writer;
-    writer.write("collision_cloud.pcd", *collision_cloud);
+    // pcl::PCDWriter writer;
+    // writer.write("collision_cloud.pcd", *collision_cloud);
     // ===============================================================
 
     ROS_INFO("Service call finished. return");
