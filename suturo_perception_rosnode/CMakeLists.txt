@@ -11,7 +11,14 @@ visualization_msgs
 roscpp
 dynamic_reconfigure
 message_generation
+cv_bridge
+image_transport
+roscpp
+std_msgs
+suturo_perception_2d_object_recognition_lib
 )
+
+find_package(OpenCV REQUIRED)
 
 #find_package(catkin REQUIRED dynamic_reconfigure)
 # generate dynamic reconfigure options
@@ -100,13 +107,17 @@ link_directories(${suturo_perception_lib_LIBRARY_DIRS})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 
 #catkin_package(DEPENDS roscpp CATKIN_DEPENDS suturo_perception_lib)
-#catkin_package(
+#catkin_package( ## at 25.11.2013 -- 11:00
 #  INCLUDE_DIRS include
 #  LIBRARIES suturo_perception_rosnode
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 #)
 
+catkin_package(
+  CATKIN_DEPENDS cv_bridge image_transport roscpp std_msgs
+  DEPENDS opencv
+)
 ###########
 ## Build ##
 ###########
@@ -141,7 +152,7 @@ add_dependencies(suturo_perception_rosclient suturo_perception_lib suturo_percep
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_rosnode
-  ${catkin_LIBRARIES}
+ ${OpenCV_LIBS} ${catkin_LIBRARIES}
 )
 
 target_link_libraries(suturo_perception_dummynode
