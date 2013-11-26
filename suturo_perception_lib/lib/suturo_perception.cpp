@@ -710,11 +710,21 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   // hack for collision_objects
   collision_objects = extractedObjects;
-
+  int i=0;
   // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
   for (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
       it != extractedObjects.end(); ++it)
   {  
+    std::cout << "[suturo_perception_lib] Transform cluster " << i << " into a message. Cluster has "
+      << (*it)->points.size() << " points" << std::endl;
+
+    if((*it)->points.size()==0)
+    {
+      std::cerr << "[suturo_perception_lib] Cluster cloud is empty. Skipping ...." << std::endl;
+      i++;
+      continue;
+    }
+
     // Calculate the volume of each cluster
     // Create a convex hull around the cluster and calculate the total volume
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
@@ -770,6 +780,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     percObj.c_color_average_b = (averageColor)       & 0x0000ff;
 
     tmpPerceivedObjects.push_back(percObj);
+    i++;
   }
 
   // Sort by volume
