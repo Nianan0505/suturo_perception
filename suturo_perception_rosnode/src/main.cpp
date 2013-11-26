@@ -44,6 +44,7 @@ public:
 
     // Init the topic for the segmented objects on the plane
     objects_on_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_objects_ontable", 1);
+    collision_cloud_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_collision_cloud", 1);
 
     // Initialize dynamic reconfigure
     reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
@@ -222,7 +223,7 @@ public:
         pq.request.id = queryId;
         std::stringstream ss;
         ss << "is_edible([[" << queryId << ", '', '" << it->c_volume << "', 0]], Out)"; 
-        std::cerr << "HACK HACK query:" << ss.str() << std::endl; 
+        std::cerr << "Knowledge query for collision_cloud:" << ss.str() << std::endl; 
         pq.request.query = ss.str();
         if(is_edible_service.call(pq))
         {
@@ -243,8 +244,11 @@ public:
           pqf.request.id = queryId;
           is_edible_service_finish.call(pqf);
         }
+        else
+        std::cerr << "Kndowledge not reachable" << std::endl;
         queryId++;
       }
+      publish_pointcloud(collision_cloud_pub, collision_cloud, frameId);
     }
     else
     {
@@ -315,6 +319,7 @@ private:
   ros::Publisher vis_pub;
   ros::Publisher table_plane_pub;
   ros::Publisher objects_on_plane_pub;
+  ros::Publisher collision_cloud_pub;
   ros::ServiceClient is_edible_service;
   ros::ServiceClient is_edible_service_next;
   ros::ServiceClient is_edible_service_finish;
