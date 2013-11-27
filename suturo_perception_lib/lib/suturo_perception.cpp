@@ -76,7 +76,7 @@ SuturoPerception::SuturoPerception()
   ecClusterTolerance = 0.02; // 2cm
   ecMinClusterSize = 8000;
   ecMaxClusterSize = 200000;  
-  prismZMin = 0.01;
+  prismZMin = 0.02;
   prismZMax = 0.50; // cutoff 50 cm above plane
   ecObjClusterTolerance = 0.03; // 3cm
   ecObjMinClusterSize = 100;
@@ -673,6 +673,17 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   extract.setNegative (false);
   extract.filter (*object_clusters);
   if(writer_pcd) writer.write ("object_clusters.pcd", *object_clusters, false);
+
+  if(object_indices->indices.size() == 0)
+  {
+    std::cout << "No object indices on the table found. Skip ...";
+    // temporary list of perceived objects
+    std::vector<PerceivedObject> tmpPerceivedObjects;
+    mutex.lock();
+    perceivedObjects = tmpPerceivedObjects;
+    mutex.unlock();
+    return;
+  }
   objects_on_plane_cloud_ = object_clusters;
 
   // Project the model inliers
