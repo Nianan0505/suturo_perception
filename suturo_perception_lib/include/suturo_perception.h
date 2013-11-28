@@ -7,15 +7,25 @@
 #include <pcl/point_types.h>
 #include <boost/signals2/mutex.hpp>
 #include "perceived_object.h"
+#include "opencv2/core/core.hpp"
 
 namespace suturo_perception_lib
 {
   class SuturoPerception
   {
     public:
+
     SuturoPerception();
     void processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+		void processCloudWithProjections(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<PerceivedObject> getPerceivedObjects();
+    std::vector<cv::Mat> getPerceivedClusterImages();
+
+    // Get the cloud that is the basis for the object extraction
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getPlaneCloud();
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getObjectsOnPlaneCloud();
+
+		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images);
 
     void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
@@ -71,6 +81,9 @@ namespace suturo_perception_lib
     int getEcObjMinClusterSize() {return ecObjMinClusterSize;};
     int getEcObjMaxClusterSize() {return ecObjMaxClusterSize;};
 
+    // dirty hack collision_objects
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> collision_objects;
+
     private:
     // === Parameters ===
     // min and max values for z-axis filtering
@@ -91,6 +104,17 @@ namespace suturo_perception_lib
     double ecObjClusterTolerance;
     int ecObjMinClusterSize;
     int ecObjMaxClusterSize;
+    std::vector<cv::Mat> perceived_cluster_images_;
+
+    // The cloud of the extracted plane in the segmentation process
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_;
+
+    // The cloud of the extracted objects above the plane
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects_on_plane_cloud_;
+
+    // Set this flag to true to write partial pcds
+    // while processing a cloud
+    bool writer_pcd;
 
     // ID counter for the perceived objects
     int objectID;
@@ -108,3 +132,4 @@ namespace suturo_perception_lib
 }
 
 #endif
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

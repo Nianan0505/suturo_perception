@@ -10,6 +10,8 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 
+find_package(OpenCV REQUIRED)
+
 # include boost
 set(Boost_USE_STATIC_LIBS OFF) 
 set(Boost_USE_MULTITHREADED ON)  
@@ -19,4 +21,4 @@ find_package(Boost 1.48.0 COMPONENTS thread)
 include_directories(${Boost_INCLUDE_DIRS}) 
 link_directories(${Boost_LIBRARY_DIRS})
 # Link library against PCL and boost
-target_link_libraries(suturo_perception_lib ${PCL_LIBRARIES} ${Boost_LIBRARIES})                                                                                                                                                                                                                            
+target_link_libraries(suturo_perception_lib ${OpenCV_LIBS} ${PCL_LIBRARIES} ${Boost_LIBRARIES})                                                                                                                                                                                                                            

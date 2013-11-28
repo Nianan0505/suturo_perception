@@ -45,7 +45,8 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 
-bool writer_pcd = false;
+// Should we write debug pcds?
+bool writer_pcd = true;
 
 using namespace std;
 // debug timelog for profiling
@@ -56,10 +57,6 @@ void logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string
                 float diff = (float)d.total_microseconds() / (float)1000;
                 std::cout << "[perception_lib] Time for " << text << ": " << diff << " ms" << std::endl;
 }
-// void 
-// extractImages(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-//                                std::vector<pcl::PointIndices> *extracted_indices,
-//                                std::vector<int> *nan_indices, int file_index = 0)
 
 void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered)
 {
@@ -104,18 +101,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
     pcl::ConvexHull<pcl::PointXYZRGB> chull;
     chull.setInputCloud (cloud_cluster); // The clusters in this method must be 2d
     chull.setDimension(2);
-    // chull.setAlpha (0.1); // Only in Concave Hulls
-    // Note: Concave Hulls are much more detailed
     chull.reconstruct (*cloud_hull);
-
-    // std::cerr << "Convex hull has: " << cloud_hull->points.size ()
-    //           << " data points." << std::endl;
-
-    // writer.write ("cloud_hull.pcd", *cloud_hull, false);
-    // std::ostringstream fn;
-    // fn << "hull_" << i << ".pcd";
-
-    // writer.write(fn.str(), *cloud_cluster, false);
 
     pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
 
@@ -176,18 +162,7 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
     boost::posix_time::ptime e2 = boost::posix_time::microsec_clock::local_time();
     logTime(s2, e2, "Extracted Object Points");
 
-    cout << "Tried to map " << ex_count << " points to the image" << endl;
-    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-    // for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
-    // {
-    //   int index = nan_indices->at(*pit);
-    //   object_cloud->points.push_back (cloud_in->points[index]); //*
-    // }
     cout << "Went through the for-loops" << endl;
-
-    // object_cloud->width = object_cloud->points.size ();
-    // object_cloud->height = 1;
-    // object_cloud->is_dense = true;
 
     pcl::PCDWriter writer;
     std::stringstream extracted_path;
@@ -195,49 +170,12 @@ void clusterTwoDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::
 
     if(writer_pcd) writer.write(extracted_path.str(), *image_cloud, false); // eigentlich *
 
-    // std::stringstream real_cloud_path;
-    // real_cloud_path << "img_object" << i << "_real.pcd";
-    // writer.write(real_cloud_path.str(), *object_cloud, false); // eigentlich *
     i++;
   }
 
   if(writer_pcd) writer.write ("TwoDee_object_clusters.pcd", *object_clusters, false);
 
 }
-
-// void clusterThreeDee(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters)
-// {
-//   pcl::PCDWriter writer;
-//   // Creating the KdTree object for the search method of the extraction
-//   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
-//   tree->setInputCloud (object_clusters);
-// 
-//   std::vector<pcl::PointIndices> cluster_indices;
-//   pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-//   ec.setClusterTolerance (0.02); // 2cm
-//   ec.setMinClusterSize (100);
-//   ec.setMaxClusterSize (25000);
-//   ec.setSearchMethod (tree);
-//   ec.setInputCloud (object_clusters);
-//   ec.extract(cluster_indices);
-// 
-//   int i=0;
-//   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
-//   {
-//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
-//     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
-//       cloud_cluster->points.push_back (object_clusters->points[*pit]); //*
-//     cloud_cluster->width = cloud_cluster->points.size ();
-//     cloud_cluster->height = 1;
-//     cloud_cluster->is_dense = true;
-//     std::ostringstream fn;
-//     fn << "3dcluster_" << i << ".pcd";
-//     writer.write(fn.str(), *cloud_cluster, false);
-//     i++;
-//   }
-// 
-//   writer.write ("ThreeDee_object_clusters.pcd", *object_clusters, false);
-// }
 
 int main( int argc, char** argv )
 {
@@ -261,7 +199,8 @@ int main( int argc, char** argv )
   pcl::PassThrough<pcl::PointXYZRGB> pass(true);
   pass.setInputCloud (cloud);
   pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0, 1.4); // fine tuned! Warning // TODO Clustering for biggest plane
+  // pass.setFilterLimits (0, 1.4); // fine tuned! Warning // TODO Clustering for biggest plane
+  pass.setFilterLimits (0, 1.8); // fine tuned! Warning // TODO Clustering for biggest plane
   pass.filter (*cloud_filtered);
   pass.setKeepOrganized(true);
   std::cerr << "PointCloud after filtering has: "
@@ -312,12 +251,52 @@ int main( int argc, char** argv )
 
   boost::posix_time::ptime s3 = boost::posix_time::microsec_clock::local_time();
   //splitting the cloud in two: plane + other
-  // pcl::ExtractIndices<pcl::PointXYZRGB> extract_p;
-  // extract_p.setInputCloud(cloud_filtered);
-  // extract_p.setIndices(inliers);
-  // extract_p.filter(*cloud_plane);
-  // writer.write ("cloud_plane.pcd", *cloud_plane, false);
+  pcl::ExtractIndices<pcl::PointXYZRGB> extract_p;
+  extract_p.setInputCloud(cloud_filtered);
+  extract_p.setIndices(inliers);
+  extract_p.filter(*cloud_plane);
+  if(writer_pcd) writer.write ("cloud_plane.pcd", *cloud_plane, false);
 
+  boost::posix_time::ptime s23 = boost::posix_time::microsec_clock::local_time();
+  // Use cluster extraction to get rid of the outliers of the segmented table
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr treeTable (new pcl::search::KdTree<pcl::PointXYZRGB>);
+  treeTable->setInputCloud (cloud_plane);  
+  std::vector<pcl::PointIndices> table_cluster_indices;
+  pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ecTable;
+  ecTable.setClusterTolerance (0.02); // 2cm
+  ecTable.setMinClusterSize (10000);
+  ecTable.setMaxClusterSize (200000);
+  ecTable.setSearchMethod (treeTable);
+  ecTable.setInputCloud (cloud_plane);
+  ecTable.extract (table_cluster_indices);
+
+  std::vector<int> cluster_get_indices;
+  cluster_get_indices = *ecTable.getIndices();
+  pcl::PointIndices::Ptr new_inliers (new pcl::PointIndices);
+
+  // Extract the biggest cluster (e.g. the table) in the plane cloud
+  std::vector<pcl::PointIndices>::const_iterator it = table_cluster_indices.begin ();
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
+  for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++){
+    plane_cluster->points.push_back (cloud_plane->points[*pit]); //*
+    new_inliers->indices.push_back(cluster_get_indices.at(*pit)); // Map the indices
+    // from the cluster extraction
+    // to a proper PointIndicies
+    // instance relative to our
+    // original plane
+  }
+  plane_cluster->width = plane_cluster->points.size ();
+  plane_cluster->height = 1;
+  plane_cluster->is_dense = true;
+
+  if(writer_pcd) writer.write ("plane_cluster.pcd", *plane_cluster, false);
+  // std::cout << "Table point cloud " << plane_cluster->points.size () << " data points." << std::endl;
+
+  boost::posix_time::ptime e23 = boost::posix_time::microsec_clock::local_time();
+  logTime(s23, e23, "clustered table");
+  // NOTE: We need to transform the inliers from table_cluster_indices to inliers
+  inliers = new_inliers;
+  
   // Project the model inliers
   pcl::ProjectInliers<pcl::PointXYZRGB> proj;
   proj.setModelType (pcl::SACMODEL_PLANE);

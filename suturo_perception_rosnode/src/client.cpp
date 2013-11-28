@@ -46,7 +46,7 @@ int main(int argc, char **argv)
                   clusterSrv.response.perceivedObjs[i].c_color_average_r,
                   clusterSrv.response.perceivedObjs[i].c_color_average_g,
                   clusterSrv.response.perceivedObjs[i].c_color_average_b);
-        ROS_INFO("2D recognition label perceived object is: %s", clusterSrv.response.perceivedObjs[i].recognition_label_2d.c_str());
+        ROS_INFO("2D recognition label of perceived object is: %s", clusterSrv.response.perceivedObjs[i].recognition_label_2d.c_str());
         ROS_INFO("Centroid(x) of perceived object is: %f , %f , %f ",
           clusterSrv.response.perceivedObjs[i].c_centroid.x,
           clusterSrv.response.perceivedObjs[i].c_centroid.y,
