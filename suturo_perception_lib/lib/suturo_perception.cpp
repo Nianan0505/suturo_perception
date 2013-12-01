@@ -110,7 +110,6 @@ SuturoPerception::removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
   logTime(s, e, "removeNans()");
-  //return cloud_nanles;
 }
 
 /*
@@ -309,7 +308,6 @@ SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
     extractedObjects.push_back(cloud_cluster);
-    // writeCloudToDisk(hull_points, "hull_points.pcd");
   }
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
@@ -336,8 +334,6 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   ec.setClusterTolerance (ecObjClusterTolerance);
   ec.setMinClusterSize (ecObjMinClusterSize);
   ec.setMaxClusterSize (ecObjMaxClusterSize);
-  // ec.setMinClusterSize (100);
-  // ec.setMaxClusterSize (25000);
   ec.setSearchMethod (tree);
   ec.setInputCloud (object_clusters);
   ec.extract(cluster_indices);
@@ -486,7 +482,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
 	boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
 
-  boost::posix_time::ptime s0 = boost::posix_time::microsec_clock::local_time();
+  // boost::posix_time::ptime s0 = boost::posix_time::microsec_clock::local_time();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>), 
                                       cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>), 
                                       cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>),
@@ -495,8 +491,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   pcl::PCDReader reader;
   pcl::PCDWriter writer;
 
-  boost::posix_time::ptime e0 = boost::posix_time::microsec_clock::local_time();
-  logTime(s0, e0, "initial reading");
+  // boost::posix_time::ptime e0 = boost::posix_time::microsec_clock::local_time();
+  // logTime(s0, e0, "initial reading");
 
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
@@ -505,7 +501,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   pcl::PassThrough<pcl::PointXYZRGB> pass(true);
   pass.setInputCloud (cloud_in);
   pass.setFilterFieldName ("z");
-  // pass.setFilterLimits (0, 1.4); // fine tuned! Warning // TODO Clustering for biggest plane
   pass.setFilterLimits (zAxisFilterMin, zAxisFilterMax); // fine tuned! Warning // TODO Clustering for biggest plane
   pass.filter (*cloud_filtered);
   pass.setKeepOrganized(true);
@@ -519,18 +514,9 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
 
   //voxelizing cloud
-  boost::posix_time::ptime s1 = boost::posix_time::microsec_clock::local_time();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::VoxelGrid <pcl::PointXYZRGB> vg;
-  vg.setInputCloud(cloud_filtered);
-  vg.setLeafSize(downsampleLeafSize,downsampleLeafSize,downsampleLeafSize);
-  vg.filter(*cloud_downsampled);
-  cloud_filtered = cloud_downsampled;
-
-  boost::posix_time::ptime e1 = boost::posix_time::microsec_clock::local_time();
-  logTime(s1, e1, "downsampling()");
-  // cloud_filtered = cloud_downsampled; // Use the downsampled cloud now
-
+  downsample(cloud_filtered, cloud_downsampled);
+  cloud_filtered = cloud_downsampled; // Use the downsampled cloud now
 
   boost::posix_time::ptime s2 = boost::posix_time::microsec_clock::local_time();
   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
@@ -757,20 +743,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
     std::cout << "[suturo_perception_lib] Centroid: "
       << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << ", " << std::endl;
-
-    // used in getObjects. Left here for reference. incredibly slow
-    /*
-       std::vector<pcl::Vertices> hull_polygons;
-       hull.reconstruct (*hull_points, hull_polygons);
-
-       pcl::CropHull<pcl::PointXYZRGB> crophull;
-       crophull.setHullCloud(hull_points);
-       crophull.setInputCloud(cloud_in);
-       crophull.setHullIndices(hull_polygons);
-       crophull.setDim(3);
-       crophull.filter(*object);
-       boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-       logTime(s, e, "crop hull");*/
 
     // Add the detected cluster to the list of perceived objects
     PerceivedObject percObj;
