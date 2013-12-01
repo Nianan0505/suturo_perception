@@ -345,10 +345,12 @@ SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 /* Extract the biggest cluster in PointCloud cloud_in
 * The method returns true, if a cluster has been found.
 * If no Cluster could be extracted, or an error occured, the method returns false.
-* If you want to map the original inliers (which correspond to the input cloud_in), you can pass in a Pointer to the old inliers and receive the new inliers after the clustering in new_inliers
+* If you want to map the original inliers (which correspond to the input cloud_in), you can pass in a Pointer to the old inliers and receive the new inliers after the clustering in new_inliers.
+* When both inlier pointers are NOT NULL, the mapping will be calculated and put into new_inliers.
 */
 bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers)
 {
+  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
   // Should we map the extracted points to the inliers in the input cloud?
   bool map_indices=false;
   if(old_inliers != NULL && new_inliers != NULL)
@@ -404,6 +406,8 @@ bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZ
 
   // if(writer_pcd) writer.write ("cloud_out.pcd", *cloud_out, false);
 
+  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+  logTime(s, e, "extractBiggestCluster()");
   return true;
 }
 
@@ -559,6 +563,40 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   if(writer_pcd) writer.write ("cluster_from_projection_clusters.pcd", *object_clusters, false);
 
 }
+/*
+ * Extract all Points above a given pointcloud (hull_cloud)
+ * A Convex Hull will be calculated around this point cloud.
+ * After that, this method will use ExtractPolygonalPrismData to extract everything above the
+ * PointCloud / ConvexHull within cloud_in. The indices will be put into object_indices.
+ */
+void SuturoPerception::extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
+    pcl::PointIndices::Ptr object_indices, 
+    int convex_hull_dimension=2)
+{
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::ConvexHull<pcl::PointXYZRGB> hull;
+
+  hull.setDimension (convex_hull_dimension); 
+  hull.setInputCloud (hull_cloud);
+  hull.reconstruct (*hull_points);
+
+  pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+  prism.setInputCloud (cloud_in);
+  prism.setInputPlanarHull (hull_points);
+  prism.setHeightLimits (prismZMin, prismZMax);
+  prism.segment (*object_indices);
+
+  // Create the filtering object
+  pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+  // Extract the inliers of the prism
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
+  extract.setInputCloud (cloud_in);
+  extract.setIndices (object_indices);
+  extract.setNegative (false);
+  extract.filter (*cloud_out);
+}
 
 /*
  * Process a single point cloud.
@@ -621,63 +659,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   pcl::PointIndices::Ptr new_inliers (new pcl::PointIndices);
   extractBiggestCluster(cloud_plane, plane_cluster, inliers, new_inliers);
 
-  /*
-  boost::posix_time::ptime s23 = boost::posix_time::microsec_clock::local_time();
-  // Use cluster extraction to get rid of the outliers of the segmented table
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr treeTable (new pcl::search::KdTree<pcl::PointXYZRGB>);
-  treeTable->setInputCloud (cloud_plane);  
-  std::vector<pcl::PointIndices> table_cluster_indices;
-  pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ecTable;
-  ecTable.setClusterTolerance (ecClusterTolerance); // 2cm
-  ecTable.setMinClusterSize (ecMinClusterSize);
-  ecTable.setMaxClusterSize (ecMaxClusterSize);
-  ecTable.setSearchMethod (treeTable);
-  ecTable.setInputCloud (cloud_plane);
-  ecTable.extract (table_cluster_indices);
-
-  std::cerr << "Cluster Table extracted" << std::endl;
-
-  std::vector<int> cluster_get_indices;
-  cluster_get_indices = *ecTable.getIndices();
-  pcl::PointIndices::Ptr new_inliers (new pcl::PointIndices);
-
-  std::cerr << "table_cluster_indices vector size: " << table_cluster_indices.size() << std::endl;
-
-  if(table_cluster_indices.size() == 0)
-  {
-    std::cout << "No suitable table cluster found. Skip ...";
-    // temporary list of perceived objects
-    std::vector<PerceivedObject> tmpPerceivedObjects;
-    mutex.lock();
-    perceivedObjects = tmpPerceivedObjects;
-    mutex.unlock();
-    return;
-  }
-
-
-  // Extract the biggest cluster (e.g. the table) in the plane cloud
-  std::vector<pcl::PointIndices>::const_iterator it = table_cluster_indices.begin ();
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
-  for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++){
-    plane_cluster->points.push_back (cloud_plane->points[*pit]); //*
-    new_inliers->indices.push_back(cluster_get_indices.at(*pit)); // Map the indices
-    // from the cluster extraction
-    // to a proper PointIndicies
-    // instance relative to our
-    // original plane
-  }
-  plane_cluster->width = plane_cluster->points.size ();
-  plane_cluster->height = 1;
-  plane_cluster->is_dense = true;
-
-  std::cerr << "New Inliers calculated: " << new_inliers->indices.size() << std::endl;
-
-  if(writer_pcd) writer.write ("plane_cluster.pcd", *plane_cluster, false);
-  // std::cout << "Table point cloud " << plane_cluster->points.size () << " data points." << std::endl;
-
-  boost::posix_time::ptime e23 = boost::posix_time::microsec_clock::local_time();
-  logTime(s23, e23, "clustered table");
-  */
   // NOTE: We need to transform the inliers from table_cluster_indices to inliers
   inliers = new_inliers;
   
@@ -690,31 +671,34 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   // Extract all objects above
   // the table plane
+  
 
   boost::posix_time::ptime s4 = boost::posix_time::microsec_clock::local_time();
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::ConvexHull<pcl::PointXYZRGB> hull;
   pcl::PointIndices::Ptr object_indices (new pcl::PointIndices);
-
-  hull.setDimension (2); 
-  hull.setInputCloud (plane_cluster);
-  hull.reconstruct (*hull_points);
-
-  pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-  prism.setInputCloud (cloud_filtered);
-  prism.setInputPlanarHull (hull_points);
-  prism.setHeightLimits (prismZMin, prismZMax);
-  prism.segment (*object_indices);
-
-  // Create the filtering object
-  pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-  // Extract the inliers of the prism
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
-  extract.setInputCloud (cloud_filtered);
-  extract.setIndices (object_indices);
-  extract.setNegative (false);
-  extract.filter (*object_clusters);
-  if(writer_pcd) writer.write ("object_clusters.pcd", *object_clusters, false);
+  extractAllPointsAbovePointCloud(cloud_filtered, plane_cluster, object_clusters, object_indices);
+    
+  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  // pcl::ConvexHull<pcl::PointXYZRGB> hull;
+
+  // hull.setDimension (2); 
+  // hull.setInputCloud (plane_cluster);
+  // hull.reconstruct (*hull_points);
+
+  // pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+  // prism.setInputCloud (cloud_filtered);
+  // prism.setInputPlanarHull (hull_points);
+  // prism.setHeightLimits (prismZMin, prismZMax);
+  // prism.segment (*object_indices);
+
+  // // Create the filtering object
+  // pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+  // // Extract the inliers of the prism
+  // extract.setInputCloud (cloud_filtered);
+  // extract.setIndices (object_indices);
+  // extract.setNegative (false);
+  // extract.filter (*object_clusters);
+  // if(writer_pcd) writer.write ("object_clusters.pcd", *object_clusters, false);
 
   if(object_indices->indices.size() == 0)
   {
