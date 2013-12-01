@@ -83,9 +83,6 @@ SuturoPerception::SuturoPerception()
   ecObjMaxClusterSize = 25000;
   debug = true;
   writer_pcd = false;
-  // // Init cv Window 
-  // cv::namedWindow("foobar", CV_WINDOW_AUTOSIZE);
-  // cv::destroyWindow("foobar");
 }
 
 
