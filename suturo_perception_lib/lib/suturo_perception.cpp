@@ -118,14 +118,15 @@ SuturoPerception::removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_
  */
 void 
 SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PassThrough<pcl::PointXYZRGB> &pass)
 {
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
-  pcl::PassThrough<pcl::PointXYZRGB> pass;
+  // pcl::PassThrough<pcl::PointXYZRGB> pass;
   pass.setInputCloud(cloud_in);
   pass.setFilterFieldName("z");
   pass.setFilterLimits(zAxisFilterMin, zAxisFilterMax);
+  pass.setKeepOrganized(true);
   pass.filter(*cloud_out);
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
@@ -482,7 +483,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
 	boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
 
-  // boost::posix_time::ptime s0 = boost::posix_time::microsec_clock::local_time();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>), 
                                       cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>), 
                                       cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>),
@@ -491,19 +491,19 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   pcl::PCDReader reader;
   pcl::PCDWriter writer;
 
-  // boost::posix_time::ptime e0 = boost::posix_time::microsec_clock::local_time();
-  // logTime(s0, e0, "initial reading");
 
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
-  // cloud_filtered = cloud;
-  // Build a filter to remove spurious NaNs
+  // TODO Remove NaNs
+
+  // Build a filter to filter on the Z Axis
   pcl::PassThrough<pcl::PointXYZRGB> pass(true);
-  pass.setInputCloud (cloud_in);
-  pass.setFilterFieldName ("z");
-  pass.setFilterLimits (zAxisFilterMin, zAxisFilterMax); // fine tuned! Warning // TODO Clustering for biggest plane
-  pass.filter (*cloud_filtered);
-  pass.setKeepOrganized(true);
+  filterZAxis(cloud_in, cloud_filtered, pass);
+  // pass.setInputCloud (cloud_in);
+  // pass.setFilterFieldName ("z");
+  // pass.setFilterLimits (zAxisFilterMin, zAxisFilterMax); 
+  // pass.filter (*cloud_filtered);
+  // pass.setKeepOrganized(true);
   std::cerr << "PointCloud after filtering has: "
             << cloud_filtered->points.size () << " data points." << std::endl;
 
@@ -784,122 +784,122 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
  *
  * The result is a list of PerceivedObject's, which will be put into the buffer perceivedObjects.
  */
-void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
-{
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
-  //point cloud objects
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
-
-  pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
-
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
-
-  //removing nans from point clouds
-  removeNans(cloud_in, cloud_nanles);
-
-  //filtering cloud on z axis
-  filterZAxis(cloud_nanles, cloud_filtered);
-
-  downsample(cloud_filtered, cloud_filtered_downsampled);
-
-  //fitting a plane to the filtered cloud
-  fitPlanarModel(cloud_filtered_downsampled, inliers);
-
-  // filter out biggest surface and return cloud above it
-  extractObjectCluster(cloud_filtered_downsampled, inliers, object_clusters);
-
-  // cluster extraction
-  // extract objects from downsampled object cloud
-  extractObjects(object_clusters, extractedObjects);
-  std::cerr << "extractVector size" << extractedObjects.size() << std::endl;
-
-  // temporary list of perceived objects
-  std::vector<PerceivedObject> tmpPerceivedObjects;
-
-  // shape detector to detect shape
-  // int to represent the shape
-  suturo_perception_shape_detection::RandomSampleConsensus rsc;
-  int ptShape;
-
-  // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
-  for (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
-      it != extractedObjects.end(); ++it)
-  {  
-    // Calculate the volume of each cluster
-    // Create a convex hull around the cluster and calculate the total volume
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr obj_points_from_hull (new pcl::PointCloud<pcl::PointXYZRGB> ());
-
-    pcl::ConvexHull<pcl::PointXYZRGB> hull;
-    hull.setInputCloud(*it);
-    hull.setDimension(3);
-    hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
-    hull.reconstruct (*hull_points);
-
-    // Get average color of the object
-    uint32_t averageColor = getAverageColor(*it);
-
-    // Detect the shape of the object
-    rsc.detectShape(*it);
-    ptShape = rsc.getShape();
-
-    // Centroid calulcation
-    Eigen::Vector4f centroid;
-    pcl::compute3DCentroid (*hull_points, centroid);  
-
-    std::cout << "[suturo_perception_lib] Centroid: "
-      << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << ", " << std::endl;
-
-    // used in getObjects. Left here for reference. incredibly slow
-    /*
-       std::vector<pcl::Vertices> hull_polygons;
-       hull.reconstruct (*hull_points, hull_polygons);
-
-       pcl::CropHull<pcl::PointXYZRGB> crophull;
-       crophull.setHullCloud(hull_points);
-       crophull.setInputCloud(cloud_in);
-       crophull.setHullIndices(hull_polygons);
-       crophull.setDim(3);
-       crophull.filter(*object);
-       boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-       logTime(s, e, "crop hull");*/
-
-    // Add the detected cluster to the list of perceived objects
-    PerceivedObject percObj;
-    percObj.c_id= objectID;
-    objectID++;
-    Point ptCentroid;
-    ptCentroid.x=centroid[0];
-    ptCentroid.y=centroid[1];
-    ptCentroid.z=centroid[2];
-    percObj.c_centroid = ptCentroid;
-    percObj.c_shape = ptShape;
-    percObj.c_volume = hull.getTotalVolume();
-    percObj.c_color_average_r = (averageColor >> 16) & 0x0000ff;
-    percObj.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
-    percObj.c_color_average_b = (averageColor)       & 0x0000ff;
-
-    tmpPerceivedObjects.push_back(percObj);
-  }
-
-  // Sort by volume
-  std::sort(tmpPerceivedObjects.begin(), tmpPerceivedObjects.end(), ReceivedObjectGreaterThan);
-
-  // Lock the buffer access to assign the recently perceived objects
-  mutex.lock();
-  perceivedObjects = tmpPerceivedObjects;
-  mutex.unlock();
-
-  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "TOTAL");
-}
+// void SuturoPerception::processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+// {
+//   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+// 
+//   //point cloud objects
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
+// 
+//   pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
+// 
+//   pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+//   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
+// 
+//   //removing nans from point clouds
+//   removeNans(cloud_in, cloud_nanles);
+// 
+//   //filtering cloud on z axis
+//   filterZAxis(cloud_nanles, cloud_filtered);
+// 
+//   downsample(cloud_filtered, cloud_filtered_downsampled);
+// 
+//   //fitting a plane to the filtered cloud
+//   fitPlanarModel(cloud_filtered_downsampled, inliers);
+// 
+//   // filter out biggest surface and return cloud above it
+//   extractObjectCluster(cloud_filtered_downsampled, inliers, object_clusters);
+// 
+//   // cluster extraction
+//   // extract objects from downsampled object cloud
+//   extractObjects(object_clusters, extractedObjects);
+//   std::cerr << "extractVector size" << extractedObjects.size() << std::endl;
+// 
+//   // temporary list of perceived objects
+//   std::vector<PerceivedObject> tmpPerceivedObjects;
+// 
+//   // shape detector to detect shape
+//   // int to represent the shape
+//   suturo_perception_shape_detection::RandomSampleConsensus rsc;
+//   int ptShape;
+// 
+//   // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
+//   for (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
+//       it != extractedObjects.end(); ++it)
+//   {  
+//     // Calculate the volume of each cluster
+//     // Create a convex hull around the cluster and calculate the total volume
+//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr obj_points_from_hull (new pcl::PointCloud<pcl::PointXYZRGB> ());
+// 
+//     pcl::ConvexHull<pcl::PointXYZRGB> hull;
+//     hull.setInputCloud(*it);
+//     hull.setDimension(3);
+//     hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
+//     hull.reconstruct (*hull_points);
+// 
+//     // Get average color of the object
+//     uint32_t averageColor = getAverageColor(*it);
+// 
+//     // Detect the shape of the object
+//     rsc.detectShape(*it);
+//     ptShape = rsc.getShape();
+// 
+//     // Centroid calulcation
+//     Eigen::Vector4f centroid;
+//     pcl::compute3DCentroid (*hull_points, centroid);  
+// 
+//     std::cout << "[suturo_perception_lib] Centroid: "
+//       << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << ", " << std::endl;
+// 
+//     // used in getObjects. Left here for reference. incredibly slow
+//     /*
+//        std::vector<pcl::Vertices> hull_polygons;
+//        hull.reconstruct (*hull_points, hull_polygons);
+// 
+//        pcl::CropHull<pcl::PointXYZRGB> crophull;
+//        crophull.setHullCloud(hull_points);
+//        crophull.setInputCloud(cloud_in);
+//        crophull.setHullIndices(hull_polygons);
+//        crophull.setDim(3);
+//        crophull.filter(*object);
+//        boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+//        logTime(s, e, "crop hull");*/
+// 
+//     // Add the detected cluster to the list of perceived objects
+//     PerceivedObject percObj;
+//     percObj.c_id= objectID;
+//     objectID++;
+//     Point ptCentroid;
+//     ptCentroid.x=centroid[0];
+//     ptCentroid.y=centroid[1];
+//     ptCentroid.z=centroid[2];
+//     percObj.c_centroid = ptCentroid;
+//     percObj.c_shape = ptShape;
+//     percObj.c_volume = hull.getTotalVolume();
+//     percObj.c_color_average_r = (averageColor >> 16) & 0x0000ff;
+//     percObj.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
+//     percObj.c_color_average_b = (averageColor)       & 0x0000ff;
+// 
+//     tmpPerceivedObjects.push_back(percObj);
+//   }
+// 
+//   // Sort by volume
+//   std::sort(tmpPerceivedObjects.begin(), tmpPerceivedObjects.end(), ReceivedObjectGreaterThan);
+// 
+//   // Lock the buffer access to assign the recently perceived objects
+//   mutex.lock();
+//   perceivedObjects = tmpPerceivedObjects;
+//   mutex.unlock();
+// 
+//   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+//   logTime(s, e, "TOTAL");
+// }
 
 std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
 {
@@ -914,36 +914,36 @@ std::vector<cv::Mat> SuturoPerception::getPerceivedClusterImages()
  * Convenience method to get separated object pointclouds.
  * Return a point cloud vector containing a cloud for each extracted object
  */
-void SuturoPerception::getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects)
-{
-  //point cloud objects
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
-
-  pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
-
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-
-  //removing nans from point clouds
-  removeNans(cloud_in, cloud_nanles);
-
-  //downsample(cloud_nanles, cloud_downsampled);
-  //filtering cloud on z axis
-  filterZAxis(cloud_nanles, cloud_filtered);
-
-  //fitting a plane to the filtered cloud
-  fitPlanarModel(cloud_filtered, inliers);
-
-  // filter out biggest surface and return cloud above it
-  extractObjectCluster(cloud_filtered, inliers, object_clusters);
-
-  // cluster extraction
-  // extract objects from downsampled object cloud
-  extractObjects(object_clusters, extractedObjects);
-}
+// void SuturoPerception::getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+//     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects)
+// {
+//   //point cloud objects
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
+// 
+//   pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
+// 
+//   pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+// 
+//   //removing nans from point clouds
+//   removeNans(cloud_in, cloud_nanles);
+// 
+//   //downsample(cloud_nanles, cloud_downsampled);
+//   //filtering cloud on z axis
+//   filterZAxis(cloud_nanles, cloud_filtered);
+// 
+//   //fitting a plane to the filtered cloud
+//   fitPlanarModel(cloud_filtered, inliers);
+// 
+//   // filter out biggest surface and return cloud above it
+//   extractObjectCluster(cloud_filtered, inliers, object_clusters);
+// 
+//   // cluster extraction
+//   // extract objects from downsampled object cloud
+//   extractObjects(object_clusters, extractedObjects);
+// }
 
 // debug timelog for profiling
 void SuturoPerception::logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string text)

@@ -8,6 +8,9 @@
 #include <boost/signals2/mutex.hpp>
 #include "perceived_object.h"
 #include "opencv2/core/core.hpp"
+#include <pcl/filters/filter.h>
+#include <pcl/filters/crop_hull.h>
+#include <pcl/filters/passthrough.h>
 
 namespace suturo_perception_lib
 {
@@ -16,7 +19,7 @@ namespace suturo_perception_lib
     public:
 
     SuturoPerception();
-    void processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+    // void processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
 		void processCloudWithProjections(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<PerceivedObject> getPerceivedObjects();
     std::vector<cv::Mat> getPerceivedClusterImages();
@@ -30,7 +33,8 @@ namespace suturo_perception_lib
     void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
     void filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
+                pcl::PassThrough<pcl::PointXYZRGB> &pass );
     void downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
     void fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
