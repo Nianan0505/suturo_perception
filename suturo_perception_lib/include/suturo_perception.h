@@ -50,6 +50,7 @@ namespace suturo_perception_lib
     void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
     uint32_t getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+    bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers);
 
     // debug
     void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects);

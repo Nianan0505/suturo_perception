@@ -122,6 +122,13 @@ void
 SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PassThrough<pcl::PointXYZRGB> &pass)
 {
+
+  if(cloud_in->points.size() == 0)
+  {
+    std::cerr << "Could not filter on Z Axis. input cloud empty" << std::endl;
+    return;
+  }
+
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
   pass.setInputCloud(cloud_in);
@@ -201,7 +208,7 @@ pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out
   extract_p.setInputCloud(cloud_in);
   extract_p.setIndices(inliers);
   extract_p.filter(*cloud_out);
-  // TODO use setNegative
+  extract_p.setNegative(setNegative);
   //
   // if(writer_pcd) writer.write ("cloud_plane.pcd", *cloud_plane, false);
 }
@@ -335,7 +342,70 @@ SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
   logTime(s, e, "extractObjects()");
 }
 
+/* Extract the biggest cluster in PointCloud cloud_in
+* The method returns true, if a cluster has been found.
+* If no Cluster could be extracted, or an error occured, the method returns false.
+* If you want to map the original inliers (which correspond to the input cloud_in), you can pass in a Pointer to the old inliers and receive the new inliers after the clustering in new_inliers
+*/
+bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers)
+{
+  // Should we map the extracted points to the inliers in the input cloud?
+  bool map_indices=false;
+  if(old_inliers != NULL && new_inliers != NULL)
+    map_indices = true;
 
+  if(cloud_in->points.size() == 0)
+  {
+    std::cerr << "Could not extract biggest cluster. input cloud empty" << std::endl;
+    return false;
+  }
+
+  // Use cluster extraction to get rid of the outliers of the segmented table
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr treeTable (new pcl::search::KdTree<pcl::PointXYZRGB>);
+  treeTable->setInputCloud (cloud_in);  
+  std::vector<pcl::PointIndices> cluster_indices;
+  pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ecTable;
+  ecTable.setClusterTolerance (ecClusterTolerance); // 2cm
+  ecTable.setMinClusterSize (ecMinClusterSize);
+  ecTable.setMaxClusterSize (ecMaxClusterSize);
+  ecTable.setSearchMethod (treeTable);
+  ecTable.setInputCloud (cloud_in);
+  ecTable.extract (cluster_indices);
+
+  std::vector<int> cluster_get_indices;
+  cluster_get_indices = *ecTable.getIndices();
+
+  std::cerr << "cluster_indices vector size: " << cluster_indices.size() << std::endl;
+
+  if(cluster_indices.size() == 0)
+  {
+    std::cout << "No suitable cluster found for extraction. Skip ...";
+    return false;
+  }
+
+
+  // Extract the biggest cluster (e.g. the table) in the plane cloud
+  std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin ();
+  for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++){
+    cloud_out->points.push_back (cloud_in->points[*pit]); 
+
+    if(map_indices)
+      new_inliers->indices.push_back(cluster_get_indices.at(*pit)); // Map the indices
+                                                                  // from the cluster extraction
+                                                                  // to a proper PointIndicies
+                                                                  // instance relative to our
+                                                                  // original plane
+  }
+  cloud_out->width = cloud_out->points.size ();
+  cloud_out->height = 1;
+  cloud_out->is_dense = true;
+
+  // std::cerr << "New Inliers calculated: " << new_inliers->indices.size() << std::endl;
+
+  // if(writer_pcd) writer.write ("cloud_out.pcd", *cloud_out, false);
+
+  return true;
+}
 
 void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images)
 {
@@ -541,17 +611,17 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
             << inliers->indices.size () << " inliers." << std::endl;
   // Table segmentation done
   
-  // Input cloud can't be null
-  if(inliers->indices.size () == 0)
-  {
-    std::cerr << "First Table Inlier Set is empty. Exiting...." << std::endl;
-    return;
-  }
-  std::cerr << "Table inlier count" << inliers->indices.size();
-
   // Extract the plane as a PointCloud from the calculated inliers
+  std::cerr << "Table inlier count" << inliers->indices.size();
   extractInliersFromPointCloud(cloud_filtered, inliers, cloud_plane);
 
+
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointIndices::Ptr new_inliers (new pcl::PointIndices);
+  extractBiggestCluster(cloud_plane, plane_cluster, inliers, new_inliers);
+
+  /*
   boost::posix_time::ptime s23 = boost::posix_time::microsec_clock::local_time();
   // Use cluster extraction to get rid of the outliers of the segmented table
   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr treeTable (new pcl::search::KdTree<pcl::PointXYZRGB>);
@@ -607,6 +677,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   boost::posix_time::ptime e23 = boost::posix_time::microsec_clock::local_time();
   logTime(s23, e23, "clustered table");
+  */
   // NOTE: We need to transform the inliers from table_cluster_indices to inliers
   inliers = new_inliers;
   
