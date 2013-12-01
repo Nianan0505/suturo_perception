@@ -11,6 +11,7 @@
 #include <pcl/filters/filter.h>
 #include <pcl/filters/crop_hull.h>
 #include <pcl/filters/passthrough.h>
+#include <pcl/ModelCoefficients.h>
 
 namespace suturo_perception_lib
 {
@@ -38,7 +39,9 @@ namespace suturo_perception_lib
     void downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
     void fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-                        pcl::PointIndices::Ptr indices_out);
+                        pcl::PointIndices::Ptr indices_out, pcl::ModelCoefficients::Ptr coefficients);
+    void extractInliersFromPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+          pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, bool setNegative);
     void extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
                               const pcl::PointIndices::Ptr inliers, 
                               pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);

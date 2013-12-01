@@ -114,6 +114,8 @@ SuturoPerception::removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_
 
 /*
  * Filter cloud on z-axis. aka cut off cloud at given distance.
+ * This method will use setKeepOrganized on the given PassThrough Filter.
+ *
  * Return the filtered cloud.
  */
 void 
@@ -122,7 +124,6 @@ SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 {
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
-  // pcl::PassThrough<pcl::PointXYZRGB> pass;
   pass.setInputCloud(cloud_in);
   pass.setFilterFieldName("z");
   pass.setFilterLimits(zAxisFilterMin, zAxisFilterMax);
@@ -134,7 +135,7 @@ SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 }
 
 /*
- * Downsample the input cloud
+ * Downsample the input cloud with a pcl::VoxelGrid
  * Return the filtered cloud.
  */
 void 
@@ -158,11 +159,9 @@ SuturoPerception::downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_
  */
 void 
 SuturoPerception::fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-    pcl::PointIndices::Ptr inliers)
+    pcl::PointIndices::Ptr inliers, pcl::ModelCoefficients::Ptr coefficients)
 {
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
-  pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
 
   if(cloud_in->points.size() == 0)
   {
@@ -179,11 +178,32 @@ SuturoPerception::fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
   seg.segment(*inliers,*coefficients);
   if (inliers->indices.size () == 0)
   {
-    std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
+    std::cerr << "Could not estimate a planar model for the given dataset. The inlier size is 0" << std::endl;
   }
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
   logTime(s, e, "fitPlanarModel()");
+}
+
+// Extract the given inliers from cloud_in as a PointCloud
+// The method does nothing, if the set of inliers is empty.
+// The parameter setNegative will be used for ExtractIndices::setNegative
+void SuturoPerception::extractInliersFromPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, bool setNegative=false)
+{
+  // Input cloud can't be null
+  if(inliers->indices.size () == 0)
+  {
+    std::cerr << "extractInliersFromPointCloud can't work with an empty set of indices. Exiting...." << std::endl;
+    return;
+  }
+  pcl::ExtractIndices<pcl::PointXYZRGB> extract_p;
+  extract_p.setInputCloud(cloud_in);
+  extract_p.setIndices(inliers);
+  extract_p.filter(*cloud_out);
+  // TODO use setNegative
+  //
+  // if(writer_pcd) writer.write ("cloud_plane.pcd", *cloud_plane, false);
 }
 
 /*
@@ -499,11 +519,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // Build a filter to filter on the Z Axis
   pcl::PassThrough<pcl::PointXYZRGB> pass(true);
   filterZAxis(cloud_in, cloud_filtered, pass);
-  // pass.setInputCloud (cloud_in);
-  // pass.setFilterFieldName ("z");
-  // pass.setFilterLimits (zAxisFilterMin, zAxisFilterMax); 
-  // pass.filter (*cloud_filtered);
-  // pass.setKeepOrganized(true);
   std::cerr << "PointCloud after filtering has: "
             << cloud_filtered->points.size () << " data points." << std::endl;
 
@@ -518,34 +533,14 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   downsample(cloud_filtered, cloud_downsampled);
   cloud_filtered = cloud_downsampled; // Use the downsampled cloud now
 
-  boost::posix_time::ptime s2 = boost::posix_time::microsec_clock::local_time();
+  // Find the biggest table plane in the scene
   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
   pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-  // Create the segmentation object
-  pcl::SACSegmentation<pcl::PointXYZRGB> seg;
-  // Optional
-  // seg.setOptimizeCoefficients (true);
-  // Mandatory
-  seg.setModelType (pcl::SACMODEL_PLANE);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setMaxIterations(planeMaxIterations);
-  seg.setDistanceThreshold (planeDistanceThreshold);
-
-  // Input cloud can't be null
-  if(cloud_filtered->points.size() == 0)
-  {
-    std::cerr << "Could not estimate a planar model for the given dataset. input cloud empty" << std::endl;
-    return;
-  }
-  seg.setInputCloud (cloud_filtered);
-  seg.segment (*inliers, *coefficients);
-
+  fitPlanarModel(cloud_filtered, inliers, coefficients);
   std::cerr << "PointCloud after segmentation has: "
             << inliers->indices.size () << " inliers." << std::endl;
-
-  boost::posix_time::ptime e2 = boost::posix_time::microsec_clock::local_time();
-  logTime(s2, e2, "ransac");
-
+  // Table segmentation done
+  
   // Input cloud can't be null
   if(inliers->indices.size () == 0)
   {
@@ -554,15 +549,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   }
   std::cerr << "Table inlier count" << inliers->indices.size();
 
-  boost::posix_time::ptime s3 = boost::posix_time::microsec_clock::local_time();
-  //splitting the cloud in two: plane + other
-  pcl::ExtractIndices<pcl::PointXYZRGB> extract_p;
-  extract_p.setInputCloud(cloud_filtered);
-  extract_p.setIndices(inliers);
-  extract_p.filter(*cloud_plane);
-  if(writer_pcd) writer.write ("cloud_plane.pcd", *cloud_plane, false);
-  
-  std::cerr << "Table extracted" << std::endl;
+  // Extract the plane as a PointCloud from the calculated inliers
+  extractInliersFromPointCloud(cloud_filtered, inliers, cloud_plane);
 
   boost::posix_time::ptime s23 = boost::posix_time::microsec_clock::local_time();
   // Use cluster extraction to get rid of the outliers of the segmented table
@@ -684,8 +672,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   logTime(s4, e4, "filter the objects above the plane");
 
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
-  // std::vector<cv::Mat> extractedImages;
-  // clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, extractedImages);
   clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, perceived_cluster_images_);
   std::cerr << "extractedObjects Vector size" << extractedObjects.size() << std::endl;
   // std::cerr << "extractedImages Vector size" << extractedImages.size() << std::endl;
