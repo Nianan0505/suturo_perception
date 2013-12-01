@@ -671,35 +671,11 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   // Extract all objects above
   // the table plane
-  
-
   boost::posix_time::ptime s4 = boost::posix_time::microsec_clock::local_time();
   pcl::PointIndices::Ptr object_indices (new pcl::PointIndices);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
   extractAllPointsAbovePointCloud(cloud_filtered, plane_cluster, object_clusters, object_indices);
     
-  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  // pcl::ConvexHull<pcl::PointXYZRGB> hull;
-
-  // hull.setDimension (2); 
-  // hull.setInputCloud (plane_cluster);
-  // hull.reconstruct (*hull_points);
-
-  // pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-  // prism.setInputCloud (cloud_filtered);
-  // prism.setInputPlanarHull (hull_points);
-  // prism.setHeightLimits (prismZMin, prismZMax);
-  // prism.segment (*object_indices);
-
-  // // Create the filtering object
-  // pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-  // // Extract the inliers of the prism
-  // extract.setInputCloud (cloud_filtered);
-  // extract.setIndices (object_indices);
-  // extract.setNegative (false);
-  // extract.filter (*object_clusters);
-  // if(writer_pcd) writer.write ("object_clusters.pcd", *object_clusters, false);
-
   if(object_indices->indices.size() == 0)
   {
     std::cout << "No object indices on the table found. Skip ...";
