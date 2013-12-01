@@ -42,13 +42,13 @@ namespace suturo_perception_lib
                         pcl::PointIndices::Ptr indices_out, pcl::ModelCoefficients::Ptr coefficients);
     void extractInliersFromPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
           pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, bool setNegative);
-    void extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-                              const pcl::PointIndices::Ptr inliers, 
-                              pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
+    // void extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+                              // const pcl::PointIndices::Ptr inliers, 
+                              // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
     void extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                         std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
-    void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-                    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
+    // void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+                    // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
     uint32_t getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers);
     void extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PointIndices::Ptr object_indices, int convex_hull_dimension);
