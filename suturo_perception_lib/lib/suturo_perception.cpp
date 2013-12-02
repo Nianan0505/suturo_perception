@@ -283,6 +283,12 @@ bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZ
   return true;
 }
 
+/**
+ * Use EuclideanClusterExtraction on object_clusters to identify seperate objects in the given pointcloud.
+ * Create a ConvexHull for every object_cluster and extract everything that's above it (in a given range,
+ * see SuturoPerception::prismZMax and SuturoPerception::prismZMin.
+ * In the future, this method will also extract 2d images from every object cluster.
+ */
 void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images)
 {
 
@@ -363,8 +369,8 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     boost::posix_time::ptime s2 = boost::posix_time::microsec_clock::local_time();
 
 
-	// TESTING, NO OPENCV
-
+    // TESTING, NO OPENCV
+    // TODO Put it back in and debug it's failures
     /*
     // RGB Values for points
     int r,g,b;
@@ -500,8 +506,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   std::cerr << "Table inlier count" << inliers->indices.size();
   extractInliersFromPointCloud(cloud_filtered, inliers, cloud_plane);
 
-
-
+  // Take the biggest cluster in the extracted plane. This will be
+  // most likely our desired table pointcloud
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointIndices::Ptr new_inliers (new pcl::PointIndices);
   extractBiggestCluster(cloud_plane, plane_cluster, inliers, new_inliers);
@@ -604,10 +610,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     tmpPerceivedObjects.push_back(percObj);
     i++;
   }
-
-  // Sort by volume
-  //std::sort(tmpPerceivedObjects.begin(), tmpPerceivedObjects.end(), ReceivedObjectGreaterThan);
-  // not needed anymore, but needed for hack.
 
   // Lock the buffer access to assign the recently perceived objects
   mutex.lock();
