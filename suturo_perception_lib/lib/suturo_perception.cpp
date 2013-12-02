@@ -214,47 +214,47 @@ pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out
 }
 
 
-/*
- * Filter out points above biggest plane
- * Return filtered cloud.
- */
-  void 
-SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects)
-{
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-  if(cloud_in->size() == 0) {std::cerr<<"extractedObjects inputcloud empty" <<std::endl; return;} // cloud_in was empty
-
-  // Creating the KdTree object for the search method of the extraction
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
-  tree->setInputCloud (cloud_in);
-  std::vector<pcl::PointIndices> cluster_indices;
-  pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-  ec.setClusterTolerance (ecObjClusterTolerance); // 2cm
-  ec.setMinClusterSize (ecObjMinClusterSize);
-  ec.setMaxClusterSize (ecObjMaxClusterSize);
-  ec.setSearchMethod (tree);
-  ec.setInputCloud (cloud_in);
-  ec.extract (cluster_indices);
-
-  // temporary list of perceived objects
-  std::vector<PerceivedObject> tmpPerceivedObjects;
-  // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
-  int j = 0;
-  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
-  {
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
-    for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
-      cloud_cluster->points.push_back (cloud_in->points[*pit]); //*
-    cloud_cluster->width = cloud_cluster->points.size ();
-    cloud_cluster->height = 1;
-    cloud_cluster->is_dense = true;
-    extractedObjects.push_back(cloud_cluster);
-  }
-
-  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "extractObjects()");
-}
+// /*
+//  * Filter out points above biggest plane
+//  * Return filtered cloud.
+//  */
+//   void 
+// SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+//     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects)
+// {
+//   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+//   if(cloud_in->size() == 0) {std::cerr<<"extractedObjects inputcloud empty" <<std::endl; return;} // cloud_in was empty
+// 
+//   // Creating the KdTree object for the search method of the extraction
+//   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
+//   tree->setInputCloud (cloud_in);
+//   std::vector<pcl::PointIndices> cluster_indices;
+//   pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
+//   ec.setClusterTolerance (ecObjClusterTolerance); // 2cm
+//   ec.setMinClusterSize (ecObjMinClusterSize);
+//   ec.setMaxClusterSize (ecObjMaxClusterSize);
+//   ec.setSearchMethod (tree);
+//   ec.setInputCloud (cloud_in);
+//   ec.extract (cluster_indices);
+// 
+//   // temporary list of perceived objects
+//   std::vector<PerceivedObject> tmpPerceivedObjects;
+//   // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
+//   int j = 0;
+//   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+//   {
+//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
+//     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
+//       cloud_cluster->points.push_back (cloud_in->points[*pit]); //*
+//     cloud_cluster->width = cloud_cluster->points.size ();
+//     cloud_cluster->height = 1;
+//     cloud_cluster->is_dense = true;
+//     extractedObjects.push_back(cloud_cluster);
+//   }
+// 
+//   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+//   logTime(s, e, "extractObjects()");
+// }
 
 /* Extract the biggest cluster in PointCloud cloud_in
 * The method returns true, if a cluster has been found.
@@ -609,46 +609,22 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   // Extract all objects above
   // the table plane
-  boost::posix_time::ptime s4 = boost::posix_time::microsec_clock::local_time();
   pcl::PointIndices::Ptr object_indices (new pcl::PointIndices);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
   extractAllPointsAbovePointCloud(cloud_filtered, plane_cluster, object_clusters, object_indices);
-    
-  // if(object_indices->indices.size() == 0)
-  // {
-  //   std::cout << "No object indices on the table found. Skip ...";
-  //   // temporary list of perceived objects
-  //   std::vector<PerceivedObject> tmpPerceivedObjects;
-  //   mutex.lock();
-  //   perceivedObjects = tmpPerceivedObjects;
-  //   mutex.unlock();
-  //   return;
-  // }
   objects_on_plane_cloud_ = object_clusters;
 
+  // Project the pointcloud above the table onto the table to get a 2d representation of the objects
+  // This will cause every point of an object to be at the base of the object
   projectToPlaneCoefficients(cloud_filtered, object_indices, coefficients, objects_cloud_projected);
-
-  // // Project the model inliers
-  // pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
-  // proj_objs.setModelType (pcl::SACMODEL_PLANE);
-  // proj_objs.setIndices (object_indices); // project the whole object cloud to the plane
-  // proj_objs.setInputCloud (cloud_filtered);
-  // proj_objs.setModelCoefficients (coefficients); // project to the plane model
-  // proj_objs.filter (*objects_cloud_projected);
-  // std::cerr << "Object PointCloud after projection has: "
-  //           << objects_cloud_projected->points.size () << " data points." << std::endl;
   if(writer_pcd) writer.write ("objects_cloud_projected.pcd", *objects_cloud_projected, false);
 
-  // boost::posix_time::ptime e4 = boost::posix_time::microsec_clock::local_time();
-  // logTime(s4, e4, "filter the objects above the plane");
-
+  // Take the projected points, cluster them and extract everything that's above it
+  // By doing this, we should get every object on the table and a 2d image of it.
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
   clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, perceived_cluster_images_);
   std::cerr << "extractedObjects Vector size" << extractedObjects.size() << std::endl;
-  // std::cerr << "extractedImages Vector size" << extractedImages.size() << std::endl;
   std::cerr << "extractedImages Vector size" << perceived_cluster_images_.size() << std::endl;
-  // for(int i = 0; i < extractedImages.size(); i++)
-
     
   // temporary list of perceived objects
   std::vector<PerceivedObject> tmpPerceivedObjects;

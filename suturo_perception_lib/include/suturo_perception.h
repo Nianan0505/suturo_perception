@@ -45,7 +45,7 @@ namespace suturo_perception_lib
     // void extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
                               // const pcl::PointIndices::Ptr inliers, 
                               // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
-    void extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+    // void extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                         std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
     // void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                     // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
