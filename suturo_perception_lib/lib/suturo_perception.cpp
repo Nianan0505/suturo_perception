@@ -512,6 +512,30 @@ void SuturoPerception::extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl
   extract.filter (*cloud_out);
 }
 
+/**
+ * Project all points referenced by object_indices in cloud_in to a 2dimensional plane defined by coefficients.
+ * The projected cloud will be available in cloud_out after the function call.
+ *
+ * If the object_indices are empty, the method will do nothing.
+ */
+void SuturoPerception::projectToPlaneCoefficients(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointIndices::Ptr object_indices, pcl::ModelCoefficients::Ptr coefficients, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
+{
+  if(object_indices->indices.size() == 0)
+  {
+    std::cout << "No object indices in projectToPlaneCoefficients. Skip ...";
+    return;
+  }
+
+  // Project the model inliers
+  pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
+  proj_objs.setModelType (pcl::SACMODEL_PLANE);
+  proj_objs.setIndices (object_indices); // project the whole object cloud to the plane
+  proj_objs.setInputCloud (cloud_in);
+  proj_objs.setModelCoefficients (coefficients); // project to the plane model
+  proj_objs.filter (*cloud_out);
+
+}
+
 /*
  * Process a single point cloud.
  * This will include
@@ -590,31 +614,33 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
   extractAllPointsAbovePointCloud(cloud_filtered, plane_cluster, object_clusters, object_indices);
     
-  if(object_indices->indices.size() == 0)
-  {
-    std::cout << "No object indices on the table found. Skip ...";
-    // temporary list of perceived objects
-    std::vector<PerceivedObject> tmpPerceivedObjects;
-    mutex.lock();
-    perceivedObjects = tmpPerceivedObjects;
-    mutex.unlock();
-    return;
-  }
+  // if(object_indices->indices.size() == 0)
+  // {
+  //   std::cout << "No object indices on the table found. Skip ...";
+  //   // temporary list of perceived objects
+  //   std::vector<PerceivedObject> tmpPerceivedObjects;
+  //   mutex.lock();
+  //   perceivedObjects = tmpPerceivedObjects;
+  //   mutex.unlock();
+  //   return;
+  // }
   objects_on_plane_cloud_ = object_clusters;
 
-  // Project the model inliers
-  pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
-  proj_objs.setModelType (pcl::SACMODEL_PLANE);
-  proj_objs.setIndices (object_indices); // project the whole object cloud to the plane
-  proj_objs.setInputCloud (cloud_filtered);
-  proj_objs.setModelCoefficients (coefficients); // project to the plane model
-  proj_objs.filter (*objects_cloud_projected);
-  std::cerr << "Object PointCloud after projection has: "
-            << objects_cloud_projected->points.size () << " data points." << std::endl;
+  projectToPlaneCoefficients(cloud_filtered, object_indices, coefficients, objects_cloud_projected);
+
+  // // Project the model inliers
+  // pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
+  // proj_objs.setModelType (pcl::SACMODEL_PLANE);
+  // proj_objs.setIndices (object_indices); // project the whole object cloud to the plane
+  // proj_objs.setInputCloud (cloud_filtered);
+  // proj_objs.setModelCoefficients (coefficients); // project to the plane model
+  // proj_objs.filter (*objects_cloud_projected);
+  // std::cerr << "Object PointCloud after projection has: "
+  //           << objects_cloud_projected->points.size () << " data points." << std::endl;
   if(writer_pcd) writer.write ("objects_cloud_projected.pcd", *objects_cloud_projected, false);
 
-  boost::posix_time::ptime e4 = boost::posix_time::microsec_clock::local_time();
-  logTime(s4, e4, "filter the objects above the plane");
+  // boost::posix_time::ptime e4 = boost::posix_time::microsec_clock::local_time();
+  // logTime(s4, e4, "filter the objects above the plane");
 
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
   clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, perceived_cluster_images_);
