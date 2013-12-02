@@ -214,48 +214,6 @@ pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out
 }
 
 
-// /*
-//  * Filter out points above biggest plane
-//  * Return filtered cloud.
-//  */
-//   void 
-// SuturoPerception::extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-//     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects)
-// {
-//   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-//   if(cloud_in->size() == 0) {std::cerr<<"extractedObjects inputcloud empty" <<std::endl; return;} // cloud_in was empty
-// 
-//   // Creating the KdTree object for the search method of the extraction
-//   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
-//   tree->setInputCloud (cloud_in);
-//   std::vector<pcl::PointIndices> cluster_indices;
-//   pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-//   ec.setClusterTolerance (ecObjClusterTolerance); // 2cm
-//   ec.setMinClusterSize (ecObjMinClusterSize);
-//   ec.setMaxClusterSize (ecObjMaxClusterSize);
-//   ec.setSearchMethod (tree);
-//   ec.setInputCloud (cloud_in);
-//   ec.extract (cluster_indices);
-// 
-//   // temporary list of perceived objects
-//   std::vector<PerceivedObject> tmpPerceivedObjects;
-//   // Iterate over the extracted clusters and write them as a PerceivedObjects to the result list
-//   int j = 0;
-//   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
-//   {
-//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
-//     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
-//       cloud_cluster->points.push_back (cloud_in->points[*pit]); //*
-//     cloud_cluster->width = cloud_cluster->points.size ();
-//     cloud_cluster->height = 1;
-//     cloud_cluster->is_dense = true;
-//     extractedObjects.push_back(cloud_cluster);
-//   }
-// 
-//   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-//   logTime(s, e, "extractObjects()");
-// }
-
 /* Extract the biggest cluster in PointCloud cloud_in
 * The method returns true, if a cluster has been found.
 * If no Cluster could be extracted, or an error occured, the method returns false.
@@ -386,13 +344,14 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     std::cerr << "After segment" << std::endl;
 
     // Create the filtering object
-    pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+    // pcl::ExtractIndices<pcl::PointXYZRGB> extract;
     // Extract the inliers of the prism
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_points (new pcl::PointCloud<pcl::PointXYZRGB>());
-    extract.setInputCloud (original_cloud);
-    extract.setIndices (object_indices);
-    extract.setNegative (false);
-    extract.filter (*object_points);
+    extractInliersFromPointCloud(original_cloud, object_indices, object_points);
+    // extract.setInputCloud (original_cloud);
+    // extract.setIndices (object_indices);
+    // extract.setNegative (false);
+    // extract.filter (*object_points);
     extracted_objects.push_back(object_points);
 
     std::cerr << "After extract" << std::endl;
