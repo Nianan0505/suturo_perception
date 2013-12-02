@@ -285,6 +285,19 @@ bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZ
 
 void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images)
 {
+
+  if(object_clusters->points.size() == 0)
+  {
+    std::cerr << "clusterFromProjection: object_clusters is empty. Skipping ...." << std::endl;
+    return;
+  }
+
+  if(original_cloud->points.size() == 0)
+  {
+    std::cerr << "clusterFromProjection: original_cloud is empty. Skipping ...." << std::endl;
+    return;
+  }
+
   mutex.lock();
   // extracted_images = tmpPerceivedObjects; // TODO use temporary list for images
   extracted_images.clear();
@@ -292,7 +305,8 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
 
   pcl::PCDWriter writer;
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-  // Creating the KdTree object for the search method of the extraction
+
+  // Identify clusters in the input cloud
   pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
   tree->setInputCloud (object_clusters);
 
@@ -310,6 +324,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   logTime(s, e, "filter the objects above the plane");
 
   int i=0;
+  // Iterate over the found clusters and extract single pointclouds
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
   {
     // Gather all points for a cluster into a single pointcloud
@@ -327,34 +342,15 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     fn << "2dcluster_" << i << ".pcd";
     if(writer_pcd) writer.write(fn.str(), *cloud_cluster, false);
 
-
+  
+    // Extract every point above the 2d cluster.
+    // These points will belong to a single object on the table
     pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The extracted indices of a single object above the plane
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_points (new pcl::PointCloud<pcl::PointXYZRGB>());
     extractAllPointsAbovePointCloud(original_cloud, cloud_cluster, object_points, object_indices, 2);
-
-    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
-    // pcl::ConvexHull<pcl::PointXYZRGB> chull;
-    // chull.setInputCloud (cloud_cluster); // The clusters in this method must be 2d
-    // chull.setDimension(2);
-    // chull.reconstruct (*cloud_hull);
-
-    // pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
-    // std::cerr << "After hull" << std::endl;
-
-    // // Extract everything above the projection of the object
-    // pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-    // prism.setInputCloud (original_cloud);
-    // prism.setInputPlanarHull (cloud_hull); 
-    // prism.setHeightLimits (prismZMin, prismZMax);
-    // prism.segment (*object_indices);
-    // std::cerr << "After segment" << std::endl;
-
-    // // Extract the inliers of the prism
-    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_points (new pcl::PointCloud<pcl::PointXYZRGB>());
-    // extractInliersFromPointCloud(original_cloud, object_indices, object_points);
     extracted_objects.push_back(object_points);
 
-    std::cerr << "After extract" << std::endl;
+    // std::cerr << "After extract" << std::endl;
 
     boost::posix_time::ptime e1 = boost::posix_time::microsec_clock::local_time();
     logTime(s1, e1, "Extracted Object Points");
@@ -384,52 +380,6 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     }
     extracted_images.push_back(img);
     */
-
-
-
-
-
-    // CREATE THE IMAGE CLOUD - KEEP THAT FOR REFERENCE
-    // create black cloud
-    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr image_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-    // image_cloud->resize(640*480);
-    // image_cloud->width = 640;
-    // image_cloud->height = 480;
-    // image_cloud->is_dense = false;
-    // for (int x = 0; x < 640; x++) {
-    //   for (int y = 0; y < 480; y++) {
-    //     image_cloud->at(x,y).rgb = 0;
-    //   }
-    // }
-    // if(removed_indices_filtered == NULL)
-    // {
-    //   cout << "indice mappings are NULL. Can't calculate image" << endl;
-    // }
-
-    // int ex_count = 0;
-    // // fill in color of extracted object points
-    // for (std::vector<int>::const_iterator pit = object_indices->indices.begin(); pit != object_indices->indices.end(); pit++)
-    // {
-    //   int index = removed_indices_filtered->at(*pit);
-    //   // int index = *pit;
-    //   // std::cout << "index = " << index << " ";
-    //   image_cloud->at(index % 640, index / 640).x = original_cloud->points[index].x;
-    //   image_cloud->at(index % 640, index / 640).y = original_cloud->points[index].y;
-    //   image_cloud->at(index % 640, index / 640).z = original_cloud->points[index].z;
-    //   image_cloud->at(index % 640, index / 640).rgb = original_cloud->points[index].rgb;
-    //   ex_count++;
-    // }
-    // boost::posix_time::ptime e2 = boost::posix_time::microsec_clock::local_time();
-    // logTime(s2, e2, "Extracted Object Points");
-
-    // cout << "Went through the for-loops" << endl;
-
-    // pcl::PCDWriter writer;
-    // std::stringstream extracted_path;
-    // extracted_path << "img_object_" << i << ".pcd";
-
-    // if(writer_pcd) writer.write(extracted_path.str(), *image_cloud, false); // eigentlich *
-
     i++;
   }
 
