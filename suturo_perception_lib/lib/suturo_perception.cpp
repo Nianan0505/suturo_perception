@@ -312,6 +312,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   int i=0;
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
   {
+    // Gather all points for a cluster into a single pointcloud
     boost::posix_time::ptime s1 = boost::posix_time::microsec_clock::local_time();
     cout << "Read object cloud" << endl;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -326,32 +327,31 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     fn << "2dcluster_" << i << ".pcd";
     if(writer_pcd) writer.write(fn.str(), *cloud_cluster, false);
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::ConvexHull<pcl::PointXYZRGB> chull;
-    chull.setInputCloud (cloud_cluster); // The clusters in this method must be 2d
-    chull.setDimension(2);
-    chull.reconstruct (*cloud_hull);
 
-    pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
-    std::cerr << "After hull" << std::endl;
-
-    // Extract everything above the projection of the object
-    pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-    prism.setInputCloud (original_cloud);
-    prism.setInputPlanarHull (cloud_hull); 
-    prism.setHeightLimits (prismZMin, prismZMax);
-    prism.segment (*object_indices);
-    std::cerr << "After segment" << std::endl;
-
-    // Create the filtering object
-    // pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-    // Extract the inliers of the prism
+    pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The extracted indices of a single object above the plane
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_points (new pcl::PointCloud<pcl::PointXYZRGB>());
-    extractInliersFromPointCloud(original_cloud, object_indices, object_points);
-    // extract.setInputCloud (original_cloud);
-    // extract.setIndices (object_indices);
-    // extract.setNegative (false);
-    // extract.filter (*object_points);
+    extractAllPointsAbovePointCloud(original_cloud, cloud_cluster, object_points, object_indices, 2);
+
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZRGB>);
+    // pcl::ConvexHull<pcl::PointXYZRGB> chull;
+    // chull.setInputCloud (cloud_cluster); // The clusters in this method must be 2d
+    // chull.setDimension(2);
+    // chull.reconstruct (*cloud_hull);
+
+    // pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The indices of the objects above the plane
+    // std::cerr << "After hull" << std::endl;
+
+    // // Extract everything above the projection of the object
+    // pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+    // prism.setInputCloud (original_cloud);
+    // prism.setInputPlanarHull (cloud_hull); 
+    // prism.setHeightLimits (prismZMin, prismZMax);
+    // prism.segment (*object_indices);
+    // std::cerr << "After segment" << std::endl;
+
+    // // Extract the inliers of the prism
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_points (new pcl::PointCloud<pcl::PointXYZRGB>());
+    // extractInliersFromPointCloud(original_cloud, object_indices, object_points);
     extracted_objects.push_back(object_points);
 
     std::cerr << "After extract" << std::endl;
