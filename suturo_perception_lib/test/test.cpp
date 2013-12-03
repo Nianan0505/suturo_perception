@@ -23,7 +23,7 @@ TEST(suturo_perception_test, box_1_test)
   }
   
   suturo_perception_lib::SuturoPerception sp;
-  sp.processCloud(cloud);
+  sp.processCloudWithProjections(cloud);
   
   std::vector<suturo_perception_lib::PerceivedObject> objects = sp.getPerceivedObjects();
   
