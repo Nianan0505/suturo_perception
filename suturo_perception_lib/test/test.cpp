@@ -38,12 +38,12 @@ TEST(suturo_perception_test, box_1_test)
   ASSERT_EQ(1, objects.size());
   ASSERT_LT(0.0032, objects.at(0).c_volume);
   ASSERT_GT(0.0036, objects.at(0).c_volume);
-  ASSERT_LT(-0.00453912, objects.at(0).c_centroid.x);
-  ASSERT_GT(-0.00453904, objects.at(0).c_centroid.x);
-  ASSERT_LT(0.108890, objects.at(0).c_centroid.y);
-  ASSERT_GT(0.108898, objects.at(0).c_centroid.y);
-  ASSERT_LT(0.948475, objects.at(0).c_centroid.z);
-  ASSERT_GT(0.948483, objects.at(0).c_centroid.z);
+  ASSERT_LT(-0.009603, objects.at(0).c_centroid.x);
+  ASSERT_GT(-0.009403, objects.at(0).c_centroid.x);
+  ASSERT_LT(0.105987, objects.at(0).c_centroid.y);
+  ASSERT_GT(0.107987, objects.at(0).c_centroid.y);
+  ASSERT_LT(0.940000, objects.at(0).c_centroid.z);
+  ASSERT_GT(0.940144, objects.at(0).c_centroid.z);
   
   SUCCEED();
 }
