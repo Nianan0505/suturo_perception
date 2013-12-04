@@ -1,48 +1,17 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(suturo_perception_rosnode)
+project(suturo_perception_utils)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS 
-suturo_perception_lib
-suturo_perception_msgs
-visualization_msgs
-roscpp
-dynamic_reconfigure
-message_generation
-cv_bridge
-image_transport
-roscpp
-std_msgs
-suturo_perception_2d_object_recognition_lib
-suturo_perception_utils 
-pcl
-pcl_ros
-)
-
-find_package(OpenCV REQUIRED)
-
-#find_package(catkin REQUIRED dynamic_reconfigure)
-# generate dynamic reconfigure options
-generate_dynamic_reconfigure_options(
-  cfg/SuturoPerception.cfg
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED COMPONENTS system)
+# find_package(Boost REQUIRED COMPONENTS system)
 
-# WORKAROUND - import pcl here as well 
-find_package(PCL 1.6 REQUIRED COMPONENTS)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-
-link_directories(${suturo_perception_lib_LIBRARY_DIRS})
-link_directories(${suturo_perception_utils_LIBRARY_DIRS})
-
-#add_dependencies(suturo_perception_rosnode ${PROJECT_NAME}_gencfg)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -97,7 +66,7 @@ link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   std_msgs
 # )
 
 ###################################
@@ -109,63 +78,41 @@ link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-
-#catkin_package(DEPENDS roscpp CATKIN_DEPENDS suturo_perception_lib)
-#catkin_package( ## at 25.11.2013 -- 11:00
-#  INCLUDE_DIRS include
-#  LIBRARIES suturo_perception_rosnode
-#  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS system_lib
-#)
-
 catkin_package(
-  CATKIN_DEPENDS cv_bridge image_transport roscpp std_msgs
-  DEPENDS opencv
+  INCLUDE_DIRS include
+  LIBRARIES suturo_perception_utils
+#  CATKIN_DEPENDS roscpp std_msgs
+#  DEPENDS system_lib
 )
+
 ###########
 ## Build ##
 ###########
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
-message(========= INCLUDE DIRS "${catkin_INCLUDE_DIRS}")
-
+include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
-# workaround: catkin_include doesn't work
-#include_directories(${suturo_perception_lib_INCLUDE_DIRS})
-#include_directories(${suturo_perception_msgs_INCLUDE_DIRS})
-
 
 ## Declare a cpp library
-# add_library(suturo_perception_rosnode
-#   src/${PROJECT_NAME}/suturo_perception_rosnode.cpp
-# )
+ add_library(suturo_perception_utils
+   src/publisher_helper.cpp
+ )
 
 ## Declare a cpp executable
-add_executable(suturo_perception_rosnode src/main.cpp)
-add_executable(suturo_perception_dummynode src/dummy_node.cpp)
-add_executable(suturo_perception_rosclient src/client.cpp)
+# add_executable(suturo_perception_utils_node src/suturo_perception_utils_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(suturo_perception_rosnode suturo_perception_lib suturo_perception_msgs)
-add_dependencies(suturo_perception_rosclient suturo_perception_lib suturo_perception_msgs)
+# add_dependencies(suturo_perception_utils_node suturo_perception_utils_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(suturo_perception_rosnode
- ${OpenCV_LIBS} ${catkin_LIBRARIES}
-)
+# target_link_libraries(suturo_perception_utils_node
+#   ${catkin_LIBRARIES}
+# )
 
-target_link_libraries(suturo_perception_dummynode
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(suturo_perception_rosclient
-  ${catkin_LIBRARIES}
-)
 #############
 ## Install ##
 #############
@@ -181,7 +128,7 @@ target_link_libraries(suturo_perception_rosclient
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS suturo_perception_rosnode suturo_perception_rosnode_node
+# install(TARGETS suturo_perception_utils suturo_perception_utils_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -206,7 +153,7 @@ target_link_libraries(suturo_perception_rosclient
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_suturo_perception_rosnode.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_suturo_perception_utils.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

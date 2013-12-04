@@ -16,6 +16,9 @@
 #include "suturo_perception_msgs/PrologNextSolution.h"
 #include "suturo_perception_msgs/PrologFinish.h"
 #include "object_matcher.h"  // Include 2d Object recognizer
+#include "publisher_helper.h"
+
+using namespace suturo_perception_helper;
 
 class SuturoPerceptionROSNode
 {
@@ -28,7 +31,8 @@ public:
     nh(n), 
     pointTopic(pt), 
     frameId(fi),
-    recognitionDir(rd)
+    recognitionDir(rd),
+    ph(n)
   {
     clusterService = nh.advertiseService("GetClusters", 
       &SuturoPerceptionROSNode::getClusters, this);
@@ -53,8 +57,16 @@ public:
     if(!recognitionDir.empty())
       object_matcher_.readTrainImagesFromDatabase(recognitionDir);
 
-		object_matcher_.setVerboseLevel(0); // TODO use constant
+    object_matcher_.setVerboseLevel(0); // TODO use constant
     object_matcher_.setMinGoodMatches(7);
+
+    std::cout << "Advertise test" << std::endl;
+    std::cout << ph.isAdvertised("/footopic");
+    ph.advertise<sensor_msgs::PointCloud2>("/footopic");
+    std::cout << "Advertisement done" << std::endl;
+    std::cout << ph.isAdvertised("/footopic");
+    std::cout << "Reading topic" << std::endl;
+    std::cout << ph.getPublisher("/footopic")->getTopic() << std::endl;
   }
 
 
@@ -327,6 +339,8 @@ private:
   std::string pointTopic;
   std::string frameId;
   std::string recognitionDir;
+  // Helper Class for Publishing Business
+  PublisherHelper ph;
   // dynamic reconfigure
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> reconfSrv;
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig>::CallbackType reconfCb;
