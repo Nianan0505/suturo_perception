@@ -36,7 +36,7 @@ namespace suturo_perception_helper
         if(!isAdvertised(topic))
         {
           _topic_to_publisher_map[topic] = _node_handle.advertise<T> (topic, _queue_size);
-          std::cout << _topic_to_publisher_map[topic].getTopic() << std::endl;
+          // std::cout << _topic_to_publisher_map[topic].getTopic() << std::endl;
           setAdvertised(topic);
           // sleep(10);
         }
