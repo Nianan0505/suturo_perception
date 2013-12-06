@@ -1,4 +1,5 @@
 #include "suturo_perception_rosnode.h"
+
 /*
  * Constructor
  */
@@ -35,13 +36,13 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   object_matcher_.setVerboseLevel(0); // TODO use constant
   object_matcher_.setMinGoodMatches(7);
 
-  std::cout << "Advertise test" << std::endl;
-  std::cout << ph.isAdvertised("/footopic");
+  ROS_DEBUG("Advertise test");
+  ROS_DEBUG("%s", ph.isAdvertised("/footopic") ? "true" : "false");
   ph.advertise<sensor_msgs::PointCloud2>("/footopic");
-  std::cout << "Advertisement done" << std::endl;
-  std::cout << ph.isAdvertised("/footopic");
-  std::cout << "Reading topic" << std::endl;
-  std::cout << ph.getPublisher("/footopic")->getTopic() << std::endl;
+  ROS_DEBUG("Advertisement done");
+  ROS_DEBUG("%s", ph.isAdvertised("/footopic") ? "true" : "false");
+  ROS_DEBUG("Reading topic");
+  ROS_DEBUG("%s", ph.getPublisher("/footopic")->getTopic().c_str());
 }
 
 
@@ -156,33 +157,34 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // boost::this_thread::sleep(boost::posix_time::seconds(1)); // This will cause the long sequences of "Receiving cloud" messages
   if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
   {
-    std::cout << "Extracted images vector: " << perceived_cluster_images.size() << std::endl;
+    ROS_DEBUG("Extracted images vector: %lu", perceived_cluster_images.size());
     for(int i = 0; i < perceived_cluster_images.size(); i++)
     {
       std::ostringstream fn;
       // fn << "/tmp/2dcluster_match_" << i << ".jpg";
-      std::cout << "Try to recognize:" << i << std::endl;
+      ROS_DEBUG("Try to recognize: %i", i);
       ObjectMatcher::ExecutionResult om_res = object_matcher_.recognizeTrainedImages(perceived_cluster_images.at(i), true); // run headless (true)
       if(!om_res.label.empty()){
-        std::cout << "Recognized a object with the label " << om_res.label << "object_id: " << i << std::endl;
-        // std::cout << "objects vs. images size" << perceivedObjects.size() << " | " << perceived_cluster_images.size() << std::endl;
-        std::cout << "Tried to set label " << om_res.label << " at idx: " << i << std::endl;
-        std::cout << "perceivedObjects.size()" << perceivedObjects.size() << " perceived_cluster_images.size()" << perceived_cluster_images.size() << std::endl;
+        ROS_DEBUG("Recognized a object with the label %s  object_id: %i", om_res.label.c_str(), i);
+        // ROS_DEBUG("objects vs. images size" << perceivedObjects.size() << " | " << perceived_cluster_images.size() << std::endl;
+        ROS_DEBUG("Tried to set label %s at idx: %i", om_res.label.c_str(), i);
+        ROS_DEBUG("perceivedObjects.size(): %lu  perceived_cluster_images.size(): %lu", perceivedObjects.size(), 
+                                                                                        perceived_cluster_images.size());
 
         res.perceivedObjs.at(i).recognition_label_2d = om_res.label;
       }else{
-        std::cout << "No Label for " << i << std::endl;
+        ROS_DEBUG("No Label for %i", i);
       }
       // else
       // {
-      //   std::cout << "Empty label" << std::endl;
+      //   ROS_DEBUG("Empty label" << std::endl;
       // }
       // cv::imwrite(fn.str(), om_res.match_image);
     }
   }
   else
   {
-    std::cerr << "!!!!!!!!!!!!!!!!! Image vs. Object Vector differs!!!!!!!!!!!!!!!!!!!!!!! OR NO 2D OBJECT RECOGNITION DATABASE FILE GIVEN" << std::endl;
+    ROS_ERROR("Image vs. Object Vector differs or no 2D object recognition database file given.");
   }
 
   mutex.unlock();
@@ -210,21 +212,21 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
       pq.request.id = queryId;
       std::stringstream ss;
       ss << "is_edible([[" << queryId << ", '', '" << it->c_volume << "', 0]], Out)"; 
-      std::cerr << "Knowledge query for collision_cloud:" << ss.str() << std::endl; 
+      ROS_DEBUG("Knowledge query for collision_cloud: %s", ss.str().c_str()); 
       pq.request.query = ss.str();
       if(is_edible_service.call(pq))
       {
         
         pqn.request.id = queryId;
         is_edible_service_next.call(pqn);
-        std::cout << "SOLUTION: " << pqn.response.solution << std::endl;
+        ROS_DEBUG("SOLUTION: %s", pqn.response.solution.c_str());
 
-        if(pqn.response.solution.empty()) std::cout << "Prolog returned fishy results" << std::endl;
+        if(pqn.response.solution.empty()) ROS_DEBUG("Prolog returned fishy results");
         else
         {
           if(pqn.response.solution.substr(8, 1).compare("]") == 0)
           {
-            std::cout << "Added to collision_cloud: " << std::endl;
+            ROS_DEBUG("Added to collision_cloud");
             *collision_cloud += *sp.collision_objects[queryId];  
           }
         }
@@ -232,14 +234,14 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
         is_edible_service_finish.call(pqf);
       }
       else
-      std::cerr << "Kndowledge not reachable" << std::endl;
+      ROS_ERROR("Knowledge not reachable");
       queryId++;
     }
     publish_pointcloud(collision_cloud_pub, collision_cloud, frameId);
   }
   else
   {
-    std::cerr << "collision cloud (aka plane) is NULL ... skipping iteration" << std::endl;
+    ROS_ERROR("collision cloud (aka plane) is NULL ... skipping iteration");
   }
 
   // pcl::PCDWriter writer;

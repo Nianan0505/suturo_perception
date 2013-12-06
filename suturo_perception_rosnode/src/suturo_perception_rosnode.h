@@ -1,3 +1,4 @@
+#include "ros/ros.h"
 #include <boost/signals2/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/date_time.hpp>
