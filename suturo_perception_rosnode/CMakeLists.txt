@@ -145,7 +145,7 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(suturo_perception_rosnode src/main.cpp)
+add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
 
