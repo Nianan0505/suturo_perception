@@ -712,10 +712,14 @@ SuturoPerception::getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
 
 /*
  * Convert rgb color to hsv color
+ * colors are in packed value format. the msb is used as debug flag, everthing != 0
+ * turns on debugging
+ * based on: http://en.literateprograms.org/RGB_to_HSV_color_space_conversion_%28C%29
  */
 uint32_t
 SuturoPerception::convertRGBToHSV(uint32_t rgb) 
 {
+  uint8_t debug = (rgb >> 24) & 0x000000ff;
   double r = ((double) ((rgb >> 16) & 0x0000ff)) / 255;
   double g = ((double) ((rgb >> 8) & 0x0000ff)) / 255;
   double b = ((double) ((rgb) & 0x0000ff)) / 255;
@@ -723,6 +727,8 @@ SuturoPerception::convertRGBToHSV(uint32_t rgb)
   double h = 0;
   double s = 0;
   double v = cmax;
+  if (debug)
+    printf("r = %f, g = %f, b = %f\n", r,g,b);
   if (v == 0) {
     h = 0;
     s = 0;
@@ -732,6 +738,8 @@ SuturoPerception::convertRGBToHSV(uint32_t rgb)
     double rr = r / v;
     double gg = g / v;
     double bb = b / v;
+    if (debug)
+      printf("rr = %f, gg = %f, bb = %f\n", rr,gg,bb);
 
     cmax = std::max(rr,std::max(gg,bb));
     double cmin = std::min(rr,std::min(gg,bb));
@@ -748,6 +756,9 @@ SuturoPerception::convertRGBToHSV(uint32_t rgb)
       double bbb = (bb - cmin) / s;
       cmax = std::max(rrr, std::max(ggg, bbb));
       cmin = std::min(rrr, std::min(ggg, bbb));
+    
+      if (debug) 
+        printf("rrr = %f, ggg = %f, bbb = %f\n", rrr,ggg,bbb);
 
       if (cmax == rrr)
       {
@@ -756,17 +767,20 @@ SuturoPerception::convertRGBToHSV(uint32_t rgb)
         {
           h += 360;
         }
-        else if (cmax == ggg)
-        {
-          h = 120.0 + 60.0 * (bbb - rrr);
-        }
-        else 
-        {
-          h = 240.0 + 60.0 * (rrr - ggg);
-        }
+      }
+      else if (cmax == ggg)
+      {
+        h = 120.0 + 60.0 * (bbb - rrr);
+      }
+      else 
+      {
+        h = 240.0 + 60.0 * (rrr - ggg);
       }
     }
   }
+
+  if (debug)
+    printf("h = %f, s = %f, v = %f\n", h,s,v);
 
   h = (h / 360) * 255;
   s *= 255;

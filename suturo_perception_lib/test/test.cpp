@@ -110,7 +110,7 @@ TEST(suturo_perception_test, color_2_test)
   ASSERT_EQ(0x000000, sp.convertRGBToHSV(0x000000)); // black
   ASSERT_EQ(0x0000ff, sp.convertRGBToHSV(0xffffff)); // white
   ASSERT_EQ(0x00ffff, sp.convertRGBToHSV(0xff0000)); // red
-  ASSERT_EQ(0x54ffff, sp.convertRGBToHSV(0x00ff00)); // green
+  ASSERT_EQ(0x55ffff, sp.convertRGBToHSV(0x00ff00)); // green
 }
 
 int main(int argc, char **argv) {
