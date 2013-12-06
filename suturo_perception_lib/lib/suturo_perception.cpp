@@ -683,7 +683,7 @@ SuturoPerception::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn)
 /*
  * Get average color for the points in the given point cloud
  */
-  uint32_t
+uint32_t
 SuturoPerception::getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
@@ -709,5 +709,103 @@ SuturoPerception::getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
 
   return ((uint32_t)average_r << 16 | (uint32_t)average_g << 8 | (uint32_t)average_b);
 }
+
+/*
+ * Convert rgb color to hsv color
+ */
+uint32_t
+SuturoPerception::convertRGBToHSV(uint32_t rgb) 
+{
+  double r = ((double) ((rgb >> 16) & 0x0000ff)) / 255;
+  double g = ((double) ((rgb >> 8) & 0x0000ff)) / 255;
+  double b = ((double) ((rgb) & 0x0000ff)) / 255;
+  double cmax = std::max(r,std::max(g,b));
+  double h = 0;
+  double s = 0;
+  double v = cmax;
+  if (v == 0) {
+    h = 0;
+    s = 0;
+  } 
+  else 
+  {
+    double rr = r / v;
+    double gg = g / v;
+    double bb = b / v;
+
+    cmax = std::max(rr,std::max(gg,bb));
+    double cmin = std::min(rr,std::min(gg,bb));
+
+    s = cmax - cmin;
+    if (s == 0)
+    {
+      h = 0;
+    }
+    else
+    {
+      double rrr = (rr - cmin) / s;
+      double ggg = (gg - cmin) / s;
+      double bbb = (bb - cmin) / s;
+      cmax = std::max(rrr, std::max(ggg, bbb));
+      cmin = std::min(rrr, std::min(ggg, bbb));
+
+      if (cmax == rrr)
+      {
+        h = 0.0 + 60.0 * (ggg - bbb);
+        if (h < 0.0)
+        {
+          h += 360;
+        }
+        else if (cmax == ggg)
+        {
+          h = 120.0 + 60.0 * (bbb - rrr);
+        }
+        else 
+        {
+          h = 240.0 + 60.0 * (rrr - ggg);
+        }
+      }
+    }
+  }
+
+  h = (h / 360) * 255;
+  s *= 255;
+  v *= 255;
+  return ((uint32_t)h << 16 | (uint32_t)s << 8 | (uint32_t)v);
+}
+
+/*
+ * Get average color for the points in the given point cloud in HSV format
+ */
+uint32_t
+SuturoPerception::getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+{
+  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
+  if(cloud_in->points.size() == 0) return 0;
+
+  double average_h = 0;
+  double average_s = 0;
+  double average_v = 0;
+  for(int i = 0; i < cloud_in->points.size(); ++i)
+  {
+    uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
+    uint32_t hsv = convertRGBToHSV(rgb);
+   
+    double h = (double) ((hsv >> 16) & 0x0000ff);
+    double s = (double) ((hsv >> 8) & 0x0000ff);
+    double v = (double) ((hsv) & 0x0000ff);
+
+    average_h += h / (double)cloud_in->points.size();
+    average_s += s / (double)cloud_in->points.size();
+    average_v += v / (double)cloud_in->points.size();
+  }
+
+  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+  logTime(s, e, "getAverageColorHSV()");
+
+  return ((uint32_t)average_h << 16 | (uint32_t)average_s << 8 | (uint32_t)average_v);
+}
+
 
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

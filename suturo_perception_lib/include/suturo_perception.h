@@ -50,6 +50,7 @@ namespace suturo_perception_lib
     // void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                     // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
     uint32_t getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+    uint32_t getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers);
     void extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PointIndices::Ptr object_indices, int convex_hull_dimension);
 
@@ -90,6 +91,9 @@ namespace suturo_perception_lib
     double getEcObjClusterTolerance() {return ecObjClusterTolerance;};
     int getEcObjMinClusterSize() {return ecObjMinClusterSize;};
     int getEcObjMaxClusterSize() {return ecObjMaxClusterSize;};
+
+    // Method for convertig packed RGB color to packed HSV color
+    uint32_t convertRGBToHSV(uint32_t rgb);
 
     // dirty hack collision_objects
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> collision_objects;

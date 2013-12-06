@@ -84,6 +84,22 @@ TEST(suturo_perception_test, color_1_test)
   ASSERT_EQ(66, (averageColor) & 0x0000ff);
 }
 
+TEST(suturo_perception_test, color_2_test)
+{
+  suturo_perception_lib::SuturoPerception sp;
+
+  uint8_t r = 255, g = 100, b = 150;
+  uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
+  uint32_t hsv = sp.convertRGBToHSV(rgb);
+  uint8_t h = (hsv & 0xff0000) >> 16;
+  uint8_t s = ((hsv & 0xff00) >> 8);
+  uint8_t v = ((hsv & 0xff));
+  printf("hsv = %.8x\n", hsv);
+  ASSERT_EQ(241, h);
+  ASSERT_EQ(155, s);
+  ASSERT_EQ(255, v);
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
