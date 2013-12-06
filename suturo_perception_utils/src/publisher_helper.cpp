@@ -21,20 +21,6 @@ ros::Publisher* PublisherHelper::getPublisher(std::string topic)
 
 }
 
-// template<class T>
-// void PublisherHelper::advertise(std::string topic)
-// {
-//   if(!isAdvertised(topic))
-//   {
-//       _topic_to_publisher_map[topic] = _node_handle.advertise<T> (topic, _queue_size);
-//       setAdvertised(topic);
-//   }
-//   else
-//   {
-//     std::cerr << "Tried to advertise on an already existing topic" << std::endl;
-//   }
-// }
-
 bool PublisherHelper::isAdvertised(std::string topic)
 {
   if(_is_advertised_map.find(topic) == _is_advertised_map.end())

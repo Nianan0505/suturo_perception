@@ -42,7 +42,7 @@ namespace suturo_perception_helper
         }
         else
         {
-          std::cerr << "Tried to advertise on an already existing topic" << std::endl;
+          ROS_ERROR("Tried to advertise on an already existing topic");
         }
       }
 
