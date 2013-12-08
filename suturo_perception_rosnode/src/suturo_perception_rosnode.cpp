@@ -24,12 +24,9 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   maxMarkerId = 0;
 
   // Init the topic for the plane segmentation result
-  // table_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_table", 1);
 	ph.advertise<sensor_msgs::PointCloud2>(TABLE_PLANE_TOPIC);
 
   // Init the topic for the segmented objects on the plane
-  // objects_on_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_objects_ontable", 1);
-  // collision_cloud_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_collision_cloud", 1);
 	ph.advertise<sensor_msgs::PointCloud2>(ALL_OBJECTS_ON_PLANE_TOPIC);
 	ph.advertise<sensor_msgs::PointCloud2>(COLLISION_CLOUD_TOPIC);
 
@@ -43,13 +40,6 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   object_matcher_.setVerboseLevel(0); // TODO use constant
   object_matcher_.setMinGoodMatches(7);
 
-  // ROS_DEBUG("Advertise test");
-  // ROS_DEBUG("%s", ph.isAdvertised("/footopic") ? "true" : "false");
-  // ph.advertise<sensor_msgs::PointCloud2>("/footopic");
-  // ROS_DEBUG("Advertisement done");
-  // ROS_DEBUG("%s", ph.isAdvertised("/footopic") ? "true" : "false");
-  // ROS_DEBUG("Reading topic");
-  // ROS_DEBUG("%s", ph.getPublisher("/footopic")->getTopic().c_str());
 }
 
 
