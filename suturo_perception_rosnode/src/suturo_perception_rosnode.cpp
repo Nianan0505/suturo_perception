@@ -20,11 +20,14 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   maxMarkerId = 0;
 
   // Init the topic for the plane segmentation result
-  table_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_table", 1);
+  // table_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_table", 1);
+	ph.advertise<sensor_msgs::PointCloud2>("suturo_perception_table"); // TODO use /suturo/objects_on_table
 
   // Init the topic for the segmented objects on the plane
-  objects_on_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_objects_ontable", 1);
-  collision_cloud_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_collision_cloud", 1);
+  // objects_on_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_objects_ontable", 1);
+  // collision_cloud_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_collision_cloud", 1);
+	ph.advertise<sensor_msgs::PointCloud2>("suturo_perception_objects_ontable"); // TODO use /suturo/objects_on_table
+	ph.advertise<sensor_msgs::PointCloud2>("suturo_perception_collision_cloud");
 
   // Initialize dynamic reconfigure
   reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
@@ -36,13 +39,13 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   object_matcher_.setVerboseLevel(0); // TODO use constant
   object_matcher_.setMinGoodMatches(7);
 
-  ROS_DEBUG("Advertise test");
-  ROS_DEBUG("%s", ph.isAdvertised("/footopic") ? "true" : "false");
-  ph.advertise<sensor_msgs::PointCloud2>("/footopic");
-  ROS_DEBUG("Advertisement done");
-  ROS_DEBUG("%s", ph.isAdvertised("/footopic") ? "true" : "false");
-  ROS_DEBUG("Reading topic");
-  ROS_DEBUG("%s", ph.getPublisher("/footopic")->getTopic().c_str());
+  // ROS_DEBUG("Advertise test");
+  // ROS_DEBUG("%s", ph.isAdvertised("/footopic") ? "true" : "false");
+  // ph.advertise<sensor_msgs::PointCloud2>("/footopic");
+  // ROS_DEBUG("Advertisement done");
+  // ROS_DEBUG("%s", ph.isAdvertised("/footopic") ? "true" : "false");
+  // ROS_DEBUG("Reading topic");
+  // ROS_DEBUG("%s", ph.getPublisher("/footopic")->getTopic().c_str());
 }
 
 
@@ -110,8 +113,11 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_publish = sp.getPlaneCloud();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_publish = sp.getObjectsOnPlaneCloud();
 
-	PublisherHelper::publish_pointcloud(table_plane_pub, plane_cloud_publish, frameId);
-	PublisherHelper::publish_pointcloud(objects_on_plane_pub, object_cloud_publish, frameId);
+	ph.publish_pointcloud("suturo_perception_table",plane_cloud_publish, frameId);
+	ph.publish_pointcloud("suturo_perception_objects_ontable",object_cloud_publish, frameId);
+
+	// PublisherHelper::publish_pointcloud(table_plane_pub, plane_cloud_publish, frameId);
+	// PublisherHelper::publish_pointcloud(objects_on_plane_pub, object_cloud_publish, frameId);
 
   if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
   {
@@ -195,7 +201,8 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
       ROS_ERROR("Knowledge not reachable");
       queryId++;
     }
-		PublisherHelper::publish_pointcloud(collision_cloud_pub, collision_cloud, frameId);
+		// PublisherHelper::publish_pointcloud(collision_cloud_pub, collision_cloud, frameId);
+		ph.publish_pointcloud("suturo_perception_collision_cloud",collision_cloud, frameId);
   }
   else
   {
