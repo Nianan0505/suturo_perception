@@ -20,19 +20,28 @@ namespace suturo_perception_utils
       std::map<std::string,bool> _is_advertised_map;
       ros::NodeHandle &_node_handle;
       int _queue_size;
-    public:
-      // Constructor
-      PublisherHelper(ros::NodeHandle& nh);
 
       void setAdvertised(std::string topic);
 
-      // Is the given Topic already advertised? 
+    public:
+      // Constructor
+      PublisherHelper(ros::NodeHandle& nh);
+      /**
+       * Is the given Topic already advertised by PublisherHelper::advertise?
+       */
       bool isAdvertised(std::string topic);
 
-      // Returns the publisher object for a given Topic. If no publisher is existing, NULL will be returned.
+      /**
+       * Returns the publisher object for a given Topic.
+       * If no publisher is existing for the topic, NULL will be returned.
+       */
       ros::Publisher *getPublisher(std::string topic);
 
-      // Advertise a topic with Type T
+      /**
+       * Advertise a topic with Type T at the ROS Master
+       * The publisher instance will be stored in an internal hashmap, which can 
+       * can then be accessed with the getPublisher() Method
+       */
       template<class T>
       void advertise(std::string topic)
       {
@@ -48,6 +57,7 @@ namespace suturo_perception_utils
           ROS_ERROR("Tried to advertise on an already existing topic");
         }
       }
+
       /**
        * Publish a pointcloud to a given publisher. This method does NOT use
        * the Publisher Hashmap provided by this class! You can use it to publish
@@ -64,7 +74,7 @@ namespace suturo_perception_utils
        *         false, if the input cloud is empty
        *         true otherwise
        */
-      bool publish_pointcloud(std::string topic, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame)
+      bool publish_pointcloud(std::string topic, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame);
 
   };
 }

@@ -34,9 +34,9 @@ void PublisherHelper::setAdvertised(std::string topic)
 void PublisherHelper::publish_pointcloud(ros::Publisher &publisher, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame)
 {
 
-  sensor_msgs::PointCloud2 pub_message;
   if(cloud_to_publish != NULL)
   {
+    sensor_msgs::PointCloud2 pub_message;
     pcl::toROSMsg(*cloud_to_publish, pub_message );
     pub_message.header.frame_id = frame;
     publisher.publish(pub_message);
@@ -57,6 +57,7 @@ bool PublisherHelper::publish_pointcloud(std::string topic, pcl::PointCloud<pcl:
 
   if(cloud_to_publish != NULL)
   {
+    sensor_msgs::PointCloud2 pub_message;
     pcl::toROSMsg(*cloud_to_publish, pub_message );
     pub_message.header.frame_id = frame;
     getPublisher(topic)->publish(pub_message);
