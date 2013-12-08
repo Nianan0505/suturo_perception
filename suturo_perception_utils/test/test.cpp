@@ -5,7 +5,7 @@
 #include "ros/ros.h"
 #include <sensor_msgs/PointCloud.h>
 
-using namespace suturo_perception_helper;
+using namespace suturo_perception_utils;
 
 TEST(suturo_perception_utils, check_initial_state)
 {

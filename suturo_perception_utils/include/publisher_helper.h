@@ -8,7 +8,7 @@
 
 #define DEFAULT_QUEUE_SIZE 5
 
-namespace suturo_perception_helper
+namespace suturo_perception_utils
 {
   class PublisherHelper
   {

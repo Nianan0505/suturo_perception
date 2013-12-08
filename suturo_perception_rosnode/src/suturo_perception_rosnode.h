@@ -18,7 +18,7 @@
 #include "object_matcher.h"  // Include 2d Object recognizer
 #include "publisher_helper.h"
 
-using namespace suturo_perception_helper;
+using namespace suturo_perception_utils;
 
 class SuturoPerceptionROSNode
 {

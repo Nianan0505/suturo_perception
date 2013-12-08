@@ -3,7 +3,7 @@
 #include <iostream> 
 #include "ros/ros.h"
 
-using namespace suturo_perception_helper;
+using namespace suturo_perception_utils;
 
 PublisherHelper::PublisherHelper(ros::NodeHandle &nh) : _node_handle(nh), _queue_size(DEFAULT_QUEUE_SIZE)
 {
