@@ -1,5 +1,9 @@
 #include "suturo_perception_rosnode.h"
 
+const std::string SuturoPerceptionROSNode::TABLE_PLANE_TOPIC = "suturo_perception_table";
+const std::string SuturoPerceptionROSNode::ALL_OBJECTS_ON_PLANE_TOPIC = "suturo_perception_objects_ontable"; // TODO use /suturo/objects_on_table
+const std::string SuturoPerceptionROSNode::COLLISION_CLOUD_TOPIC = "suturo_perception_collision_cloud";
+
 /*
  * Constructor
  */
@@ -21,13 +25,13 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
 
   // Init the topic for the plane segmentation result
   // table_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_table", 1);
-	ph.advertise<sensor_msgs::PointCloud2>("suturo_perception_table"); // TODO use /suturo/objects_on_table
+	ph.advertise<sensor_msgs::PointCloud2>(TABLE_PLANE_TOPIC);
 
   // Init the topic for the segmented objects on the plane
   // objects_on_plane_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_objects_ontable", 1);
   // collision_cloud_pub = nh.advertise<sensor_msgs::PointCloud2> ("suturo_perception_collision_cloud", 1);
-	ph.advertise<sensor_msgs::PointCloud2>("suturo_perception_objects_ontable"); // TODO use /suturo/objects_on_table
-	ph.advertise<sensor_msgs::PointCloud2>("suturo_perception_collision_cloud");
+	ph.advertise<sensor_msgs::PointCloud2>(ALL_OBJECTS_ON_PLANE_TOPIC);
+	ph.advertise<sensor_msgs::PointCloud2>(COLLISION_CLOUD_TOPIC);
 
   // Initialize dynamic reconfigure
   reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
@@ -113,8 +117,8 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_publish = sp.getPlaneCloud();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_publish = sp.getObjectsOnPlaneCloud();
 
-	ph.publish_pointcloud("suturo_perception_table",plane_cloud_publish, frameId);
-	ph.publish_pointcloud("suturo_perception_objects_ontable",object_cloud_publish, frameId);
+	ph.publish_pointcloud(TABLE_PLANE_TOPIC,plane_cloud_publish, frameId);
+	ph.publish_pointcloud(ALL_OBJECTS_ON_PLANE_TOPIC,object_cloud_publish, frameId);
 
 	// PublisherHelper::publish_pointcloud(table_plane_pub, plane_cloud_publish, frameId);
 	// PublisherHelper::publish_pointcloud(objects_on_plane_pub, object_cloud_publish, frameId);
@@ -202,7 +206,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
       queryId++;
     }
 		// PublisherHelper::publish_pointcloud(collision_cloud_pub, collision_cloud, frameId);
-		ph.publish_pointcloud("suturo_perception_collision_cloud",collision_cloud, frameId);
+		ph.publish_pointcloud(COLLISION_CLOUD_TOPIC, collision_cloud, frameId);
   }
   else
   {

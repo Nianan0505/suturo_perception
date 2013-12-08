@@ -30,6 +30,11 @@ public:
   void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level);
 
 private:
+  // Declare the name of the used Topics
+  static const std::string TABLE_PLANE_TOPIC;
+  static const std::string ALL_OBJECTS_ON_PLANE_TOPIC;
+  static const std::string COLLISION_CLOUD_TOPIC;
+
   bool processing; // processing flag
   ObjectMatcher object_matcher_;
   suturo_perception_lib::SuturoPerception sp;
