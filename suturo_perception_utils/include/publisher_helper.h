@@ -5,6 +5,9 @@
 #include <map>
 #include "ros/ros.h"
 #include <unistd.h>
+#include <pcl_ros/point_cloud.h>
+#include <sensor_msgs/PointCloud.h>
+#include <pcl/point_types.h>
 
 #define DEFAULT_QUEUE_SIZE 5
 
@@ -45,6 +48,23 @@ namespace suturo_perception_utils
           ROS_ERROR("Tried to advertise on an already existing topic");
         }
       }
+      /**
+       * Publish a pointcloud to a given publisher. This method does NOT use
+       * the Publisher Hashmap provided by this class! You can use it to publish
+       * a PCL Pointcloud to an already advertised topic and a given ros::Publisher.
+       */
+      static void publish_pointcloud(ros::Publisher &publisher, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame);
+
+      /**
+       * Publish a pointcloud by passing the name of topic.
+       * This method will try to find a publisher for the given topic, and post the
+       * passed PointCLoud with the Publisher.
+       *
+       * @return false, if no publisher is advertised for the given topic name
+       *         false, if the input cloud is empty
+       *         true otherwise
+       */
+      bool publish_pointcloud(std::string topic, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame)
 
   };
 }

@@ -8,7 +8,15 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
 	sensor_msgs
+	pcl
+	pcl_ros
 )
+
+# WORKAROUND - import pcl here as well 
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
