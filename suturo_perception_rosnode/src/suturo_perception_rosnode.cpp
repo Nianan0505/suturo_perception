@@ -46,21 +46,6 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
 }
 
 
-void SuturoPerceptionROSNode::publish_pointcloud(ros::Publisher &publisher, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame)
-{
-
-  sensor_msgs::PointCloud2 pub_message;
-  if(cloud_to_publish != NULL)
-  {
-    pcl::toROSMsg(*cloud_to_publish, pub_message );
-    pub_message.header.frame_id = frame;
-    publisher.publish(pub_message);
-  }
-  else
-  {
-    ROS_ERROR("publish_pointcloud : Input cloud is NULL");
-  }
-}
  /*
   * Receive callback for the /camera/depth_registered/points subscription
   */
@@ -125,8 +110,8 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_publish = sp.getPlaneCloud();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_cloud_publish = sp.getObjectsOnPlaneCloud();
 
-  publish_pointcloud(table_plane_pub, plane_cloud_publish, frameId);
-  publish_pointcloud(objects_on_plane_pub, object_cloud_publish, frameId);
+	PublisherHelper::publish_pointcloud(table_plane_pub, plane_cloud_publish, frameId);
+	PublisherHelper::publish_pointcloud(objects_on_plane_pub, object_cloud_publish, frameId);
 
   if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
   {
@@ -210,7 +195,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
       ROS_ERROR("Knowledge not reachable");
       queryId++;
     }
-    publish_pointcloud(collision_cloud_pub, collision_cloud, frameId);
+		PublisherHelper::publish_pointcloud(collision_cloud_pub, collision_cloud, frameId);
   }
   else
   {
@@ -381,4 +366,4 @@ void SuturoPerceptionROSNode::publishVisualizationMarkers(std::vector<suturo_per
   }
   maxMarkerId = markerId;
 }
-
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

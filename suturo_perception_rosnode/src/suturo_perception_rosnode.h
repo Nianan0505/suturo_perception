@@ -24,8 +24,6 @@ class SuturoPerceptionROSNode
 {
 public:
   SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string fi, std::string rd);
-  void publish_pointcloud(ros::Publisher &publisher, 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame);
   void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud);
   bool getClusters(suturo_perception_msgs::GetClusters::Request &req,
     suturo_perception_msgs::GetClusters::Response &res);
@@ -66,3 +64,5 @@ private:
 
   void publishVisualizationMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs);
 };
+
+// vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
