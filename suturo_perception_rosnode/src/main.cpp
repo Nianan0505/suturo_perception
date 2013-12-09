@@ -26,7 +26,31 @@ int main (int argc, char** argv)
   
   SuturoPerceptionROSNode spr(nh, pointTopic, frameId, recognitionDir);
 
-  ROS_INFO("suturo_perception READY");
+  ROS_INFO("                    _____ ");
+  ROS_INFO("                   |     | ");
+  ROS_INFO("                   | | | | ");
+  ROS_INFO("                   |_____| ");
+  ROS_INFO("             ____ ___|_|___ ____ ");
+  ROS_INFO("            ()___)         ()___) ");
+  ROS_INFO("            // /|           |\\ \\\\ ");
+  ROS_INFO("           // / |           | \\ \\\\ ");
+  ROS_INFO("          (___) |___________| (___) ");
+  ROS_INFO("          (___)   (_______)   (___) ");
+  ROS_INFO("          (___)     (___)     (___) ");
+  ROS_INFO("          (___)      |_|      (___) ");
+  ROS_INFO("          (___)  ___/___\\___   | | ");
+  ROS_INFO("           | |  |           |  | | ");
+  ROS_INFO("           | |  |___________| /___\\ ");
+  ROS_INFO("          /___\\  |||     ||| //   \\\\ ");
+  ROS_INFO("         //   \\\\ |||     ||| \\\\   // ");
+  ROS_INFO("         \\\\   // |||     |||  \\\\ // ");
+  ROS_INFO("          \\\\ // ()__)   (__() ");
+  ROS_INFO("                ///       \\\\\\ ");
+  ROS_INFO("               ///         \\\\\\ ");
+  ROS_INFO("             _///___     ___\\\\\\_ ");
+  ROS_INFO("            |_______|   |_______| ");
+
+  ROS_INFO("           suturo_perception READY");
   ros::MultiThreadedSpinner spinner(2);
   spinner.spin();
   return (0);

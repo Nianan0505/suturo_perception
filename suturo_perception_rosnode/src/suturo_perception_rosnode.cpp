@@ -89,7 +89,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
   ROS_INFO("Waiting for processed cloud");
   ros::Rate r(20); // 20 hz
-  // cancel service call, if no cloud is received after 5s
+  // cancel service call, if no cloud is received after 10s
   boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
   while(processing)
   {
@@ -249,7 +249,7 @@ void SuturoPerceptionROSNode::reconfigureCallback(suturo_perception_rosnode::Sut
   ROS_INFO("Reconfigure successful");
 }
 
-// private Methods
+// private methods
 
 /*
  * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
