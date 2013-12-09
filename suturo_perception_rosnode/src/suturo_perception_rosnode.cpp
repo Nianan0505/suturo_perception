@@ -59,6 +59,42 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
 
 }
 
+/*
+ * Receive callback for the /camera/depth_registered/points subscription
+ */
+void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+{
+  // process only one cloud
+  logger.logInfo("Receiving cloud");
+  if(processing)
+  {
+    logger.logInfo("processing...");
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::fromROSMsg(*inputCloud,*cloud_in);
+    
+    std::stringstream ss;
+    ss << "Received a new point cloud: size = " << cloud_in->points.size();
+    // << cloud_in->points.size()
+    logger.logInfo((boost::format("Received a new point cloud: size = %s") % cloud_in->points.size()).str());
+    // alt: logger.logInfo(static_cast<std::stringstream&>(std::stringstream().flush() << "test").str());
+    sp.processCloudWithProjections(cloud_in);
+    processing = false;
+    //sp.writeCloudToDisk(objects);
+    logger.logInfo("Cloud processed. Lock buffer and return the results");      
+  }
+}
+
+// void receive_ic(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+// {
+//   return;
+// 
+// }
+// 
+// void receive_two_images(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::ImageConstPtr& inputImage2)
+// {
+//   return;
+// 
+// }
 
  /*
   * Receive callback for the /camera/depth_registered/points subscription
@@ -95,7 +131,7 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
 bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::Request &req,
   suturo_perception_msgs::GetClusters::Response &res)
 {
-  ros::Subscriber sub;
+  // ros::Subscriber sub;
   processing = true;
 
   // signal failed call, if request string does not match
@@ -105,8 +141,17 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   // Subscribe to the depth information topic
-  sub = nh.subscribe(pointTopic, 1, 
-    &SuturoPerceptionROSNode::receive_cloud, this);
+  // sub = nh.subscribe(pointTopic, 1, 
+  //   &SuturoPerceptionROSNode::receive_cloud, this);
+
+  message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, "/camera/rgb/image_color", 1);
+  message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub(nh, pointTopic, 1);
+  // message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::PointCloud2> sync(image_sub, pc_sub, 10);
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::PointCloud2> MySyncPolicy;
+  message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image_sub, pc_sub);
+
+  // sync.registerCallback(boost::bind(&callback, _1, _2));
+  sync.registerCallback(boost::bind(&SuturoPerceptionROSNode::receive_image_and_cloud,this, _1, _2));
 
   logger.logInfo("Waiting for processed cloud");
   ros::Rate r(20); // 20 hz
@@ -188,7 +233,9 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   mutex.unlock();
 
   logger.logInfo("Shutting down subscriber");
-  sub.shutdown(); // shutdown subscriber, to mitigate funky behavior
+  image_sub.unsubscribe(); // shutdown subscriber, to mitigate funky behavior
+  pc_sub.unsubscribe(); // shutdown subscriber, to mitigate funky behavior
+  // sync.shutdown();
   publishVisualizationMarkers(res.perceivedObjs);
 
   // ===============================================================
