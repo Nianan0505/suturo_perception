@@ -32,20 +32,13 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   // Init the topic for the segmented objects on the plane
 	ph.advertise<sensor_msgs::PointCloud2>(ALL_OBJECTS_ON_PLANE_TOPIC);
 	ph.advertise<sensor_msgs::PointCloud2>(COLLISION_CLOUD_TOPIC);
-  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "0");
-  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "1");
-  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "2");
-  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "3");
-  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "4");
-  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "5");
-  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "6");
-  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "0");
-  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "1");
-  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "2");
-  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "3");
-  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "4");
-  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "5");
-  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "6");
+  for(int i = 0; i <= 6; ++i)
+  {
+    std::stringstream ss;
+    ss << i;
+    ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + ss.str());
+    ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + ss.str());
+  }
 
   // Initialize dynamic reconfigure
   reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
