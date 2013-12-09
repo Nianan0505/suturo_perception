@@ -99,6 +99,8 @@ add_library(suturo_perception_utils
   src/suturo_perception_utils.cpp
 )
 
+target_link_libraries(suturo_perception_utils ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 ## Declare a cpp executable
 # add_executable(suturo_perception_utils_node src/suturo_perception_utils_node.cpp)
 
