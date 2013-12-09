@@ -50,7 +50,15 @@ int main (int argc, char** argv)
   ROS_INFO("             _///___     ___\\\\\\_ ");
   ROS_INFO("            |_______|   |_______| ");
 
-  ROS_INFO("           suturo_perception READY");
+  ROS_INFO("  ____  __  __ ______  __  __   ___   ____                            ");
+  ROS_INFO("  / __/ / / / //_  __/ / / / /  / _ \\ / __ \\                           ");
+  ROS_INFO(" _\\ \\  / /_/ /  / /   / /_/ /  / , _// /_/ /                           ");
+  ROS_INFO("/___/_ \\____/_ /_/__  \\____/  /_/|_| \\____/______   ____  ____    _  __");
+  ROS_INFO("  / _ \\  / __/  / _ \\ / ___/  / __/  / _ \\/_  __/  /  _/ / __ \\  / |/ /");
+  ROS_INFO(" / ___/ / _/   / , _// /__   / _/   / ___/ / /    _/ /  / /_/ / /    / ");
+  ROS_INFO("/_/    /___/  /_/|_| \\___/  /___/  /_/    /_/    /___/  \\____/ /_/|_/  ");
+                                                                       
+  // ROS_INFO("           suturo_perception READY");
   ros::MultiThreadedSpinner spinner(2);
   spinner.spin();
   return (0);

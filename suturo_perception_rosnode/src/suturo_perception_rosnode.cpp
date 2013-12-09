@@ -3,6 +3,7 @@
 const std::string SuturoPerceptionROSNode::TABLE_PLANE_TOPIC = "suturo_perception_table";
 const std::string SuturoPerceptionROSNode::ALL_OBJECTS_ON_PLANE_TOPIC = "suturo_perception_objects_ontable"; // TODO use /suturo/objects_on_table
 const std::string SuturoPerceptionROSNode::COLLISION_CLOUD_TOPIC = "suturo_perception_collision_cloud";
+const std::string SuturoPerceptionROSNode::IMAGE_PREFIX_TOPIC= "/suturo/cluster_image/";
 
 /*
  * Constructor
@@ -29,6 +30,13 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   // Init the topic for the segmented objects on the plane
 	ph.advertise<sensor_msgs::PointCloud2>(ALL_OBJECTS_ON_PLANE_TOPIC);
 	ph.advertise<sensor_msgs::PointCloud2>(COLLISION_CLOUD_TOPIC);
+  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "1");
+  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "2");
+  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "3");
+  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "4");
+  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "5");
+  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "6");
+  ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "7");
 
   // Initialize dynamic reconfigure
   reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
@@ -110,6 +118,10 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 	ph.publish_pointcloud(TABLE_PLANE_TOPIC,plane_cloud_publish, frameId);
 	ph.publish_pointcloud(ALL_OBJECTS_ON_PLANE_TOPIC,object_cloud_publish, frameId);
   ROS_INFO(" #################### Extracted images vector: %lu vs. Extracted PointCloud Vector: %lu", perceived_cluster_images.size(), perceivedObjects.size());
+
+  // Push a dummy image to test the functionality of image publishing
+  cv::Mat img(cv::Size(5,5),CV_8UC3, cv::Scalar(0,0,0)); // Create a dummy 5x5 image
+  ph.publish_cv_mat("dummyimage", img, frameId);
 
   /*
    * TODO Implement, if the vector sizes are equal

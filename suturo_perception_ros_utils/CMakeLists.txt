@@ -17,7 +17,17 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   pcl
   pcl_ros
+  cv_bridge
+  image_transport
 )
+# WORKAROUND - import pcl here as well 
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+find_package(OpenCV REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -91,6 +101,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_ros_utils
   CATKIN_DEPENDS roscpp std_msgs sensor_msgs
+  DEPENDS opencv
 #  DEPENDS system_lib
 )
 
