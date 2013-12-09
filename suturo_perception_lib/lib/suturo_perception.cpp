@@ -329,7 +329,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   cout << "Got " << cluster_indices.size() << "clusters";
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logger.logTime(s, e, "filter the objects above the plane");
+  logger.logTime(s, e, "filtering out objects above the plane");
 
   int i=0;
   // Iterate over the found clusters and extract single pointclouds
