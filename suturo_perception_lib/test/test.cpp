@@ -65,16 +65,13 @@ TEST(suturo_perception_test, color_1_test)
   cloud->points.push_back(point2);
   cloud->points.push_back(point3);
   
-  uint32_t averageColor = sp.getAverageColor(cloud);
-  ASSERT_EQ(255, (averageColor >> 16) & 0x0000ff);
-
-  /*
-  uint32_t averageColorHSV = sp.convertRGBToHSV(averageColor); //sp.getAverageColorHSV(cloud);
-  printf("avg color hsv = %.8x\n", averageColorHSV);
+  uint32_t averageColorHSV = sp.getAverageColorHSV(cloud);
   ASSERT_EQ(0, (averageColorHSV >> 16) & 0x0000ff);
   ASSERT_EQ(255, (averageColorHSV >> 8) & 0x00ff);
   ASSERT_EQ(255, averageColorHSV & 0xff);
-  */
+
+  uint32_t averageColor = sp.getAverageColor(cloud);
+  ASSERT_EQ(255, (averageColor >> 16) & 0x0000ff);
 
   r = 0, g = 200, b = 100;
   uint8_t g1 = 150, b1=50;
@@ -102,7 +99,6 @@ TEST(suturo_perception_test, color_2_test)
   uint8_t h = (hsv & 0xff0000) >> 16;
   uint8_t s = ((hsv & 0xff00) >> 8);
   uint8_t v = ((hsv & 0xff));
-  printf("hsv = %.8x\n", hsv);
   ASSERT_EQ(241, h);
   ASSERT_EQ(155, s);
   ASSERT_EQ(255, v);

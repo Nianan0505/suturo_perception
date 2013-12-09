@@ -794,31 +794,7 @@ SuturoPerception::convertRGBToHSV(uint32_t rgb)
 uint32_t
 SuturoPerception::getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
-  if(cloud_in->points.size() == 0) return 0;
-
-  double average_h = 0;
-  double average_s = 0;
-  double average_v = 0;
-  for(int i = 0; i < cloud_in->points.size(); ++i)
-  {
-    uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
-    uint32_t hsv = convertRGBToHSV(rgb);
-   
-    double h = (double) ((hsv >> 16) & 0x0000ff);
-    double s = (double) ((hsv >> 8) & 0x0000ff);
-    double v = (double) ((hsv) & 0x0000ff);
-
-    average_h += h / (double)cloud_in->points.size();
-    average_s += s / (double)cloud_in->points.size();
-    average_v += v / (double)cloud_in->points.size();
-  }
-
-  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "getAverageColorHSV()");
-
-  return ((uint32_t)average_h << 16 | (uint32_t)average_s << 8 | (uint32_t)average_v);
+  return convertRGBToHSV(getAverageColor(cloud_in));
 }
 
 
