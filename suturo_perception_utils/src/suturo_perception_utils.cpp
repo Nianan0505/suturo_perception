@@ -43,22 +43,22 @@ void Logger::log(level lvl, std::string s)
 
 }
 
-void Logger::logDebug(const std::string s)
+void Logger::logDebug(const std::string& s)
 {
   log(DEBUG, s);
 }
 
-void Logger::logInfo(const std::string s)
+void Logger::logInfo(const std::string& s)
 {
   log(INFO, s);
 }
 
-void Logger::logWarn(const std::string s)
+void Logger::logWarn(const std::string& s)
 {
   log(WARN, s);
 }
 
-void Logger::logError(const std::string s)
+void Logger::logError(const std::string& s)
 {
   log(ERROR, s);
 }

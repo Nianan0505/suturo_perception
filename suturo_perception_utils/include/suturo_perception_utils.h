@@ -26,10 +26,10 @@ namespace suturo_perception_utils
       /**
        * log methods for different levels
        */
-      void logDebug(const std::string s);
-      void logInfo (const std::string s);
-      void logWarn (const std::string s);
-      void logError(const std::string s);
+      void logDebug(const std::string& s);
+      void logInfo (const std::string& s);
+      void logWarn (const std::string& s);
+      void logError(const std::string& s);
      
   };
 }
