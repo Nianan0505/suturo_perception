@@ -4,6 +4,7 @@ const std::string SuturoPerceptionROSNode::TABLE_PLANE_TOPIC = "suturo_perceptio
 const std::string SuturoPerceptionROSNode::ALL_OBJECTS_ON_PLANE_TOPIC = "suturo_perception_objects_ontable"; // TODO use /suturo/objects_on_table
 const std::string SuturoPerceptionROSNode::COLLISION_CLOUD_TOPIC = "suturo_perception_collision_cloud";
 const std::string SuturoPerceptionROSNode::IMAGE_PREFIX_TOPIC= "/suturo/cluster_image/";
+const std::string SuturoPerceptionROSNode::HISTOGRAM_PREFIX_TOPIC= "/suturo/cluster_histogram/";
 
 /*
  * Constructor
@@ -38,6 +39,13 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "4");
   ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "5");
   ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + "6");
+  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "0");
+  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "1");
+  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "2");
+  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "3");
+  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "4");
+  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "5");
+  ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + "6");
 
   // Initialize dynamic reconfigure
   reconfCb = boost::bind(&SuturoPerceptionROSNode::reconfigureCallback, this, _1, _2);
@@ -112,9 +120,11 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   std::vector<cv::Mat> perceived_cluster_images;
+  boost::shared_ptr<std::vector<cv::Mat> > perceived_cluster_histograms;
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
   perceived_cluster_images = sp.getPerceivedClusterImages();
+  perceived_cluster_histograms = sp.getPerceivedClusterHistograms();
   res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_publish = sp.getPlaneCloud();
@@ -124,13 +134,22 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 	ph.publish_pointcloud(ALL_OBJECTS_ON_PLANE_TOPIC,object_cloud_publish, frameId);
   logger.logInfo((boost::format(" Extracted images vector: %s vs. Extracted PointCloud Vector: %s") % perceived_cluster_images.size() % perceivedObjects.size()).str());
 
-  // Push a dummy image to test the functionality of image publishing
+  // Push a dummy image to test the functionality of image publishing; TODO: remove this?
   cv::Mat img(cv::Size(5,5),CV_8UC3, cv::Scalar(0,0,0)); // Create a dummy 5x5 image
   // ph.publish_cv_mat("dummyimage", img, frameId);
   for(int i = 0; i < perceived_cluster_images.size(); i++)
   {
     std::string i_str = boost::lexical_cast<std::string>(i);
     ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + i_str , perceived_cluster_images.at(i), frameId);
+  }
+
+  // publish histograms
+  for (int i = 0; i < perceived_cluster_histograms->size(); i++)
+  {
+    if (i > 6)
+      continue;
+    std::string i_str = boost::lexical_cast<std::string>(i);
+    ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + i_str, perceived_cluster_histograms->at(i), frameId);
   }
 
   /*
