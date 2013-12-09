@@ -127,6 +127,7 @@ TEST(suturo_perception_test, color_3_test)
   cloud->points.push_back(point3);
 
   boost::shared_ptr<std::vector<int> > hist = sp.getHistogramHue(cloud);
+  /*
   for (int i = 0; i < hist->size(); i++)
   {
     printf("%.5d: ", i);
@@ -136,8 +137,41 @@ TEST(suturo_perception_test, color_3_test)
     }
     printf("\n");
   }
+  */
+  ASSERT_EQ(3, hist->at(0));
 }
   
+TEST(suturo_perception_test, color_4_test)
+{
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  
+  std::stringstream boxpath;
+  boxpath << "box1.pcd";
+
+  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (boxpath.str().c_str(), *cloud) == -1) //* load the file
+  {
+    std::stringstream error_msg;
+    error_msg << "Couldn't read file " << boxpath << "\n";
+    PCL_ERROR (error_msg.str().c_str());
+    FAIL() << error_msg.str().c_str();
+  }
+  
+  suturo_perception_lib::SuturoPerception sp;
+  boost::shared_ptr<std::vector<int> > hist = sp.getHistogramHue(cloud);
+
+  std::ofstream histfile;
+  histfile.open("histogram.dat");
+  for (int i = 0; i < hist->size(); i++)
+  {
+    histfile << i << "\t" << hist->at(i) << std::endl;
+  }
+  histfile.close();
+  // use gnuplot to draw the histogram:
+  // set boxwidth 0.5
+  // set style fill solid
+  // plot "./histogram.dat" using 1:2 with line
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

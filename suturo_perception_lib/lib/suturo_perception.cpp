@@ -821,6 +821,9 @@ SuturoPerception::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
     uint8_t s = (hsv >> 8) & 0x0000ff;
     uint8_t v = (hsv) & 0x0000ff;
 
+    if (s < 20 || v < 20)
+      continue;
+
     ret->at(h/3) ++;
   }
 
