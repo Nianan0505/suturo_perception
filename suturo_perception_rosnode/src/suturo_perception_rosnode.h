@@ -19,6 +19,7 @@
 #include "publisher_helper.h"
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
+#include <boost/lexical_cast.hpp>
 
 using namespace suturo_perception_ros_utils;
 
