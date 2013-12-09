@@ -580,6 +580,9 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     // Get average color of the object
     uint32_t averageColor = getAverageColor(*it);
 
+    // Get hue histogram of the object
+    boost::shared_ptr<std::vector<int> > histogram = getHistogramHue(*it);
+
     // Detect the shape of the object
     rsc.detectShape(*it);
     ptShape = rsc.getShape();
@@ -605,6 +608,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     percObj.c_color_average_r = (averageColor >> 16) & 0x0000ff;
     percObj.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
     percObj.c_color_average_b = (averageColor)       & 0x0000ff;
+    percObj.c_hue_histogram = *histogram;
 
     tmpPerceivedObjects.push_back(percObj);
     i++;

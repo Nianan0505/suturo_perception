@@ -14,3 +14,5 @@ int32 c_shape
 uint8 c_color_average_r
 uint8 c_color_average_g
 uint8 c_color_average_b
+
+int32[] c_hue_histogram

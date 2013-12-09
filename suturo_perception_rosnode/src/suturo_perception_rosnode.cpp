@@ -272,6 +272,7 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_color_average_b = it->c_color_average_b;
     // these are not set for now
     msgObj->recognition_label_2d = "";
+    msgObj->c_hue_histogram = it->c_hue_histogram;
     result->push_back(*msgObj);
   }
   return result;
