@@ -375,10 +375,10 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     cv::Mat img(cv::Size(original_cloud->width,original_cloud->height),CV_8UC3, cv::Scalar(0,0,0)); // Create an image with the size of the original cloud
 
     // Compute the ROI (region of interest, with the segmented image)
-    int min_x = original_cloud->width;
-    int max_x = 0;
-    int min_y = original_cloud->height;
-    int max_y = 0;
+    int min_column = original_cloud->width;
+    int max_column = 0;
+    int min_row = original_cloud->height;
+    int max_row = 0;
 
     // fill in color of extracted object points
     for (std::vector<int>::const_iterator pit = object_indices->indices.begin(); pit != object_indices->indices.end(); pit++)
@@ -386,10 +386,23 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
       int index = removed_indices_filtered->at(*pit);
       int row = index / 640;
       int column = index % 640;
-      img.at<cv::Vec3b>( index / 640, index % 640)[0] = original_cloud->points[index].b;
-      img.at<cv::Vec3b>( index / 640, index % 640)[1] = original_cloud->points[index].g;
-      img.at<cv::Vec3b>( index / 640, index % 640)[2] = original_cloud->points[index].r;
+
+      // Calculate the dimensions of the image
+      if(column > max_column) max_column = column;
+      if(row > max_row) max_row = row;
+      if(row < min_row) min_row = row;
+      if(column < min_column) min_column = column;
+
+      img.at<cv::Vec3b>( row, column)[0] = original_cloud->points[index].b;
+      img.at<cv::Vec3b>( row, column)[1] = original_cloud->points[index].g;
+      img.at<cv::Vec3b>( row, column)[2] = original_cloud->points[index].r;
     }
+
+    // cv::Point top =  cv::Point(min_row, min_column);
+    // cv::Point bottom =  cv::Point(max_row, max_column);
+    cv::Point top =  cv::Point(min_column, min_row);
+    cv::Point bottom =  cv::Point(max_column, max_row);
+    cv::rectangle(img, top , bottom , cv::Scalar(100, 100, 200), 2, CV_AA);
     extracted_images.push_back(img);
     
     i++;
