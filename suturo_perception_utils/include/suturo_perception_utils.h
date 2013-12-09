@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 #ifndef HAVE_NO_ROS
 #include "ros/ros.h"
@@ -30,6 +31,8 @@ namespace suturo_perception_utils
       void logInfo (const std::string& s);
       void logWarn (const std::string& s);
       void logError(const std::string& s);
+      // time logging helper
+      void logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string text);
      
   };
 }

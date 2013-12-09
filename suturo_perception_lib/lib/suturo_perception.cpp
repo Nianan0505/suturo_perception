@@ -67,6 +67,8 @@ bool ReceivedObjectGreaterThan(const PerceivedObject& p1,
  */
 SuturoPerception::SuturoPerception()
 {
+  // initialize logger
+  logger = Logger("perception_lib");
   // Set default parameters
   zAxisFilterMin = 0.0;
   zAxisFilterMax = 1.5;
@@ -109,7 +111,7 @@ SuturoPerception::removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_
   pcl::removeNaNFromPointCloud(*cloud_in,*cloud_nanles,nans);
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "removeNans()");
+  logger.logTime(s, e, "removeNans()");
 }
 
 /*
@@ -125,7 +127,7 @@ SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 
   if(cloud_in->points.size() == 0)
   {
-    std::cerr << "Could not filter on Z Axis. input cloud empty" << std::endl;
+    logger.logError("Could not filter on Z Axis. input cloud empty");
     return;
   }
 
@@ -138,7 +140,7 @@ SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
   pass.filter(*cloud_out);
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "filterZAxis()");
+  logger.logTime(s, e, "filterZAxis()");
 }
 
 /*
@@ -157,7 +159,7 @@ SuturoPerception::downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_
   vg.filter(*cloud_out);
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "downsample()");
+  logger.logTime(s, e, "downsample()");
 }
 
 /*
@@ -172,7 +174,7 @@ SuturoPerception::fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
 
   if(cloud_in->points.size() == 0)
   {
-    std::cerr << "Could not estimate a planar model for the given dataset. input cloud empty" << std::endl;
+    logger.logError("Could not estimate a planar model for the given dataset. input cloud empty");
     return;
   }
 
@@ -185,11 +187,11 @@ SuturoPerception::fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cl
   seg.segment(*inliers,*coefficients);
   if (inliers->indices.size () == 0)
   {
-    std::cerr << "Could not estimate a planar model for the given dataset. The inlier size is 0" << std::endl;
+    logger.logError("Could not estimate a planar model for the given dataset. The inlier size is 0");
   }
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "fitPlanarModel()");
+  logger.logTime(s, e, "fitPlanarModel()");
 }
 
 // Extract the given inliers from cloud_in as a PointCloud
@@ -201,7 +203,7 @@ pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out
   // Input cloud can't be null
   if(inliers->indices.size () == 0)
   {
-    std::cerr << "extractInliersFromPointCloud can't work with an empty set of indices. Exiting...." << std::endl;
+    logger.logError("extractInliersFromPointCloud can't work with an empty set of indices. Exiting....");
     return;
   }
   pcl::ExtractIndices<pcl::PointXYZRGB> extract_p;
@@ -230,7 +232,7 @@ bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZ
 
   if(cloud_in->points.size() == 0)
   {
-    std::cerr << "Could not extract biggest cluster. input cloud empty" << std::endl;
+    logger.logError("Could not extract biggest cluster. input cloud empty");
     return false;
   }
 
@@ -249,11 +251,11 @@ bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZ
   std::vector<int> cluster_get_indices;
   cluster_get_indices = *ecTable.getIndices();
 
-  std::cerr << "cluster_indices vector size: " << cluster_indices.size() << std::endl;
+  logger.logInfo((boost::format("cluster_indices vector size: %s") % cluster_indices.size()).str());
 
   if(cluster_indices.size() == 0)
   {
-    std::cout << "No suitable cluster found for extraction. Skip ...";
+    logger.logError("No suitable cluster found for extraction. Skip ...");
     return false;
   }
 
@@ -274,12 +276,12 @@ bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZ
   cloud_out->height = 1;
   cloud_out->is_dense = true;
 
-  // std::cerr << "New Inliers calculated: " << new_inliers->indices.size() << std::endl;
+  // logger.logError("New Inliers calculated: " << new_inliers->indices.size());
 
   // if(writer_pcd) writer.write ("cloud_out.pcd", *cloud_out, false);
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "extractBiggestCluster()");
+  logger.logTime(s, e, "extractBiggestCluster()");
   return true;
 }
 
@@ -294,13 +296,13 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
 
   if(object_clusters->points.size() == 0)
   {
-    std::cerr << "clusterFromProjection: object_clusters is empty. Skipping ...." << std::endl;
+    logger.logError("clusterFromProjection: object_clusters is empty. Skipping ....");
     return;
   }
 
   if(original_cloud->points.size() == 0)
   {
-    std::cerr << "clusterFromProjection: original_cloud is empty. Skipping ...." << std::endl;
+    logger.logError("clusterFromProjection: original_cloud is empty. Skipping ....");
     return;
   }
 
@@ -327,7 +329,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   cout << "Got " << cluster_indices.size() << "clusters";
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "filter the objects above the plane");
+  logger.logTime(s, e, "filter the objects above the plane");
 
   int i=0;
   // Iterate over the found clusters and extract single pointclouds
@@ -343,7 +345,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     cloud_cluster->width = cloud_cluster->points.size ();
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
-    std::cerr << "Cloud Cluster Size is " << cloud_cluster->points.size () << std::endl;
+    logger.logInfo((boost::format("Cloud Cluster Size is ") % cloud_cluster->points.size ()).str());
     std::ostringstream fn;
     fn << "2dcluster_" << i << ".pcd";
     if(writer_pcd) writer.write(fn.str(), *cloud_cluster, false);
@@ -356,10 +358,10 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     extractAllPointsAbovePointCloud(original_cloud, cloud_cluster, object_points, object_indices, 2);
     extracted_objects.push_back(object_points);
 
-    // std::cerr << "After extract" << std::endl;
+    // logger.logError("After extract");
 
     boost::posix_time::ptime e1 = boost::posix_time::microsec_clock::local_time();
-    logTime(s1, e1, "Extracted Object Points");
+    logger.logTime(s1, e1, "Extracted Object Points");
 
     std::ostringstream cl_file;
     cl_file << "2d_Z_cluster_" << i << ".pcd";
@@ -436,7 +438,7 @@ void SuturoPerception::projectToPlaneCoefficients(pcl::PointCloud<pcl::PointXYZR
 {
   if(object_indices->indices.size() == 0)
   {
-    std::cout << "No object indices in projectToPlaneCoefficients. Skip ...";
+    logger.logError("No object indices in projectToPlaneCoefficients. Skip ...");
     return;
   }
 
@@ -479,13 +481,12 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // Build a filter to filter on the Z Axis
   pcl::PassThrough<pcl::PointXYZRGB> pass(true);
   filterZAxis(cloud_in, cloud_filtered, pass);
-  std::cerr << "PointCloud after filtering has: "
-            << cloud_filtered->points.size () << " data points." << std::endl;
+  logger.logInfo((boost::format("PointCloud: %s data points") % cloud_filtered->points.size()).str());
 
   std::vector<int> removed_indices_filtered;
   removed_indices_filtered = *pass.getIndices();
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "z-filter");
+  logger.logTime(s, e, "z-filter");
 
 
   //voxelizing cloud
@@ -497,12 +498,10 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
   pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
   fitPlanarModel(cloud_filtered, inliers, coefficients);
-  std::cerr << "PointCloud after segmentation has: "
-            << inliers->indices.size () << " inliers." << std::endl;
+  logger.logInfo((boost::format("Table inlier count: %s") % inliers->indices.size ()).str());
   // Table segmentation done
   
   // Extract the plane as a PointCloud from the calculated inliers
-  std::cerr << "Table inlier count" << inliers->indices.size();
   extractInliersFromPointCloud(cloud_filtered, inliers, cloud_plane);
 
   // Take the biggest cluster in the extracted plane. This will be
@@ -516,7 +515,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   
   if(inliers->indices.size () == 0)
   {
-    std::cerr << "Second Table Inlier Set is empty. Exiting...." << std::endl;
+    logger.logError("Second Table Inlier Set is empty. Exiting....");
     return;
   }
   plane_cloud_ = plane_cluster; // save the reference to the segmented and clustered table plane
@@ -537,8 +536,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // By doing this, we should get every object on the table and a 2d image of it.
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
   clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, perceived_cluster_images_);
-  std::cerr << " ----------- extractedObjects Vector size" << extractedObjects.size() << std::endl;
-  std::cerr << " ----------- extractedImages Vector size" << perceived_cluster_images_.size() << std::endl;
+  logger.logInfo((boost::format(" - extractedObjects Vector size %s") % extractedObjects.size()).str());
+  logger.logInfo((boost::format(" - extractedImages  Vector size %s") % perceived_cluster_images_.size()).str());
     
   // temporary list of perceived objects
   std::vector<PerceivedObject> tmpPerceivedObjects;
@@ -556,12 +555,12 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   for (std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
       it != extractedObjects.end(); ++it)
   {  
-    std::cout << "[suturo_perception_lib] Transform cluster " << i << " into a message. Cluster has "
-      << (*it)->points.size() << " points" << std::endl;
+    logger.logInfo((boost::format("Transform cluster %s into a message. \
+                    Cluster has %s points") % i % (*it)->points.size()).str());
 
     if((*it)->points.size()==0)
     {
-      std::cerr << "[suturo_perception_lib] Cluster cloud is empty. Skipping ...." << std::endl;
+      logger.logError("Cluster cloud is empty. Skipping ...");
       i++;
       continue;
     }
@@ -591,8 +590,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     Eigen::Vector4f centroid;
     pcl::compute3DCentroid (*hull_points, centroid);  
 
-    std::cout << "[suturo_perception_lib] Centroid: "
-      << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << ", " << std::endl;
+    logger.logInfo((boost::format("Centroid: %s, %s, %s") % centroid[0] % centroid[1] % centroid[2]).str());
 
     // Add the detected cluster to the list of perceived objects
     PerceivedObject percObj;
@@ -620,7 +618,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   mutex.unlock();
 
   boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
-  logTime(start, end, "TOTAL");
+  logger.logTime(start, end, "TOTAL");
 }
 
 
@@ -632,17 +630,6 @@ std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
 std::vector<cv::Mat> SuturoPerception::getPerceivedClusterImages()
 {
   return perceived_cluster_images_;
-}
-
-// debug timelog for profiling
-void SuturoPerception::logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string text)
-{
-  if(debug)
-  {
-    boost::posix_time::time_duration d = e - s;
-    float diff = (float)d.total_microseconds() / (float)1000;
-    std::cout << "[perception_lib] Time for " << text << ": " << diff << " ms" << std::endl;
-  }
 }
 
 void SuturoPerception::writeCloudToDisk(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud, std::string filename="")
@@ -708,7 +695,7 @@ SuturoPerception::getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
   }
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "getAverageColor()");
+  logger.logTime(s, e, "getAverageColor()");
 
   return ((uint32_t)average_r << 16 | (uint32_t)average_g << 8 | (uint32_t)average_b);
 }
@@ -832,7 +819,7 @@ SuturoPerception::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
   }
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logTime(s, e, "getHistrogramHue()");
+  logger.logTime(s, e, "getHistrogramHue()");
 
   return ret;
  

@@ -14,6 +14,10 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/ModelCoefficients.h>
 
+#include "suturo_perception_utils.h"
+
+using namespace suturo_perception_utils;
+
 namespace suturo_perception_lib
 {
   class SuturoPerception
@@ -101,6 +105,8 @@ namespace suturo_perception_lib
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> collision_objects;
 
     private:
+    // the logger
+    Logger logger;
     // === Parameters ===
     // min and max values for z-axis filtering
     float zAxisFilterMin;
@@ -142,8 +148,6 @@ namespace suturo_perception_lib
 
     // debug var for time profiling
     bool debug;
-    // log time for profiling
-    void logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string text);
   };
 }
 
