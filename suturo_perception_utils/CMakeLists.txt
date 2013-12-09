@@ -1,32 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(suturo_perception_ros_utils)
-
-# WORKAROUND - import pcl here as well 
-find_package(PCL 1.6 REQUIRED COMPONENTS)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
+project(suturo_perception_utils)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-  sensor_msgs
-  pcl
-  pcl_ros
-  cv_bridge
-  image_transport
-)
-# WORKAROUND - import pcl here as well 
-find_package(PCL 1.6 REQUIRED COMPONENTS)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+roscpp)
 
-find_package(OpenCV REQUIRED)
+#find_path(HAVE_ROS ros.h /opt/ros/groovy/include/ros)
+#CHECK_INCLUDE_FILES ("ros.h" HAVE_ROS_H)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -85,7 +67,7 @@ find_package(OpenCV REQUIRED)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ###################################
@@ -99,9 +81,8 @@ find_package(OpenCV REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES suturo_perception_ros_utils
-  CATKIN_DEPENDS roscpp std_msgs sensor_msgs
-  DEPENDS opencv
+  LIBRARIES suturo_perception_utils
+#  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
 
@@ -112,14 +93,11 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(include)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
 
 ## Declare a cpp library
- add_library(suturo_perception_ros_utils
-   src/publisher_helper.cpp
- )
+add_library(suturo_perception_utils
+  src/suturo_perception_utils.cpp
+)
 
 ## Declare a cpp executable
 # add_executable(suturo_perception_utils_node src/suturo_perception_utils_node.cpp)
@@ -180,15 +158,3 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-catkin_add_gtest(${PROJECT_NAME}-test 
-  test/test.cpp
-)
-if(TARGET ${PROJECT_NAME}-test)
-	# target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} suturo_perception_shape_detection)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
-	# Link against catkin libs for ROS etc.
-
-	# In contrast to the tests in suturo_perception_lib, i need this declaration ..
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-endif()

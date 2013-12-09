@@ -8,6 +8,9 @@
 #include <pcl_ros/point_cloud.h>
 #include <sensor_msgs/PointCloud.h>
 #include <pcl/point_types.h>
+#include "opencv2/core/core.hpp"
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
 
 #define DEFAULT_QUEUE_SIZE 5
 
@@ -75,6 +78,19 @@ namespace suturo_perception_ros_utils
        *         true otherwise
        */
       bool publish_pointcloud(std::string topic, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_to_publish, std::string frame);
+
+      /**
+       * Publish a given cv::Mat with ros::Time::now() as Timestamp
+       * and bgr8 as image encoding
+       *
+       * @return False, when the given topic is not advertised. True otherwise.
+       */
+      bool publish_cv_mat(std::string topic, cv::Mat &img, std::string frame);
+
+      /**
+       * Publish a given cv::Mat with the passed options
+       */
+      bool publish_cv_mat(std::string topic, cv::Mat &img, ros::Time time, std::string frame, std::string image_encoding);
 
   };
 }

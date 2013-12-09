@@ -69,7 +69,29 @@ bool PublisherHelper::publish_pointcloud(std::string topic, pcl::PointCloud<pcl:
     return false;
   }
 }
+bool PublisherHelper::publish_cv_mat(std::string topic, cv::Mat &img, std::string frame)
+{
+  ros::Time time = ros::Time::now();
+  std::string image_encoding = "bgr8";
+  return publish_cv_mat(topic, img, time , frame, image_encoding);
+}
 
+bool PublisherHelper::publish_cv_mat(std::string topic, cv::Mat &img, ros::Time time, std::string frame, std::string image_encoding)
+{
+  if( !isAdvertised(topic))
+  {
+    ROS_ERROR("publish_cv_mat : Given topic is not advertised");
+    return false;
+  }
 
+  cv_bridge::CvImage cv_img;
+  cv_img.header.stamp = time;
+  cv_img.header.frame_id = frame;
+  cv_img.encoding = image_encoding;
+  cv_img.image = img;
+  getPublisher(topic)->publish(cv_img.toImageMsg());
+
+  return true;
+}
 
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

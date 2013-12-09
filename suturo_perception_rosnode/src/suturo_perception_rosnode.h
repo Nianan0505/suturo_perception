@@ -17,6 +17,9 @@
 #include "suturo_perception_msgs/PrologFinish.h"
 #include "object_matcher.h"  // Include 2d Object recognizer
 #include "publisher_helper.h"
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <boost/lexical_cast.hpp>
 
 using namespace suturo_perception_ros_utils;
 
@@ -34,6 +37,7 @@ private:
   static const std::string TABLE_PLANE_TOPIC;
   static const std::string ALL_OBJECTS_ON_PLANE_TOPIC;
   static const std::string COLLISION_CLOUD_TOPIC;
+  static const std::string IMAGE_PREFIX_TOPIC;
 
   bool processing; // processing flag
   ObjectMatcher object_matcher_;
