@@ -384,8 +384,8 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     for (std::vector<int>::const_iterator pit = object_indices->indices.begin(); pit != object_indices->indices.end(); pit++)
     {
       int index = removed_indices_filtered->at(*pit);
-      int row = index / 640;
-      int column = index % 640;
+      int row = index / original_cloud->width;
+      int column = index % original_cloud->width;
 
       // Calculate the dimensions of the image
       if(column > max_column) max_column = column;
@@ -398,13 +398,16 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
       img.at<cv::Vec3b>( row, column)[2] = original_cloud->points[index].r;
     }
 
-    // cv::Point top =  cv::Point(min_row, min_column);
-    // cv::Point bottom =  cv::Point(max_row, max_column);
-    cv::Point top =  cv::Point(min_column, min_row);
-    cv::Point bottom =  cv::Point(max_column, max_row);
-    cv::rectangle(img, top , bottom , cv::Scalar(100, 100, 200), 2, CV_AA);
-    extracted_images.push_back(img);
+    int roi_topleft_x = min_column;
+    int roi_topleft_y = min_row;
+    int roi_width = max_column - min_column;
+    int roi_height = max_row - min_row;
 
+    cv::Rect region_of_interest = cv::Rect(roi_topleft_x, roi_topleft_y, roi_width, roi_height);
+    cv::Mat image_roi = img(region_of_interest);
+
+    // extracted_images.push_back(img);
+    extracted_images.push_back(image_roi);
     i++;
   }
 
