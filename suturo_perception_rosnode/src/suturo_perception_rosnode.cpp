@@ -124,13 +124,12 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 	ph.publish_pointcloud(ALL_OBJECTS_ON_PLANE_TOPIC,object_cloud_publish, frameId);
   logger.logInfo((boost::format(" Extracted images vector: %s vs. Extracted PointCloud Vector: %s") % perceived_cluster_images.size() % perceivedObjects.size()).str());
 
-  // Push a dummy image to test the functionality of image publishing
-  cv::Mat img(cv::Size(5,5),CV_8UC3, cv::Scalar(0,0,0)); // Create a dummy 5x5 image
-  // ph.publish_cv_mat("dummyimage", img, frameId);
+  // Publish the images of the clusters
   for(int i = 0; i < perceived_cluster_images.size(); i++)
   {
     std::string i_str = boost::lexical_cast<std::string>(i);
-    ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + i_str , perceived_cluster_images.at(i), frameId);
+    // if(ph.isAdvertised(IMAGE_PREFIX_TOPIC + i_str))
+      ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + i_str , perceived_cluster_images.at(i), frameId);
   }
 
   /*
