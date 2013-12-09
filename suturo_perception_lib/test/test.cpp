@@ -109,6 +109,35 @@ TEST(suturo_perception_test, color_2_test)
   ASSERT_EQ(0x55ffff, sp.convertRGBToHSV(0x00ff00)); // green
 }
 
+TEST(suturo_perception_test, color_3_test)
+{
+  suturo_perception_lib::SuturoPerception sp;
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZRGB>());
+  
+  pcl::PointXYZRGB point1, point2, point3, point4, point5, point6;
+  uint8_t r = 255, g = 0, b = 0;
+  uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
+  point1.rgb = *reinterpret_cast<float*>(&rgb);
+  point2.rgb = *reinterpret_cast<float*>(&rgb);
+  point3.rgb = *reinterpret_cast<float*>(&rgb);
+  cloud->points.push_back(point1);
+  cloud->points.push_back(point2);
+  cloud->points.push_back(point3);
+
+  boost::shared_ptr<std::vector<int> > hist = sp.getHistogramHue(cloud);
+  for (int i = 0; i < hist->size(); i++)
+  {
+    printf("%.5d: ", i);
+    for (int j = 0; j < hist->at(i); j++)
+    {
+      printf("#");
+    }
+    printf("\n");
+  }
+}
+  
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

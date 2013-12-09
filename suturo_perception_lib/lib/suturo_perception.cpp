@@ -796,5 +796,39 @@ SuturoPerception::getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Pt
   return convertRGBToHSV(getAverageColor(cloud_in));
 }
 
+/*
+ * Get HSV histogram from the given point cloud
+ */
+boost::shared_ptr<std::vector<int> >
+SuturoPerception::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+{
+  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
+  boost::shared_ptr<std::vector<int> > ret (new std::vector<int>(86)); // 86 = 255 / 3 + 1
+
+  if(cloud_in->points.size() == 0) return ret;
+
+  for (int i = 0; i < (*ret).size(); i++)
+  {
+    ret->at(i) = 0;
+  }
+
+  for(int i = 0; i < cloud_in->points.size(); ++i)
+  {
+    uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
+    uint32_t hsv = convertRGBToHSV(rgb);
+    uint8_t h = (hsv >> 16) & 0x0000ff;
+    uint8_t s = (hsv >> 8) & 0x0000ff;
+    uint8_t v = (hsv) & 0x0000ff;
+
+    ret->at(h/3) ++;
+  }
+
+  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+  logTime(s, e, "getHistrogramHue()");
+
+  return ret;
+ 
+}
 
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
