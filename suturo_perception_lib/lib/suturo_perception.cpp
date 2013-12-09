@@ -296,13 +296,13 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
 
   if(object_clusters->points.size() == 0)
   {
-    logger.logError("clusterFromProjection: object_clusters is empty. Skipping ....");
+    logger.logError("clusterFromProjection: object_clusters is empty. Skipping ...");
     return;
   }
 
   if(original_cloud->points.size() == 0)
   {
-    logger.logError("clusterFromProjection: original_cloud is empty. Skipping ....");
+    logger.logError("clusterFromProjection: original_cloud is empty. Skipping ...");
     return;
   }
 
@@ -326,7 +326,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   ec.setSearchMethod (tree);
   ec.setInputCloud (object_clusters);
   ec.extract(cluster_indices);
-  cout << "Got " << cluster_indices.size() << "clusters";
+  logger.logInfo((boost::format("Found %s clusters.") % cluster_indices.size()).str());
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
   logger.logTime(s, e, "filtering out objects above the plane");
@@ -337,7 +337,6 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   {
     // Gather all points for a cluster into a single pointcloud
     boost::posix_time::ptime s1 = boost::posix_time::microsec_clock::local_time();
-    cout << "Read object cloud" << endl;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
       cloud_cluster->points.push_back (object_clusters->points[*pit]); //*
