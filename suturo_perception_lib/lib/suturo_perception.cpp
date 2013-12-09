@@ -406,7 +406,6 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     cv::Rect region_of_interest = cv::Rect(roi_topleft_x, roi_topleft_y, roi_width, roi_height);
     cv::Mat image_roi = img(region_of_interest);
 
-    // extracted_images.push_back(img);
     extracted_images.push_back(image_roi);
     i++;
   }
