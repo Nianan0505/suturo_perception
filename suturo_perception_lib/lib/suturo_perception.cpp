@@ -345,7 +345,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     cloud_cluster->width = cloud_cluster->points.size ();
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
-    logger.logInfo((boost::format("Cloud Cluster Size is ") % cloud_cluster->points.size ()).str());
+    logger.logInfo((boost::format("Cloud Cluster Size is %s") % cloud_cluster->points.size ()).str());
     std::ostringstream fn;
     fn << "2dcluster_" << i << ".pcd";
     if(writer_pcd) writer.write(fn.str(), *cloud_cluster, false);
