@@ -4,7 +4,9 @@ using namespace suturo_perception_ros_utils;
 
 PublisherHelper::PublisherHelper(ros::NodeHandle &nh) : _node_handle(nh), _queue_size(DEFAULT_QUEUE_SIZE)
 {
+  logger = Logger("perception_ros_utils");
 }
+
 ros::Publisher* PublisherHelper::getPublisher(std::string topic)
 {
   if(isAdvertised(topic))
@@ -43,7 +45,7 @@ void PublisherHelper::publish_pointcloud(ros::Publisher &publisher, pcl::PointCl
   }
   else
   {
-    ROS_ERROR("publish_pointcloud : Input cloud is NULL");
+    ROS_ERROR("[perception_ros_utils] publish_pointcloud : Input cloud is NULL");
   }
 }
 
