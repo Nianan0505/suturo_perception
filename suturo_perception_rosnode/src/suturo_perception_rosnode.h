@@ -20,8 +20,10 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <boost/lexical_cast.hpp>
+#include "suturo_perception_utils.h"
 
 using namespace suturo_perception_ros_utils;
+using namespace suturo_perception_utils;
 
 class SuturoPerceptionROSNode
 {
@@ -61,6 +63,8 @@ private:
   // dynamic reconfigure
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> reconfSrv;
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig>::CallbackType reconfCb;
+
+  Logger logger;
 
   /*
    * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list

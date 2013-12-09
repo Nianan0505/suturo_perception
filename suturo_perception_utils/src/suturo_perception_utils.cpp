@@ -2,24 +2,24 @@
 
 using namespace suturo_perception_utils;
 
-SuturoPerceptionUtils::SuturoPerceptionUtils(std::string m) : module(m){}
+Logger::Logger(std::string m) : module(m){}
 
-void SuturoPerceptionUtils::log(level lvl, std::string s)
+void Logger::log(level lvl, std::string s)
 { 
   #ifndef HAVE_NO_ROS
   switch(lvl)
   {
     case DEBUG:
-      ROS_DEBUG("[%s]  %s", module.c_str(), s.c_str());
+      ROS_DEBUG("[%s] %s", module.c_str(), s.c_str());
     break;
     case INFO:
-      ROS_INFO( "[%s]  %s", module.c_str(), s.c_str());
+      ROS_INFO( "[%s] %s", module.c_str(), s.c_str());
     break;
     case WARN:
-      ROS_WARN( "[%s]  %s", module.c_str(), s.c_str());
+      ROS_WARN( "[%s] %s", module.c_str(), s.c_str());
     break;
     case ERROR:
-      ROS_ERROR("[%s]  %s", module.c_str(), s.c_str());
+      ROS_ERROR("[%s] %s", module.c_str(), s.c_str());
     break;
   }
   
@@ -43,22 +43,22 @@ void SuturoPerceptionUtils::log(level lvl, std::string s)
 
 }
 
-void SuturoPerceptionUtils::logDebug(std::string s)
+void Logger::logDebug(const std::string s)
 {
   log(DEBUG, s);
 }
 
-void SuturoPerceptionUtils::logInfo(std::string s)
+void Logger::logInfo(const std::string s)
 {
   log(INFO, s);
 }
 
-void SuturoPerceptionUtils::logWarn(std::string s)
+void Logger::logWarn(const std::string s)
 {
   log(WARN, s);
 }
 
-void SuturoPerceptionUtils::logError(std::string s)
+void Logger::logError(const std::string s)
 {
   log(ERROR, s);
 }

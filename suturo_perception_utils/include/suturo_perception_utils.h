@@ -12,7 +12,7 @@
 
 namespace suturo_perception_utils
 {
-  class SuturoPerceptionUtils
+  class Logger
   {
     private:
       std::string module;
@@ -21,14 +21,15 @@ namespace suturo_perception_utils
 
     public:
       // Constructor to instantiate a logger for a module
-      SuturoPerceptionUtils(std::string moduleName);
+      Logger(){};
+      Logger(std::string moduleName);
       /**
        * log methods for different levels
        */
-      void logDebug(std::string s);
-      void logInfo (std::string s);
-      void logWarn (std::string s);
-      void logError(std::string s);
+      void logDebug(const std::string s);
+      void logInfo (const std::string s);
+      void logWarn (const std::string s);
+      void logError(const std::string s);
      
   };
 }

@@ -17,6 +17,7 @@ roscpp
 std_msgs
 suturo_perception_2d_object_recognition_lib
 suturo_perception_ros_utils 
+suturo_perception_utils 
 pcl
 pcl_ros
 )
@@ -41,6 +42,7 @@ add_definitions(${PCL_DEFINITIONS})
 
 link_directories(${suturo_perception_lib_LIBRARY_DIRS})
 link_directories(${suturo_perception_ros_utils_LIBRARY_DIRS})
+link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 
 #add_dependencies(suturo_perception_rosnode ${PROJECT_NAME}_gencfg)
 

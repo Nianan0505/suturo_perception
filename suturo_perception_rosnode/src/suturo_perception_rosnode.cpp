@@ -15,6 +15,7 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   recognitionDir(rd),
   ph(n)
 {
+  logger = Logger("perception_rosnode");
   clusterService = nh.advertiseService("GetClusters", 
     &SuturoPerceptionROSNode::getClusters, this);
   vis_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 0);
@@ -57,18 +58,22 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
  void SuturoPerceptionROSNode::receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
  {
   // process only one cloud
-  ROS_INFO("Receiving cloud");
+  logger.logInfo("Receiving cloud");
   if(processing)
   {
-    ROS_INFO("processing...");
+    logger.logInfo("processing...");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*inputCloud,*cloud_in);
-
-    ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
+    
+    std::stringstream ss;
+    ss << "Received a new point cloud: size = " << cloud_in->points.size();
+    // << cloud_in->points.size()
+    logger.logInfo((boost::format("Received a new point cloud: size = %s") % cloud_in->points.size()).str());
+    // alt: logger.logInfo(static_cast<std::stringstream&>(std::stringstream().flush() << "test").str());
     sp.processCloudWithProjections(cloud_in);
     processing = false;
     //sp.writeCloudToDisk(objects);
-    ROS_INFO("Cloud processed. Lock buffer and return the results");      
+    logger.logInfo("Cloud processed. Lock buffer and return the results");      
   }
 }
 
@@ -95,7 +100,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   sub = nh.subscribe(pointTopic, 1, 
     &SuturoPerceptionROSNode::receive_cloud, this);
 
-  ROS_INFO("Waiting for processed cloud");
+  logger.logInfo("Waiting for processed cloud");
   ros::Rate r(20); // 20 hz
   // cancel service call, if no cloud is received after 10s
   boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
@@ -117,7 +122,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
 	ph.publish_pointcloud(TABLE_PLANE_TOPIC,plane_cloud_publish, frameId);
 	ph.publish_pointcloud(ALL_OBJECTS_ON_PLANE_TOPIC,object_cloud_publish, frameId);
-  ROS_INFO(" #################### Extracted images vector: %lu vs. Extracted PointCloud Vector: %lu", perceived_cluster_images.size(), perceivedObjects.size());
+  logger.logInfo((boost::format(" Extracted images vector: %s vs. Extracted PointCloud Vector: %s") % perceived_cluster_images.size() % perceivedObjects.size()).str());
 
   // Push a dummy image to test the functionality of image publishing
   cv::Mat img(cv::Size(5,5),CV_8UC3, cv::Scalar(0,0,0)); // Create a dummy 5x5 image
@@ -164,7 +169,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   */
   mutex.unlock();
 
-  ROS_INFO("Shutting down subscriber");
+  logger.logInfo("Shutting down subscriber");
   sub.shutdown(); // shutdown subscriber, to mitigate funky behavior
   publishVisualizationMarkers(res.perceivedObjs);
 
@@ -219,7 +224,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     ROS_ERROR("collision cloud (aka plane) is NULL ... skipping iteration");
   }
 
-  ROS_INFO("Service call finished. return");
+  logger.logInfo("Service call finished. return");
   return true;
 }
 
@@ -228,7 +233,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
  */
 void SuturoPerceptionROSNode::reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level)
 {
-  ROS_INFO("Reconfigure request : \n"
+  logger.logInfo((boost::format("Reconfigure request : \n"
             "zAxisFilterMin: %f \n"
             "zAxisFilterMax: %f \n"
             "downsampleLeafSize: %f \n"
@@ -241,11 +246,11 @@ void SuturoPerceptionROSNode::reconfigureCallback(suturo_perception_rosnode::Sut
             "prismZMax: %f \n"
             "ecObjClusterTolerance: %f \n"
             "ecObjMinClusterSize: %i \n"
-            "ecObjMaxClusterSize: %i \n",
-            config.zAxisFilterMin, config.zAxisFilterMax, config.downsampleLeafSize,
-            config.planeMaxIterations, config.planeDistanceThreshold, config.ecClusterTolerance,
-            config.ecMinClusterSize, config.ecMaxClusterSize, config.prismZMin, config.prismZMax,
-            config.ecObjClusterTolerance, config.ecObjMinClusterSize, config.ecObjMaxClusterSize);
+            "ecObjMaxClusterSize: %i \n") %
+            config.zAxisFilterMin % config.zAxisFilterMax % config.downsampleLeafSize %
+            config.planeMaxIterations % config.planeDistanceThreshold % config.ecClusterTolerance %
+            config.ecMinClusterSize % config.ecMaxClusterSize % config.prismZMin % config.prismZMax %
+            config.ecObjClusterTolerance % config.ecObjMinClusterSize % config.ecObjMaxClusterSize).str());
   /*while(processing) // wait until current processing run is completed 
   { 
     boost::this_thread::sleep(boost::posix_time::milliseconds(1));
@@ -263,7 +268,7 @@ void SuturoPerceptionROSNode::reconfigureCallback(suturo_perception_rosnode::Sut
   sp.setEcObjClusterTolerance(config.ecObjClusterTolerance);
   sp.setEcObjMinClusterSize(config.ecObjMinClusterSize);
   sp.setEcObjMaxClusterSize(config.ecObjMaxClusterSize);
-  ROS_INFO("Reconfigure successful");
+  logger.logInfo("Reconfigure successful");
 }
 
 // private methods
@@ -297,7 +302,7 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
 
 void SuturoPerceptionROSNode::publishVisualizationMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs)
 {
-  ROS_INFO("Publishing centroid visualization markers");
+  logger.logInfo("Publishing centroid visualization markers");
   int markerId = 0;
   std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = objs.begin();
   for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = objs.begin(); 
