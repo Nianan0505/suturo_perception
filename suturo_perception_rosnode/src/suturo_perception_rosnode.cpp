@@ -109,10 +109,10 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
 	ph.publish_pointcloud(TABLE_PLANE_TOPIC,plane_cloud_publish, frameId);
 	ph.publish_pointcloud(ALL_OBJECTS_ON_PLANE_TOPIC,object_cloud_publish, frameId);
+  ROS_INFO(" #################### Extracted images vector: %lu vs. Extracted PointCloud Vector: %lu", perceived_cluster_images.size(), perceivedObjects.size());
 
-	// PublisherHelper::publish_pointcloud(table_plane_pub, plane_cloud_publish, frameId);
-	// PublisherHelper::publish_pointcloud(objects_on_plane_pub, object_cloud_publish, frameId);
-
+  /*
+   * TODO Implement, if the vector sizes are equal
   if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
   {
     ROS_DEBUG("Extracted images vector: %lu", perceived_cluster_images.size());
@@ -144,7 +144,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   {
     ROS_ERROR("Image vs. Object Vector differs or no 2D object recognition database file given.");
   }
-
+  */
   mutex.unlock();
 
   ROS_INFO("Shutting down subscriber");
@@ -195,17 +195,12 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
       ROS_ERROR("Knowledge not reachable");
       queryId++;
     }
-		// PublisherHelper::publish_pointcloud(collision_cloud_pub, collision_cloud, frameId);
-		ph.publish_pointcloud(COLLISION_CLOUD_TOPIC, collision_cloud, frameId);
+    ph.publish_pointcloud(COLLISION_CLOUD_TOPIC, collision_cloud, frameId);
   }
   else
   {
     ROS_ERROR("collision cloud (aka plane) is NULL ... skipping iteration");
   }
-
-  // pcl::PCDWriter writer;
-  // writer.write("collision_cloud.pcd", *collision_cloud);
-  // ===============================================================
 
   ROS_INFO("Service call finished. return");
   return true;

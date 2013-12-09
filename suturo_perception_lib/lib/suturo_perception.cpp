@@ -370,8 +370,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
 
 
     // TESTING, NO OPENCV
-    // TODO Put it back in and debug it's failures
-    /*
+    
     // RGB Values for points
     int r,g,b;
     cv::Mat img(cv::Size(original_cloud->width,original_cloud->height),CV_8UC3, cv::Scalar(0,0,0)); // Create a cloud with the size of the original cloud
@@ -385,7 +384,7 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
       img.at<cv::Vec3b>( index / 640, index % 640)[2] = original_cloud->points[index].r;
     }
     extracted_images.push_back(img);
-    */
+    
     i++;
   }
 
@@ -538,8 +537,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // By doing this, we should get every object on the table and a 2d image of it.
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
   clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, perceived_cluster_images_);
-  std::cerr << "extractedObjects Vector size" << extractedObjects.size() << std::endl;
-  std::cerr << "extractedImages Vector size" << perceived_cluster_images_.size() << std::endl;
+  std::cerr << " ----------- extractedObjects Vector size" << extractedObjects.size() << std::endl;
+  std::cerr << " ----------- extractedImages Vector size" << perceived_cluster_images_.size() << std::endl;
     
   // temporary list of perceived objects
   std::vector<PerceivedObject> tmpPerceivedObjects;

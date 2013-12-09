@@ -45,9 +45,6 @@ private:
   int objectID;
   ros::ServiceServer clusterService;
   ros::Publisher vis_pub;
-  // ros::Publisher table_plane_pub;
-  // ros::Publisher objects_on_plane_pub;
-  // ros::Publisher collision_cloud_pub;
   ros::ServiceClient is_edible_service;
   ros::ServiceClient is_edible_service_next;
   ros::ServiceClient is_edible_service_finish;
