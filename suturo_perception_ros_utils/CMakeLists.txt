@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(suturo_perception_ros_utils)
 
+# WORKAROUND - import pcl here as well 
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -11,13 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
   pcl
   pcl_ros
 )
-
-# WORKAROUND - import pcl here as well 
-find_package(PCL 1.6 REQUIRED COMPONENTS)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
