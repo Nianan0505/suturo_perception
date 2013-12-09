@@ -22,7 +22,7 @@ namespace suturo_perception_utils
 
     public:
       // Constructor to instantiate a logger for a module
-      Logger(){};
+      Logger(){module = "";};
       Logger(std::string moduleName);
       /**
        * log methods for different levels

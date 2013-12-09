@@ -11,7 +11,7 @@ roscpp)
 #CHECK_INCLUDE_FILES ("ros.h" HAVE_ROS_H)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -82,8 +82,8 @@ roscpp)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_utils
-#  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS system_lib
+  CATKIN_DEPENDS roscpp
+  DEPENDS system_lib
 )
 
 ###########
