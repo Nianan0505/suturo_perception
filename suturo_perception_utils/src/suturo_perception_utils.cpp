@@ -63,4 +63,12 @@ void Logger::logError(const std::string& s)
   log(ERROR, s);
 }
 
+// timelogging for profiling
+void Logger::logTime(boost::posix_time::ptime s, boost::posix_time::ptime e, std::string text)
+{
+    boost::posix_time::time_duration d = e - s;
+    float diff = (float)d.total_microseconds() / (float)1000;
+    logInfo((boost::format("Time for %s: %s ms") % text % diff).str());
+}
+
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
