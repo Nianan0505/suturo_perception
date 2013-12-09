@@ -1,6 +1,6 @@
 #include "publisher_helper.h"
 
-using namespace suturo_perception_utils;
+using namespace suturo_perception_ros_utils;
 
 PublisherHelper::PublisherHelper(ros::NodeHandle &nh) : _node_handle(nh), _queue_size(DEFAULT_QUEUE_SIZE)
 {
