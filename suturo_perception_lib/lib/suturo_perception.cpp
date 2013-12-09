@@ -370,17 +370,22 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
 
     boost::posix_time::ptime s2 = boost::posix_time::microsec_clock::local_time();
 
-
-    // TESTING, NO OPENCV
-    
     // RGB Values for points
     int r,g,b;
-    cv::Mat img(cv::Size(original_cloud->width,original_cloud->height),CV_8UC3, cv::Scalar(0,0,0)); // Create a cloud with the size of the original cloud
-    // (for now)
+    cv::Mat img(cv::Size(original_cloud->width,original_cloud->height),CV_8UC3, cv::Scalar(0,0,0)); // Create an image with the size of the original cloud
+
+    // Compute the ROI (region of interest, with the segmented image)
+    int min_x = original_cloud->width;
+    int max_x = 0;
+    int min_y = original_cloud->height;
+    int max_y = 0;
+
     // fill in color of extracted object points
     for (std::vector<int>::const_iterator pit = object_indices->indices.begin(); pit != object_indices->indices.end(); pit++)
     {
       int index = removed_indices_filtered->at(*pit);
+      int row = index / 640;
+      int column = index % 640;
       img.at<cv::Vec3b>( index / 640, index % 640)[0] = original_cloud->points[index].b;
       img.at<cv::Vec3b>( index / 640, index % 640)[1] = original_cloud->points[index].g;
       img.at<cv::Vec3b>( index / 640, index % 640)[2] = original_cloud->points[index].r;
