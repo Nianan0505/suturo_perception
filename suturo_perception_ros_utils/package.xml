@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>suturo_perception_utils</name>
+  <name>suturo_perception_ros_utils</name>
   <version>0.0.0</version>
-  <description>The suturo_perception_utils package</description>
+  <description>The suturo_perception_ros_utils package. Includes ros dependent helpers</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->

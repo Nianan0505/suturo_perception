@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(suturo_perception_utils)
+project(suturo_perception_ros_utils)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -7,8 +7,16 @@ project(suturo_perception_utils)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
-	sensor_msgs
+  sensor_msgs
+  pcl
+  pcl_ros
 )
+
+# WORKAROUND - import pcl here as well 
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -81,7 +89,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES suturo_perception_utils
+  LIBRARIES suturo_perception_ros_utils
   CATKIN_DEPENDS roscpp std_msgs sensor_msgs
 #  DEPENDS system_lib
 )
@@ -98,7 +106,7 @@ include_directories(
 )
 
 ## Declare a cpp library
- add_library(suturo_perception_utils
+ add_library(suturo_perception_ros_utils
    src/publisher_helper.cpp
  )
 
