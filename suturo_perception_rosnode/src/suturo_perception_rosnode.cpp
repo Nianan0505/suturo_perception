@@ -177,9 +177,10 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // Publish the images of the clusters
   for(int i = 0; i < perceived_cluster_images.size(); i++)
   {
-    std::string i_str = boost::lexical_cast<std::string>(i);
+    std::stringstream ss;
+    ss << i;
     // if(ph.isAdvertised(IMAGE_PREFIX_TOPIC + i_str))
-      ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + i_str , perceived_cluster_images.at(i), frameId);
+      ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + ss.str() , perceived_cluster_images.at(i), frameId);
   }
 
   // publish histograms
@@ -187,8 +188,9 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   {
     if (i > 6)
       continue;
-    std::string i_str = boost::lexical_cast<std::string>(i);
-    ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + i_str, perceived_cluster_histograms.at(i), frameId);
+    std::stringstream ss;
+    ss << i;
+    ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + ss.str(), perceived_cluster_histograms.at(i), frameId);
   }
 
   /*
