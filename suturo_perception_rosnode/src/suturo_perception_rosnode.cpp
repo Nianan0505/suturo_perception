@@ -161,6 +161,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
   std::vector<cv::Mat> perceived_cluster_images;
   std::vector<cv::Mat> perceived_cluster_histograms;
+
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
   perceived_cluster_images = sp.getPerceivedClusterImages();
@@ -179,8 +180,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   {
     std::stringstream ss;
     ss << i;
-    // if(ph.isAdvertised(IMAGE_PREFIX_TOPIC + i_str))
-      ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + ss.str() , perceived_cluster_images.at(i), frameId);
+    ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + ss.str() , perceived_cluster_images.at(i), frameId);
   }
 
   // publish histograms

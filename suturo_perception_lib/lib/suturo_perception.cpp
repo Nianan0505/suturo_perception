@@ -803,8 +803,7 @@ SuturoPerception::convertRGBToHSV(uint32_t rgb)
     }
   }
 
-  if (debug)
-    printf("h = %f, s = %f, v = %f\n", h,s,v);
+  logger.logDebug((boost::format("h = %f, s = %f, v = %f") % h % s % v).str());
 
   h = (h / 360) * 255;
   s *= 255;
