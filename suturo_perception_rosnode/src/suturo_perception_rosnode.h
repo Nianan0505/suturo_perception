@@ -20,7 +20,12 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <boost/lexical_cast.hpp>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
 #include "suturo_perception_utils.h"
+#include <sensor_msgs/Image.h>
 
 using namespace suturo_perception_ros_utils;
 using namespace suturo_perception_utils;
@@ -30,6 +35,7 @@ class SuturoPerceptionROSNode
 public:
   SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string fi, std::string rd);
   void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud);
+  void receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud);
   bool getClusters(suturo_perception_msgs::GetClusters::Request &req,
     suturo_perception_msgs::GetClusters::Response &res);
   void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level);

@@ -11,8 +11,11 @@
 #include "opencv2/core/core.hpp"
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
+#include "suturo_perception_utils.h"
 
 #define DEFAULT_QUEUE_SIZE 5
+
+using namespace suturo_perception_utils;
 
 namespace suturo_perception_ros_utils
 {
@@ -23,6 +26,7 @@ namespace suturo_perception_ros_utils
       std::map<std::string,bool> _is_advertised_map;
       ros::NodeHandle &_node_handle;
       int _queue_size;
+      Logger logger;
 
       void setAdvertised(std::string topic);
 
@@ -57,7 +61,7 @@ namespace suturo_perception_ros_utils
         }
         else
         {
-          ROS_ERROR("Tried to advertise on an already existing topic");
+          logger.logError("Tried to advertise on an already existing topic");
         }
       }
 

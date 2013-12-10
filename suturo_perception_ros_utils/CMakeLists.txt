@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   cv_bridge
   image_transport
+  suturo_perception_utils
 )
 # WORKAROUND - import pcl here as well 
 find_package(PCL 1.6 REQUIRED COMPONENTS)
@@ -100,7 +101,7 @@ find_package(OpenCV REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_ros_utils
-  CATKIN_DEPENDS roscpp std_msgs sensor_msgs
+  CATKIN_DEPENDS roscpp std_msgs sensor_msgs suturo_perception_utils
   DEPENDS opencv
 #  DEPENDS system_lib
 )

@@ -112,9 +112,9 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(suturo_perception_lib
- lib/suturo_perception.cpp
-)
+#add_library(suturo_perception_lib
+# lib/suturo_perception.cpp
+#)
 
 ## Declare a cpp executable
 # add_executable(perception_node src/perception_node.cpp)
@@ -123,23 +123,6 @@ add_library(suturo_perception_lib
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(perception_node perception_generate_messages_cpp)
 
-find_package(OpenCV REQUIRED)
-
-# include boost
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.48.0 COMPONENTS thread)
-
-include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
-# Link library against PCL and boost
-target_link_libraries(suturo_perception_lib ${OpenCV_LIBS} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES} suturo_perception_utils)
-
-## Specify libraries to link a library or executable target against
- target_link_libraries(suturo_perception_lib
-   ${catkin_LIBRARIES}
- )
 
 #############
 ## Install ##
@@ -186,7 +169,7 @@ catkin_add_gtest(${PROJECT_NAME}-test
   WORKING_DIRECTORY ${POINTCLOUD_PATH}
 )
 if(TARGET ${PROJECT_NAME}-test)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} suturo_perception_shape_detection suturo_perception_lib suturo_perception_utils ${catkin_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
   
   # other stuff neded for the test
   #configure_file( test/pointcloud_path.h.in ${CMAKE_BINARY_DIR}/generated/pointcloud_path.h )
@@ -208,5 +191,5 @@ endif()
 # catkin_add_nosetests(test)
 
 # Search the following folders for additional CMakeLists.txt
-#add_subdirectory(lib)
+add_subdirectory(lib)
 #add_subdirectory(test)
