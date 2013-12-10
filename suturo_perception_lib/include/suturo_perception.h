@@ -29,7 +29,7 @@ namespace suturo_perception_lib
 		void processCloudWithProjections(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<PerceivedObject> getPerceivedObjects();
     std::vector<cv::Mat> getPerceivedClusterImages();
-    boost::shared_ptr<std::vector<cv::Mat> > getPerceivedClusterHistograms();
+    std::vector<cv::Mat> getPerceivedClusterHistograms();
 
     // Get the cloud that is the basis for the object extraction
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getPlaneCloud();
@@ -128,7 +128,7 @@ namespace suturo_perception_lib
     int ecObjMinClusterSize;
     int ecObjMaxClusterSize;
     std::vector<cv::Mat> perceived_cluster_images_;
-    boost::shared_ptr<std::vector<cv::Mat> > perceived_cluster_histograms_;
+    std::vector<cv::Mat> perceived_cluster_histograms_;
 
     // The cloud of the extracted plane in the segmentation process
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_;

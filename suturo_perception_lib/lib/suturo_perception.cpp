@@ -566,7 +566,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   int ptShape;
 
   // initialize list of histogram images
-  perceived_cluster_histograms_.reset(new std::vector<cv::Mat>(extractedObjects.size()));
+  perceived_cluster_histograms_.clear();
 
   // hack for collision_objects
   collision_objects = extractedObjects;
@@ -605,7 +605,9 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     // generate image of histogram
     cv::Mat hist(cv::Size(800,600), CV_8UC3, cv::Scalar(0,0,0)); 
     
-    perceived_cluster_histograms_->push_back(hist);
+    cv::rectangle(hist, cv::Point(10,10), cv::Point(200, 200), cv::Scalar(0,0,255), -1, 8);
+
+    perceived_cluster_histograms_.push_back(hist);
     
 
     // Detect the shape of the object
@@ -658,7 +660,7 @@ std::vector<cv::Mat> SuturoPerception::getPerceivedClusterImages()
   return perceived_cluster_images_;
 }
 
-boost::shared_ptr<std::vector<cv::Mat> > SuturoPerception::getPerceivedClusterHistograms()
+std::vector<cv::Mat> SuturoPerception::getPerceivedClusterHistograms()
 {
   return perceived_cluster_histograms_;
 }

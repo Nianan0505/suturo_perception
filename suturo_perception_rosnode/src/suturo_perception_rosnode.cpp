@@ -120,7 +120,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   std::vector<cv::Mat> perceived_cluster_images;
-  boost::shared_ptr<std::vector<cv::Mat> > perceived_cluster_histograms;
+  std::vector<cv::Mat> perceived_cluster_histograms;
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
   perceived_cluster_images = sp.getPerceivedClusterImages();
@@ -132,7 +132,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
 	ph.publish_pointcloud(TABLE_PLANE_TOPIC,plane_cloud_publish, frameId);
 	ph.publish_pointcloud(ALL_OBJECTS_ON_PLANE_TOPIC,object_cloud_publish, frameId);
-  logger.logInfo((boost::format(" Extracted images vector: %s vs. Extracted PointCloud Vector: %s") % perceived_cluster_images.size() % perceivedObjects.size()).str());
+  logger.logInfo((boost::format(" Extracted images vector: %s vs. Extracted PointCloud Vector: %s vs. Extracted histogram vector: %s") % perceived_cluster_images.size() % perceivedObjects.size() % perceived_cluster_histograms.size()).str());
 
   // Publish the images of the clusters
   for(int i = 0; i < perceived_cluster_images.size(); i++)
@@ -143,12 +143,12 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   // publish histograms
-  for (int i = 0; i < perceived_cluster_histograms->size(); i++)
+  for (int i = 0; i < perceived_cluster_histograms.size(); i++)
   {
     if (i > 6)
       continue;
     std::string i_str = boost::lexical_cast<std::string>(i);
-    ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + i_str, perceived_cluster_histograms->at(i), frameId);
+    ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + i_str, perceived_cluster_histograms.at(i), frameId);
   }
 
   /*
