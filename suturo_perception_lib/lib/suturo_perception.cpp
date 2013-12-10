@@ -604,9 +604,56 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     boost::shared_ptr<std::vector<int> > histogram = getHistogramHue(*it);
 
     // generate image of histogram
-    cv::Mat hist(cv::Size(800,600), CV_8UC3, cv::Scalar(0,0,0)); 
+    uint32_t hw = 800;
+    uint32_t hh = 600;
+    int fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
+    double fontScale = 0.75;
+    int thickness = 3;
+    cv::Scalar bg_color(255,255,255);
+    cv::Scalar fg_color(0,0,0);
+
+    cv::Mat hist(cv::Size(hw,hh), CV_8UC3, bg_color); 
+
+    int baseline = 0;
+    cv::Size txt_size_yaxis = cv::getTextSize(boost::lexical_cast<std::string>(9999), fontFace, fontScale, thickness, &baseline);
+    baseline += thickness;
+
+    cv::line(hist, cv::Point(10 + txt_size_yaxis.width, 10), cv::Point(10 + txt_size_yaxis.width, hh - 20), fg_color);
+    cv::line(hist, cv::Point(10 + txt_size_yaxis.width, hh - 20), cv::Point(hw - 20, hh - 20), fg_color);
     
-    cv::rectangle(hist, cv::Point(10,10), cv::Point(200, 200), cv::Scalar(0,0,255), -1, 8);
+    int max_h = 0;
+    for (int j = 0; j < histogram->size(); j++)
+    {
+      max_h = std::max(max_h, histogram->at(j));
+    }
+    int step = max_h / 10;
+    int y_axis_txt = 0;
+    for (int j = 0; j < 11; j++)
+    {
+      cv::Point text_org(5, hh - j*(hh / 10) - 20);
+      cv::putText(hist, boost::lexical_cast<std::string>(y_axis_txt), text_org, fontFace, fontScale, fg_color, thickness, 8);
+      y_axis_txt += step;
+    }
+    step = ( hw - txt_size_yaxis.width - 5 ) / histogram->size();
+    //cv::Point from(txt_size_yaxis.width + 5, hh - 20 - (uint32_t) (((double)hh - 20) / (double) max_h) * histogram->at(0) );
+    cv::Point from(
+        txt_size_yaxis.width + 10, 
+        hh - 20 - (uint32_t) ((((double)hh - 20) / (double) max_h)) * (double) histogram->at(0) );
+    cv::Point to(0,0);
+    //std::stringstream ykoors;
+    for (int j = 1; j < histogram->size(); j++)
+    {
+      to.x = txt_size_yaxis.width + 10 + j * ( (hw - txt_size_yaxis.width - 20) / histogram->size() );
+      to.y = hh - 20 - (uint32_t) ((((double)hh - 20) / (double) max_h)) * (double) histogram->at(j);
+
+      //ykoors << "(" << to.x << "," << to.y << ") ";
+
+      cv::line(hist, from, to, fg_color);
+
+      from.x = to.x;
+      from.y = to.y;
+    }
+    //logger.logInfo((boost::format("[histogram image] max_h = %s, a = %s, b = %s, c = %s") % max_h % (uint32_t) ((((double)hh - 20) / (double) max_h)) % (hh - 20 - (uint32_t) ((((double)hh - 20) / (double) max_h)) * (double) histogram->at(0)) % ykoors.str()).str());
 
     perceived_cluster_histograms_.push_back(hist);
     
