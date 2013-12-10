@@ -4,11 +4,11 @@
 #include <boost/date_time.hpp>
 #include <dynamic_reconfigure/server.h>
 #include <suturo_perception_rosnode/SuturoPerceptionConfig.h>
-#include <visualization_msgs/Marker.h>
 #include <pcl_ros/point_cloud.h>
 #include <sensor_msgs/PointCloud.h>
 
 #include "suturo_perception.h"
+#include "visualization_publisher.h"
 #include "perceived_object.h"
 #include "point.h"
 #include "suturo_perception_msgs/GetClusters.h"
@@ -41,7 +41,7 @@ public:
   void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level);
 
 private:
-  // Declare the name of the used Topics
+  // Declare the names of the used Topics
   static const std::string TABLE_PLANE_TOPIC;
   static const std::string ALL_OBJECTS_ON_PLANE_TOPIC;
   static const std::string COLLISION_CLOUD_TOPIC;
@@ -56,12 +56,12 @@ private:
   boost::signals2::mutex mutex;
   // ID counter for the perceived objects
   int objectID;
+  // services
   ros::ServiceServer clusterService;
-  ros::Publisher vis_pub;
   ros::ServiceClient is_edible_service;
   ros::ServiceClient is_edible_service_next;
   ros::ServiceClient is_edible_service_finish;
-  int maxMarkerId;
+  
   std::string pointTopic;
   std::string frameId;
   std::string recognitionDir;
@@ -71,6 +71,7 @@ private:
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> reconfSrv;
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig>::CallbackType reconfCb;
 
+  VisualizationPublisher visualizationPublisher;
   Logger logger;
 
   /*
@@ -78,8 +79,6 @@ private:
    */
   std::vector<suturo_perception_msgs::PerceivedObject> 
     *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects);
-
-  void publishVisualizationMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs);
 };
 
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

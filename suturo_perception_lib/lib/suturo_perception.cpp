@@ -853,7 +853,7 @@ SuturoPerception::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
   }
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logger.logTime(s, e, "getHistrogramHue()");
+  logger.logTime(s, e, "getHistogramHue()");
 
   return ret;
  
