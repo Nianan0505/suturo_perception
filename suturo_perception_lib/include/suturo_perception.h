@@ -15,6 +15,7 @@
 #include <pcl/ModelCoefficients.h>
 
 #include "suturo_perception_utils.h"
+#include "color_analysis.h"
 
 using namespace suturo_perception_utils;
 
@@ -55,9 +56,6 @@ namespace suturo_perception_lib
                         // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
     // void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                     // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
-    uint32_t getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    uint32_t getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    boost::shared_ptr<std::vector<int> > getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers);
     void extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PointIndices::Ptr object_indices, int convex_hull_dimension);
 
@@ -150,6 +148,9 @@ namespace suturo_perception_lib
 
     // debug var for time profiling
     bool debug;
+
+    // instances of helper libraries
+    suturo_perception_color_analysis::ColorAnalysis ca;
   };
 }
 

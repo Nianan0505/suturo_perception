@@ -5,7 +5,6 @@
 #include "perceived_object.h"
 #include "point.h"
 #include "random_sample_consensus.h"
-#include "color_analysis.h"
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
@@ -570,8 +569,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // initialize list of histogram images
   perceived_cluster_histograms_.clear();
 
-  suturo_perception_color_analysis::ColorAnalysis ca;
-
   // hack for collision_objects
   collision_objects = extractedObjects;
   int i=0;
@@ -601,10 +598,10 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     hull.reconstruct (*hull_points);
 
     // Get average color of the object
-    uint32_t averageColor = getAverageColor(*it);
+    uint32_t averageColor = ca.getAverageColor(*it);
 
     // Get hue histogram of the object
-    boost::shared_ptr<std::vector<int> > histogram = getHistogramHue(*it);
+    boost::shared_ptr<std::vector<int> > histogram = ca.getHistogramHue(*it);
 
     // generate image of histogram
     perceived_cluster_histograms_.push_back(ca.histogramToImage(histogram));
@@ -701,49 +698,6 @@ SuturoPerception::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn)
 {   
     suturo_perception_shape_detection::RandomSampleConsensus rsc;
     rsc.detectShape(cloudIn);
-}
-
-/*
- * Get average color for the points in the given point cloud
- */
-uint32_t
-SuturoPerception::getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
-{
-  suturo_perception_color_analysis::ColorAnalysis ca;
-  return ca.getAverageColor(cloud_in);
-}
-
-/*
- * Convert rgb color to hsv color
- * colors are in packed value format. the msb is used as debug flag, everthing != 0
- * turns on debugging
- * based on: http://en.literateprograms.org/RGB_to_HSV_color_space_conversion_%28C%29
- */
-uint32_t
-SuturoPerception::convertRGBToHSV(uint32_t rgb) 
-{
-  suturo_perception_color_analysis::ColorAnalysis ca;
-  return ca.convertRGBToHSV(rgb);
-}
-
-/*
- * Get average color for the points in the given point cloud in HSV format
- */
-uint32_t
-SuturoPerception::getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
-{
-  suturo_perception_color_analysis::ColorAnalysis ca;
-  return ca.getAverageColorHSV(cloud_in);
-}
-
-/*
- * Get HSV histogram from the given point cloud
- */
-boost::shared_ptr<std::vector<int> >
-SuturoPerception::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
-{
-  suturo_perception_color_analysis::ColorAnalysis ca;
-  return ca.getHistogramHue(cloud_in);
 }
 
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

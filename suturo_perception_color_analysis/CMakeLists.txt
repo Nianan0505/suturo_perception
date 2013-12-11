@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(suturo_perception_color_analysis)
 
+SET(POINTCLOUD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../suturo_perception_lib/pointclouds" CACHE STRING "Path of Pointclouds")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
+  roscpp
   suturo_perception_utils
 )
 link_directories(${suturo_perception_utils_LIBRARY_DIRS})
@@ -78,8 +81,8 @@ link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_color_analysis
-  CATKIN_DEPENDS pcl
-#  DEPENDS system_lib
+  CATKIN_DEPENDS pcl cv_bridge roscpp
+  DEPENDS opencv
 )
 
 ###########
@@ -144,6 +147,37 @@ include_directories(
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
+
+#############
+## Testing ##
+#############
+
+## Add gtest based cpp test target and link libraries
+catkin_add_gtest(${PROJECT_NAME}-test 
+  test/test.cpp
+  WORKING_DIRECTORY ${POINTCLOUD_PATH}
+)
+if(TARGET ${PROJECT_NAME}-test)
+  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+  
+  # other stuff neded for the test
+  #configure_file( test/pointcloud_path.h.in ${CMAKE_BINARY_DIR}/generated/pointcloud_path.h )
+  #include_directories( ${CMAKE_BINARY_DIR}/generated/ )
+  
+  # test needs pcl
+  find_package(PCL 1.6 REQUIRED COMPONENTS)
+
+  find_package( OpenCV REQUIRED )
+
+  # Include PCL directories after discovery of PCL
+  include_directories(${PCL_INCLUDE_DIRS})
+  link_directories(${PCL_LIBRARY_DIRS} ${OpenCV_LIBS})
+  add_definitions(${PCL_DEFINITIONS})
+  
+
+  # used to execute the sync_pointclouds.sh script
+  #add_dependencies(${PROJECT_NAME}-test suturo_pcd_files)
+endif()
 
 # Search the following folders for additional CMakeLists.txt
 add_subdirectory(src)
