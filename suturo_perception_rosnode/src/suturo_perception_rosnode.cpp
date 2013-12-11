@@ -79,18 +79,6 @@ void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageCo
   }
 }
 
-// void receive_ic(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud)
-// {
-//   return;
-// 
-// }
-// 
-// void receive_two_images(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::ImageConstPtr& inputImage2)
-// {
-//   return;
-// 
-// }
-
  /*
   * Receive callback for the /camera/depth_registered/points subscription
   */
@@ -135,17 +123,11 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     return false;
   }
 
-  // Subscribe to the depth information topic
-  // sub = nh.subscribe(pointTopic, 1, 
-  //   &SuturoPerceptionROSNode::receive_cloud, this);
-
   message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, "/camera/rgb/image_color", 1);
   message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub(nh, pointTopic, 1);
-  // message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::PointCloud2> sync(image_sub, pc_sub, 10);
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::PointCloud2> MySyncPolicy;
   message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image_sub, pc_sub);
 
-  // sync.registerCallback(boost::bind(&callback, _1, _2));
   sync.registerCallback(boost::bind(&SuturoPerceptionROSNode::receive_image_and_cloud,this, _1, _2));
 
   logger.logInfo("Waiting for processed cloud");
