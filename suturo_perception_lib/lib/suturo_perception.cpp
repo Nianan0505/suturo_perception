@@ -291,7 +291,7 @@ bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZ
  * see SuturoPerception::prismZMax and SuturoPerception::prismZMin.
  * In the future, this method will also extract 2d images from every object cluster.
  */
-void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images)
+void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images, std::vector<ROI> &perceived_cluster_rois_)
 {
 
   if(object_clusters->points.size() == 0)
@@ -402,10 +402,17 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     int roi_width = max_column - min_column;
     int roi_height = max_row - min_row;
 
+    ROI roi;
+    roi.origin.x = roi_topleft_x;
+    roi.origin.y = roi_topleft_y;
+    roi.width = roi_width;
+    roi.height = roi_height;
+
     cv::Rect region_of_interest = cv::Rect(roi_topleft_x, roi_topleft_y, roi_width, roi_height);
     cv::Mat image_roi = img(region_of_interest);
 
     extracted_images.push_back(image_roi);
+    perceived_cluster_rois_.push_back(roi);
     i++;
   }
 
@@ -554,9 +561,11 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // Take the projected points, cluster them and extract everything that's above it
   // By doing this, we should get every object on the table and a 2d image of it.
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects;
-  clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, perceived_cluster_images_);
+  perceived_cluster_rois_.clear();
+  clusterFromProjection(objects_cloud_projected, cloud_in, &removed_indices_filtered, extractedObjects, perceived_cluster_images_, perceived_cluster_rois_);
   logger.logInfo((boost::format(" - extractedObjects Vector size %s") % extractedObjects.size()).str());
   logger.logInfo((boost::format(" - extractedImages  Vector size %s") % perceived_cluster_images_.size()).str());
+  logger.logInfo((boost::format(" - extractedROIs  Vector size %s") % perceived_cluster_rois_.size()).str());
     
   // temporary list of perceived objects
   std::vector<PerceivedObject> tmpPerceivedObjects;
@@ -632,6 +641,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     percObj.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
     percObj.c_color_average_b = (averageColor)       & 0x0000ff;
     percObj.c_hue_histogram = *histogram;
+    percObj.c_roi.push_back(perceived_cluster_rois_[i]);
 
     tmpPerceivedObjects.push_back(percObj);
     i++;
@@ -660,6 +670,11 @@ std::vector<cv::Mat> SuturoPerception::getPerceivedClusterImages()
 std::vector<cv::Mat> SuturoPerception::getPerceivedClusterHistograms()
 {
   return perceived_cluster_histograms_;
+}
+
+std::vector<ROI> SuturoPerception::getPerceivedClusterROIs()
+{
+  return perceived_cluster_rois_;
 }
 
 void SuturoPerception::writeCloudToDisk(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud, std::string filename="")

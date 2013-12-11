@@ -16,6 +16,7 @@
 
 #include "suturo_perception_utils.h"
 #include "color_analysis.h"
+#include "roi.h"
 
 using namespace suturo_perception_utils;
 
@@ -31,12 +32,14 @@ namespace suturo_perception_lib
     std::vector<PerceivedObject> getPerceivedObjects();
     std::vector<cv::Mat> getPerceivedClusterImages();
     std::vector<cv::Mat> getPerceivedClusterHistograms();
+    std::vector<ROI> getPerceivedClusterROIs();
 
     // Get the cloud that is the basis for the object extraction
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getPlaneCloud();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getObjectsOnPlaneCloud();
 
-		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images);
+    // TODO Refactor method to a result struct
+		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images, std::vector<ROI> &perceived_cluster_rois_);
 
     void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
@@ -49,13 +52,6 @@ namespace suturo_perception_lib
                         pcl::PointIndices::Ptr indices_out, pcl::ModelCoefficients::Ptr coefficients);
     void extractInliersFromPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
           pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, bool setNegative);
-    // void extractObjectCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-                              // const pcl::PointIndices::Ptr inliers, 
-                              // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
-    // void extractObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-                        // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
-    // void getObjects(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-                    // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& extractedObjects);
     bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers);
     void extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PointIndices::Ptr object_indices, int convex_hull_dimension);
 
@@ -127,6 +123,7 @@ namespace suturo_perception_lib
     int ecObjMaxClusterSize;
     std::vector<cv::Mat> perceived_cluster_images_;
     std::vector<cv::Mat> perceived_cluster_histograms_;
+    std::vector<ROI> perceived_cluster_rois_;
 
     // The cloud of the extracted plane in the segmentation process
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_;

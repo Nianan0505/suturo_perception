@@ -2,6 +2,7 @@
 #define PERCEIVED_OBJECT_H
 
 #include "point.h"
+#include "roi.h"
 
 namespace suturo_perception_lib
 {
@@ -17,6 +18,7 @@ namespace suturo_perception_lib
       uint8_t c_color_average_b;
       std::string c_recognition_label_2d;
       std::vector<int> c_hue_histogram;
+      std::vector<ROI> c_roi;
   };
 }
 
