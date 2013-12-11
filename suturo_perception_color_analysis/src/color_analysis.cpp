@@ -262,10 +262,20 @@ ColorAnalysis::histogramToImage(boost::shared_ptr<std::vector<int> > histogram)
     cv::putText(hist, boost::lexical_cast<std::string>(y_axis_txt), text_org, fontFace, fontScale, fg_color, thickness, 8);
     y_axis_txt += step;
   }
-  int x_axis_width = hh - 20 - txt_size_yaxis.width - 10;
-  for (int j = 10 + txt_size_yaxis.width; j < hh - 20; j++)
+  int x_axis_width = hw - 20 - txt_size_yaxis.width - 10;
+  uint8_t hue = 0;
+  for (int j = 0; j < x_axis_width; j++)
   {
     // draw xaxis color line
+    hue = (uint8_t) ((255.0 / (double)x_axis_width) * j);
+
+    uint32_t tmp_color = convertHSVToRGB(hue << 16 | 0xffff);
+    cv::Scalar x_color(
+      tmp_color & 0xff,
+      (tmp_color & 0xff00) >> 8,
+      (tmp_color & 0xff0000) >> 16);
+
+    cv::line(hist, cv::Point(10 + txt_size_yaxis.width + j, hh - 20), cv::Point(10 + txt_size_yaxis.width + j, hh), x_color);
   }
   //cv::Point from(txt_size_yaxis.width + 5, hh - 20 - (uint32_t) (((double)hh - 20) / (double) max_h) * histogram->at(0) );
   cv::Point from(
