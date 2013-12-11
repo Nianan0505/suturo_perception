@@ -154,6 +154,81 @@ ColorAnalysis::convertRGBToHSV(uint32_t rgb)
   return ((uint32_t)h << 16 | (uint32_t)s << 8 | (uint32_t)v);
 }
 
+/*
+ * convert hsv to rgb color
+ * taken from: http://stackoverflow.com/a/6930407
+ */
+uint32_t
+ColorAnalysis::convertHSVToRGB(uint32_t hsv)
+{
+  double hh, p, q, t, ff;
+  long i;
+  uint8_t r,g,b;
+  uint8_t hi = (uint8_t) ((hsv & 0xff0000) >> 16);
+  uint8_t si = (uint8_t) ((hsv & 0xff00) >> 8);
+  uint8_t vi = (uint8_t) (hsv & 0xff);
+  double h = (double) hi;
+  double s = (double) si;
+  double v = (double) vi;
+
+  h = h / 255 * 360;
+  s /= 255;
+  v /= 255;
+
+  if(s <= 0.0)
+  {
+    r = (uint8_t) v * 255;
+    g = (uint8_t) v * 255;
+    b = (uint8_t) v * 255;
+    return (r << 16) | (g << 8) | b;
+  }
+  hh = h;
+  if(hh >= 360.0) 
+    hh = 0.0;
+  hh /= 60;
+  i = (long)hh;
+  ff = hh - i;
+  p = v * (1 - s);
+  q = v * (1 - (s * ff));
+  t = v * (1 - (s * (1 - ff)));
+
+  switch(i) 
+  {
+  case 0:
+    r = (uint8_t) (v * 255);
+    g = (uint8_t) (t * 255);
+    b = (uint8_t) (p * 255);
+    break;
+  case 1:
+    r = (uint8_t) (q * 255);
+    g = (uint8_t) (v * 255);
+    b = (uint8_t) (p * 255);
+    break;
+  case 2:
+    r = (uint8_t) (p * 255);
+    g = (uint8_t) (v * 255);
+    b = (uint8_t) (t * 255);
+    break;
+  case 3:
+    r = (uint8_t) (p * 255);
+    g = (uint8_t) (q * 255);
+    b = (uint8_t) (v * 255);
+    break;
+  case 4:
+    r = (uint8_t) (t * 255);
+    g = (uint8_t) (p * 255);
+    b = (uint8_t) (v * 255);
+    break;
+  case 5:
+  default:
+    r = (uint8_t) (v * 255);
+    g = (uint8_t) (p * 255);
+    b = (uint8_t) (q * 255);
+    break;
+  }
+  return (r << 16) | (g << 8) | b;
+}
+
 cv::Mat
 ColorAnalysis::histogramToImage(boost::shared_ptr<std::vector<int> > histogram)
 {
@@ -187,7 +262,11 @@ ColorAnalysis::histogramToImage(boost::shared_ptr<std::vector<int> > histogram)
     cv::putText(hist, boost::lexical_cast<std::string>(y_axis_txt), text_org, fontFace, fontScale, fg_color, thickness, 8);
     y_axis_txt += step;
   }
-  step = ( hw - txt_size_yaxis.width - 5 ) / histogram->size();
+  int x_axis_width = hh - 20 - txt_size_yaxis.width - 10;
+  for (int j = 10 + txt_size_yaxis.width; j < hh - 20; j++)
+  {
+    // draw xaxis color line
+  }
   //cv::Point from(txt_size_yaxis.width + 5, hh - 20 - (uint32_t) (((double)hh - 20) / (double) max_h) * histogram->at(0) );
   cv::Point from(
       txt_size_yaxis.width + 10, 
