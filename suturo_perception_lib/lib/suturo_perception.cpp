@@ -641,7 +641,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     percObj.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
     percObj.c_color_average_b = (averageColor)       & 0x0000ff;
     percObj.c_hue_histogram = *histogram;
-    percObj.c_roi.push_back(perceived_cluster_rois_[i]);
+    percObj.c_roi = perceived_cluster_rois_[i];
 
     tmpPerceivedObjects.push_back(percObj);
     i++;

@@ -79,6 +79,11 @@ namespace suturo_perception_lib
     void setEcObjMinClusterSize(int v) {ecObjMinClusterSize = v;};
     void setEcObjMaxClusterSize(int v) {ecObjMaxClusterSize = v;};
 
+    // Set the input cloud, that has been used for the computation.
+    // You can keep that as a reference, to work with the original cloud later
+    void setOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud){ original_cloud_ = original_cloud;}
+
+
     float getZAxisFilterMin() {return zAxisFilterMin;};
     float getZAxisFilterMax() {return zAxisFilterMax;};
     float getDownsampleLeafSize() {return downsampleLeafSize;};
@@ -92,6 +97,9 @@ namespace suturo_perception_lib
     double getEcObjClusterTolerance() {return ecObjClusterTolerance;};
     int getEcObjMinClusterSize() {return ecObjMinClusterSize;};
     int getEcObjMaxClusterSize() {return ecObjMaxClusterSize;};
+
+    // Get the received point cloud, that you are working on
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getOriginalCloud(){ return original_cloud_;}
 
     // Method for convertig packed RGB color to packed HSV color
     uint32_t convertRGBToHSV(uint32_t rgb);
@@ -124,6 +132,7 @@ namespace suturo_perception_lib
     std::vector<cv::Mat> perceived_cluster_images_;
     std::vector<cv::Mat> perceived_cluster_histograms_;
     std::vector<ROI> perceived_cluster_rois_;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud_;
 
     // The cloud of the extracted plane in the segmentation process
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_;

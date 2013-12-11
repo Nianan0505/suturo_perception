@@ -45,6 +45,7 @@ private:
   static const std::string ALL_OBJECTS_ON_PLANE_TOPIC;
   static const std::string COLLISION_CLOUD_TOPIC;
   static const std::string IMAGE_PREFIX_TOPIC;
+  static const std::string CROPPED_IMAGE_PREFIX_TOPIC;
   static const std::string HISTOGRAM_PREFIX_TOPIC;
 
   bool processing; // processing flag

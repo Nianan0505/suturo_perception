@@ -4,6 +4,7 @@ const std::string SuturoPerceptionROSNode::TABLE_PLANE_TOPIC = "suturo_perceptio
 const std::string SuturoPerceptionROSNode::ALL_OBJECTS_ON_PLANE_TOPIC = "suturo_perception_objects_ontable"; // TODO use /suturo/objects_on_table
 const std::string SuturoPerceptionROSNode::COLLISION_CLOUD_TOPIC = "suturo_perception_collision_cloud";
 const std::string SuturoPerceptionROSNode::IMAGE_PREFIX_TOPIC= "/suturo/cluster_image/";
+const std::string SuturoPerceptionROSNode::CROPPED_IMAGE_PREFIX_TOPIC= "/suturo/cropped_cluster_image/";
 const std::string SuturoPerceptionROSNode::HISTOGRAM_PREFIX_TOPIC= "/suturo/cluster_histogram/";
 
 /*
@@ -39,6 +40,7 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
     std::stringstream ss;
     ss << i;
     ph.advertise<sensor_msgs::Image>(IMAGE_PREFIX_TOPIC + ss.str());
+    ph.advertise<sensor_msgs::Image>(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
     ph.advertise<sensor_msgs::Image>(HISTOGRAM_PREFIX_TOPIC + ss.str());
   }
 
@@ -66,12 +68,16 @@ void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageCo
     logger.logInfo("processing...");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*inputCloud,*cloud_in);
+
+    // Testing: Need to point to the original, received OpenCV Image
+    boost::shared_ptr<cv::Mat> img(new cv::Mat(7,7,CV_32FC2,Scalar(1,3)));
     
     std::stringstream ss;
     ss << "Received a new point cloud: size = " << cloud_in->points.size();
     // << cloud_in->points.size()
     logger.logInfo((boost::format("Received a new point cloud: size = %s") % cloud_in->points.size()).str());
     // alt: logger.logInfo(static_cast<std::stringstream&>(std::stringstream().flush() << "test").str());
+    sp.setOriginalCloud(cloud_in);
     sp.processCloudWithProjections(cloud_in);
     processing = false;
     //sp.writeCloudToDisk(objects);
@@ -123,6 +129,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     return false;
   }
 
+  // TODO Make this configurable!!
   message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, "/camera/rgb/image_color", 1);
   message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub(nh, pointTopic, 1);
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::PointCloud2> MySyncPolicy;
@@ -160,9 +167,21 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // Publish the images of the clusters
   for(int i = 0; i < perceived_cluster_images.size(); i++)
   {
+    if (i > 6)
+      continue;
     std::stringstream ss;
     ss << i;
     ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + ss.str() , perceived_cluster_images.at(i), frameId);
+  
+    suturo_perception_lib::ROI &roi = perceivedObjects.at(i).c_roi;
+    cv::Rect region_of_interest = cv::Rect(
+        roi.origin.x,
+        roi.origin.y,
+        roi.width,
+        roi.height);
+    // cv::Mat image_roi = img(region_of_interest);
+
+    ph.publish_cv_mat(CROPPED_IMAGE_PREFIX_TOPIC + ss.str() , perceived_cluster_images.at(i), frameId);
   }
 
   // publish histograms
