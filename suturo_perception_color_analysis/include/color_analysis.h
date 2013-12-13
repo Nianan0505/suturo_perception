@@ -19,9 +19,11 @@ namespace suturo_perception_color_analysis
       uint32_t convertRGBToHSV(uint32_t rgb);
       uint32_t convertHSVToRGB(uint32_t hsv);
       cv::Mat histogramToImage(boost::shared_ptr<std::vector<int> > histogram);
+      uint8_t getHistogramQuality();
 
     private:
       suturo_perception_utils::Logger logger;
+      uint8_t histogram_quality;
   };
 }
 #endif 

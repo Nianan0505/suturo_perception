@@ -49,6 +49,7 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
   boost::shared_ptr<std::vector<int> > ret (new std::vector<int>(86)); // 86 = 255 / 3 + 1
+  uint32_t excluded_point_cnt = 0;
 
   if(cloud_in->points.size() == 0) return ret;
 
@@ -66,10 +67,15 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
     uint8_t v = (hsv) & 0x0000ff;
 
     if (s < 20 || v < 20)
+    {
+      excluded_point_cnt++;
       continue;
+    }
 
     ret->at(h/3) ++;
   }
+
+  histogram_quality = (uint8_t) ((double) cloud_in->points.size() / (double) excluded_point_cnt);
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
   logger.logTime(s, e, "getHistogramHue()");
@@ -297,5 +303,11 @@ ColorAnalysis::histogramToImage(boost::shared_ptr<std::vector<int> > histogram)
   }
   //logger.logInfo((boost::format("[histogram image] max_h = %s, a = %s, b = %s, c = %s") % max_h % (uint32_t) ((((double)hh - 20) / (double) max_h)) % (hh - 20 - (uint32_t) ((((double)hh - 20) / (double) max_h)) * (double) histogram->at(0)) % ykoors.str()).str());
   return hist;
+}
+
+uint8_t
+ColorAnalysis::getHistogramQuality()
+{
+  return histogram_quality;
 }
 
