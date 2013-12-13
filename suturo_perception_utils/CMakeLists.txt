@@ -14,6 +14,11 @@ roscpp)
 find_package(Boost REQUIRED COMPONENTS system)
 
 
+# WORKAROUND - import pcl here as well 
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -97,6 +102,7 @@ include_directories(include)
 ## Declare a cpp library
 add_library(suturo_perception_utils
   src/suturo_perception_utils.cpp
+  src/point_cloud_writer.cpp
 )
 
 target_link_libraries(suturo_perception_utils ${PROJECT_NAME} ${catkin_LIBRARIES})

@@ -1,5 +1,4 @@
 // TODO: Load 2d objrec Database file via parameter
-//			 Publish the cluster image somewhere .. (we are ROS independent ... :x )	
 
 #include "suturo_perception.h"
 using namespace suturo_perception_lib;
@@ -389,42 +388,10 @@ std::vector<ROI> SuturoPerception::getPerceivedClusterROIs()
   return perceived_cluster_rois_;
 }
 
-void SuturoPerception::writeCloudToDisk(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud, std::string filename="")
-{
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> ex_obj;
-  ex_obj.push_back(point_cloud);
-  writeCloudToDisk(ex_obj, filename);
-}
-
- 
-// debug method
-void SuturoPerception::writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects)
-{
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin();
-  pcl::PCDWriter writer;
-  int cnt = 0;
-  for(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin(); 
-      it != extractedObjects.end(); ++it)
-  {
-    std::stringstream ss;
-    ss << "debug_pcd_" << cnt << ".pcd" << std::endl;
-    writer.write(ss.str(), **it);
-    ++cnt;
-  }
-}
-
-void SuturoPerception::writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects, std::string filename)
-{
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>::iterator it = extractedObjects.begin();
-  pcl::PCDWriter writer;
-  writer.write(filename, **it);
-}
-
 void 
 SuturoPerception::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn)
 {   
     suturo_perception_shape_detection::RandomSampleConsensus rsc;
     rsc.detectShape(cloudIn);
 }
-
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
