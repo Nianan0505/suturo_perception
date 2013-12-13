@@ -16,6 +16,7 @@
 #include "suturo_perception_msgs/PrologNextSolution.h"
 #include "suturo_perception_msgs/PrologFinish.h"
 #include "object_matcher.h"  // Include 2d Object recognizer
+#include "color_analysis.h"
 #include "publisher_helper.h"
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -28,6 +29,7 @@
 
 using namespace suturo_perception_ros_utils;
 using namespace suturo_perception_utils;
+using namespace suturo_perception_color_analysis;
 
 class SuturoPerceptionROSNode
 {
@@ -73,6 +75,9 @@ private:
 
   VisualizationPublisher visualizationPublisher;
   Logger logger;
+
+  // capabilities
+
 
   /*
    * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list

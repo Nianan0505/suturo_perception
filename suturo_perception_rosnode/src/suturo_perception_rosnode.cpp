@@ -164,7 +164,17 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
   perceived_cluster_images = sp.getPerceivedClusterImages();
-  perceived_cluster_histograms = sp.getPerceivedClusterHistograms();
+  
+  // TODO: get this from new style pipeline later
+  //perceived_cluster_histograms = sp.getPerceivedClusterHistograms();
+
+  // ****** DEMO: Demo using Coloranalysis for handling of a capability in the new style pipeline ******
+  // TODO: iterate over objects and fill perceived_cluster_histograms for publishing
+  ColorAnalysis ca;
+  ca.setInputPerceivedObject(perceivedObjects[0]); //example without iteration
+  ca.execute();
+  // perceivedObjs[0] now contains colordata and histograms
+  
   res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_publish = sp.getPlaneCloud();
