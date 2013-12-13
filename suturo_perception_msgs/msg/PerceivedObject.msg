@@ -15,4 +15,9 @@ uint8 c_color_average_r
 uint8 c_color_average_g
 uint8 c_color_average_b
 
+uint8 c_color_average_h
+uint8 c_color_average_s
+uint8 c_color_average_v
+
 int32[] c_hue_histogram
+uint8 c_hue_histogram_quality
