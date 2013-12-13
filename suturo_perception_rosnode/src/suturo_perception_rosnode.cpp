@@ -7,6 +7,8 @@ const std::string SuturoPerceptionROSNode::IMAGE_PREFIX_TOPIC= "/suturo/cluster_
 const std::string SuturoPerceptionROSNode::CROPPED_IMAGE_PREFIX_TOPIC= "/suturo/cropped_cluster_image/";
 const std::string SuturoPerceptionROSNode::HISTOGRAM_PREFIX_TOPIC= "/suturo/cluster_histogram/";
 
+namespace enc = sensor_msgs::image_encodings;
+
 /*
  * Constructor
  */
@@ -68,15 +70,23 @@ void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageCo
     logger.logInfo("processing...");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*inputCloud,*cloud_in);
+    cv_bridge::CvImagePtr cv_ptr;
+    cv_ptr = cv_bridge::toCvCopy(inputImage, enc::BGR8);
 
     // Testing: Need to point to the original, received OpenCV Image
-    boost::shared_ptr<cv::Mat> img(new cv::Mat(7,7,CV_32FC2,Scalar(1,3)));
+    // boost::shared_ptr<cv::Mat> img(new cv::Mat(7,7,CV_32FC2,Scalar(1,3)));
+    //
+    //
+    // Make a deep copy (true parameter) of the passed cv::Mat and set a new
+    // boost pointer to it.
+    boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
     
     std::stringstream ss;
     ss << "Received a new point cloud: size = " << cloud_in->points.size();
     // << cloud_in->points.size()
     logger.logInfo((boost::format("Received a new point cloud: size = %s") % cloud_in->points.size()).str());
     // alt: logger.logInfo(static_cast<std::stringstream&>(std::stringstream().flush() << "test").str());
+    sp.setOriginalRGBImage(img);
     sp.setOriginalCloud(cloud_in);
     sp.processCloudWithProjections(cloud_in);
     processing = false;

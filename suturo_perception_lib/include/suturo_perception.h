@@ -121,6 +121,7 @@ namespace suturo_perception_lib
     // Set the input cloud, that has been used for the computation.
     // You can keep that as a reference, to work with the original cloud later
     void setOriginalCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud){ original_cloud_ = original_cloud;}
+    void setOriginalRGBImage(boost::shared_ptr<cv::Mat> original_rgb_image){ original_rgb_image_ = original_rgb_image;}
 
 
     float getZAxisFilterMin() {return zAxisFilterMin;};
@@ -139,6 +140,8 @@ namespace suturo_perception_lib
 
     // Get the received point cloud, that you are working on
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getOriginalCloud(){ return original_cloud_;}
+    // Get the received rgb image, that you are working on
+    boost::shared_ptr<cv::Mat> getOriginalRGBImage(){ return original_rgb_image_;}
 
     // Method for convertig packed RGB color to packed HSV color
     uint32_t convertRGBToHSV(uint32_t rgb);
@@ -171,7 +174,11 @@ namespace suturo_perception_lib
     std::vector<cv::Mat> perceived_cluster_images_;
     std::vector<cv::Mat> perceived_cluster_histograms_;
     std::vector<ROI> perceived_cluster_rois_;
+
+    // Pointer to the input images. These can be used to review the original input and compare
+    // it to the results.
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud_;
+    boost::shared_ptr<cv::Mat> original_rgb_image_;
 
     // The cloud of the extracted plane in the segmentation process
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_;
