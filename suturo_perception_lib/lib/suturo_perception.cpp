@@ -330,6 +330,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     percObj.c_shape = ptShape;
     percObj.c_volume = hull.getTotalVolume();
     percObj.c_roi = perceived_cluster_rois_[i];
+    percObj.pointCloud = *it;
 
     tmpPerceivedObjects.push_back(percObj);
     i++;
