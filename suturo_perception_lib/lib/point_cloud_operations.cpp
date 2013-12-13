@@ -3,23 +3,6 @@
 using namespace suturo_perception_lib;
 using namespace suturo_perception_utils;
 
-    // float zAxisFilterMin;
-    // float zAxisFilterMax;
-    // // leafzise for downsampling
-    // float downsampleLeafSize;
-    // // plane fitting parameters
-    // int planeMaxIterations;
-    // double planeDistanceThreshold;
-    // // extract object cluster parameters
-    // double ecClusterTolerance;
-    // int ecMinClusterSize;
-    // int ecMaxClusterSize;
-    // double prismZMin;
-    // double prismZMax;
-    // // extract objects parameters
-    // double ecObjClusterTolerance;
-    // int ecObjMinClusterSize;
-    // int ecObjMaxClusterSize;
 /*
  * Remove NaNs from given pointcloud. 
  * Return the nanles cloud.
