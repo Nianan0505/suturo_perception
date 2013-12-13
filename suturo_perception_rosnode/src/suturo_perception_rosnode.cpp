@@ -73,49 +73,17 @@ void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageCo
     cv_bridge::CvImagePtr cv_ptr;
     cv_ptr = cv_bridge::toCvCopy(inputImage, enc::BGR8);
 
-    // Testing: Need to point to the original, received OpenCV Image
-    // boost::shared_ptr<cv::Mat> img(new cv::Mat(7,7,CV_32FC2,Scalar(1,3)));
-    //
-    //
-    // Make a deep copy (true parameter) of the passed cv::Mat and set a new
+    // Make a deep copy of the passed cv::Mat and set a new
     // boost pointer to it.
     boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
     
     std::stringstream ss;
     ss << "Received a new point cloud: size = " << cloud_in->points.size();
-    // << cloud_in->points.size()
     logger.logInfo((boost::format("Received a new point cloud: size = %s") % cloud_in->points.size()).str());
-    // alt: logger.logInfo(static_cast<std::stringstream&>(std::stringstream().flush() << "test").str());
     sp.setOriginalRGBImage(img);
     sp.setOriginalCloud(cloud_in);
     sp.processCloudWithProjections(cloud_in);
     processing = false;
-    //sp.writeCloudToDisk(objects);
-    logger.logInfo("Cloud processed. Lock buffer and return the results");      
-  }
-}
-
- /*
-  * Receive callback for the /camera/depth_registered/points subscription
-  */
- void SuturoPerceptionROSNode::receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
- {
-  // process only one cloud
-  logger.logInfo("Receiving cloud");
-  if(processing)
-  {
-    logger.logInfo("processing...");
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
-    pcl::fromROSMsg(*inputCloud,*cloud_in);
-    
-    std::stringstream ss;
-    ss << "Received a new point cloud: size = " << cloud_in->points.size();
-    // << cloud_in->points.size()
-    logger.logInfo((boost::format("Received a new point cloud: size = %s") % cloud_in->points.size()).str());
-    // alt: logger.logInfo(static_cast<std::stringstream&>(std::stringstream().flush() << "test").str());
-    sp.processCloudWithProjections(cloud_in);
-    processing = false;
-    //sp.writeCloudToDisk(objects);
     logger.logInfo("Cloud processed. Lock buffer and return the results");      
   }
 }
@@ -199,9 +167,14 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
         roi.origin.y,
         roi.width,
         roi.height);
-    // cv::Mat image_roi = img(region_of_interest);
+    cv::Mat image_roi = (*sp.getOriginalRGBImage())(region_of_interest);
 
-    ph.publish_cv_mat(CROPPED_IMAGE_PREFIX_TOPIC + ss.str() , perceived_cluster_images.at(i), frameId);
+    // ph.publish_cv_mat(CROPPED_IMAGE_PREFIX_TOPIC + ss.str() , image_roi, frameId);
+    suturo_perception_rosnode::ROIPublisher 
+      rp(ph,sp.getOriginalRGBImage(),frameId);
+    rp.setInputPerceivedObject(perceivedObjects.at(i));
+    rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
+    rp.execute();
   }
 
   // publish histograms
