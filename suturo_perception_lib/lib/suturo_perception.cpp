@@ -95,124 +95,6 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr SuturoPerception::getPlaneCloud()
 {
   return plane_cloud_;
 }
-/*
- * Remove NaNs from given pointcloud. 
- * Return the nanles cloud.
- */
-// void
-// SuturoPerception::removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles)
-// {
-//   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-// 
-//   //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
-//   std::vector<int> nans;
-//   pcl::removeNaNFromPointCloud(*cloud_in,*cloud_nanles,nans);
-// 
-//   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-//   logger.logTime(s, e, "removeNans()");
-// }
-
-// /*
-//  * Filter cloud on z-axis. aka cut off cloud at given distance.
-//  * This method will use setKeepOrganized on the given PassThrough Filter.
-//  *
-//  * Return the filtered cloud.
-//  */
-// void 
-// SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PassThrough<pcl::PointXYZRGB> &pass)
-// {
-// 
-//   if(cloud_in->points.size() == 0)
-//   {
-//     logger.logError("Could not filter on Z Axis. input cloud empty");
-//     return;
-//   }
-// 
-//   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-// 
-//   pass.setInputCloud(cloud_in);
-//   pass.setFilterFieldName("z");
-//   pass.setFilterLimits(zAxisFilterMin, zAxisFilterMax);
-//   pass.setKeepOrganized(true);
-//   pass.filter(*cloud_out);
-// 
-//   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-//   logger.logTime(s, e, "filterZAxis()");
-// }
-// 
-/*
- * Downsample the input cloud with a pcl::VoxelGrid
- * Return the filtered cloud.
- */
-void 
-SuturoPerception::downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
-{
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
-  pcl::VoxelGrid <pcl::PointXYZRGB> vg;
-  vg.setInputCloud(cloud_in);
-  vg.setLeafSize(downsampleLeafSize,downsampleLeafSize,downsampleLeafSize);
-  vg.filter(*cloud_out);
-
-  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logger.logTime(s, e, "downsample()");
-}
-
-/*
- * Fit plane to the input cloud
- * Return the inliers.
- */
-void 
-SuturoPerception::fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-    pcl::PointIndices::Ptr inliers, pcl::ModelCoefficients::Ptr coefficients)
-{
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
-  if(cloud_in->points.size() == 0)
-  {
-    logger.logError("Could not estimate a planar model for the given dataset. input cloud empty");
-    return;
-  }
-
-  pcl::SACSegmentation<pcl::PointXYZRGB> seg;
-  seg.setModelType(pcl::SACMODEL_PLANE); // TODO: parameterize
-  seg.setMethodType(pcl::SAC_RANSAC);    // TODO: parameterize
-  seg.setMaxIterations(planeMaxIterations);
-  seg.setDistanceThreshold(planeDistanceThreshold);
-  seg.setInputCloud(cloud_in);
-  seg.segment(*inliers,*coefficients);
-  if (inliers->indices.size () == 0)
-  {
-    logger.logError("Could not estimate a planar model for the given dataset. The inlier size is 0");
-  }
-
-  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logger.logTime(s, e, "fitPlanarModel()");
-}
-
-// Extract the given inliers from cloud_in as a PointCloud
-// The method does nothing, if the set of inliers is empty.
-// The parameter setNegative will be used for ExtractIndices::setNegative
-void SuturoPerception::extractInliersFromPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, bool setNegative=false)
-{
-  // Input cloud can't be null
-  if(inliers->indices.size () == 0)
-  {
-    logger.logError("extractInliersFromPointCloud can't work with an empty set of indices. Exiting....");
-    return;
-  }
-  pcl::ExtractIndices<pcl::PointXYZRGB> extract_p;
-  extract_p.setInputCloud(cloud_in);
-  extract_p.setIndices(inliers);
-  extract_p.filter(*cloud_out);
-  extract_p.setNegative(setNegative);
-  //
-  // if(writer_pcd) writer.write ("cloud_plane.pcd", *cloud_plane, false);
-}
 
 /**
  * Use EuclideanClusterExtraction on object_clusters to identify seperate objects in the given pointcloud.
@@ -283,7 +165,10 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     // These points will belong to a single object on the table
     pcl::PointIndices::Ptr object_indices (new pcl::PointIndices); // The extracted indices of a single object above the plane
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_points (new pcl::PointCloud<pcl::PointXYZRGB>());
-    extractAllPointsAbovePointCloud(original_cloud, cloud_cluster, object_points, object_indices, 2);
+    PointCloudOperations::extractAllPointsAbovePointCloud(original_cloud, cloud_cluster, object_points, object_indices, 2,
+        prismZMin, prismZMax);
+  // PointCloudOperations::extractAllPointsAbovePointCloud(cloud_filtered, plane_cluster,
+  //     object_clusters, object_indices, 2, prismZMin, prismZMax);
     extracted_objects.push_back(object_points);
 
     // logger.logError("After extract");
@@ -348,40 +233,43 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   if(writer_pcd) writer.write ("cluster_from_projection_clusters.pcd", *object_clusters, false);
 
 }
-/*
- * Extract all Points above a given pointcloud (hull_cloud)
- * A Convex Hull will be calculated around this point cloud.
- * After that, this method will use ExtractPolygonalPrismData to extract everything above the
- * PointCloud / ConvexHull within cloud_in. The indices will be put into object_indices.
- */
-void SuturoPerception::extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
-    pcl::PointIndices::Ptr object_indices, 
-    int convex_hull_dimension=2)
-{
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::ConvexHull<pcl::PointXYZRGB> hull;
-
-  hull.setDimension (convex_hull_dimension); 
-  hull.setInputCloud (hull_cloud);
-  hull.reconstruct (*hull_points);
-
-  pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-  prism.setInputCloud (cloud_in);
-  prism.setInputPlanarHull (hull_points);
-  prism.setHeightLimits (prismZMin, prismZMax);
-  prism.segment (*object_indices);
-
-  // Create the filtering object
-  pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-  // Extract the inliers of the prism
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
-  extract.setInputCloud (cloud_in);
-  extract.setIndices (object_indices);
-  extract.setNegative (false);
-  extract.filter (*cloud_out);
-}
+// /*
+//  * Extract all Points above a given pointcloud (hull_cloud)
+//  * A Convex Hull will be calculated around this point cloud.
+//  * After that, this method will use ExtractPolygonalPrismData to extract everything above the
+//  * PointCloud / ConvexHull within cloud_in. The indices will be put into object_indices.
+//  * The height of the Prism will be determined by prismZMin and prismZMax.
+//  */
+// void SuturoPerception::extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+//     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, 
+//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
+//     pcl::PointIndices::Ptr object_indices, 
+//     int convex_hull_dimension,
+//     double prismZMin,
+//     double prismZMax)
+// {
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+//   pcl::ConvexHull<pcl::PointXYZRGB> hull;
+// 
+//   hull.setDimension (convex_hull_dimension); 
+//   hull.setInputCloud (hull_cloud);
+//   hull.reconstruct (*hull_points);
+// 
+//   pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+//   prism.setInputCloud (cloud_in);
+//   prism.setInputPlanarHull (hull_points);
+//   prism.setHeightLimits (prismZMin, prismZMax);
+//   prism.segment (*object_indices);
+// 
+//   // Create the filtering object
+//   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+//   // Extract the inliers of the prism
+//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   extract.setInputCloud (cloud_in);
+//   extract.setIndices (object_indices);
+//   extract.setNegative (false);
+//   extract.filter (*cloud_out);
+// }
 
 /**
  * Project all points referenced by object_indices in cloud_in to a 2dimensional plane defined by coefficients.
@@ -480,7 +368,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // the table plane
   pcl::PointIndices::Ptr object_indices (new pcl::PointIndices);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
-  extractAllPointsAbovePointCloud(cloud_filtered, plane_cluster, object_clusters, object_indices);
+  PointCloudOperations::extractAllPointsAbovePointCloud(cloud_filtered, plane_cluster,
+      object_clusters, object_indices, 2, prismZMin, prismZMax);
   objects_on_plane_cloud_ = object_clusters;
 
   // Project the pointcloud above the table onto the table to get a 2d representation of the objects

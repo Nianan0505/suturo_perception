@@ -44,6 +44,8 @@ namespace suturo_perception_lib
 {
   class PointCloudOperations
   {
+    // TODO - PM: Set all Options in one method and use them later?
+    // We have to give up static methods then ...
     public:
       PointCloudOperations();
 
@@ -65,6 +67,13 @@ namespace suturo_perception_lib
           double ecClusterTolerance,
           int ecMinClusterSize,
           int ecMaxClusterSize);
+      static void extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+          const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, 
+          pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
+          pcl::PointIndices::Ptr object_indices, 
+          int convex_hull_dimension,
+          double prismZMin,
+          double prismZMax);
   };
 }
 

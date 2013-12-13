@@ -42,18 +42,6 @@ namespace suturo_perception_lib
     // TODO Refactor method to a result struct
 		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images, std::vector<ROI> &perceived_cluster_rois_);
 
-    // void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-    //                 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
-    // void filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-    //             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
-                // pcl::PassThrough<pcl::PointXYZRGB> &pass );
-    void downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
-    void fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-                        pcl::PointIndices::Ptr indices_out, pcl::ModelCoefficients::Ptr coefficients);
-    void extractInliersFromPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
-          pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, bool setNegative);
-    bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers);
     void extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PointIndices::Ptr object_indices, int convex_hull_dimension);
 
     void projectToPlaneCoefficients(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointIndices::Ptr object_indices, pcl::ModelCoefficients::Ptr coefficients, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);

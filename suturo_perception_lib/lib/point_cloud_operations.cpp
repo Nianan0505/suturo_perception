@@ -215,4 +215,41 @@ bool PointCloudOperations::extractBiggestCluster(const pcl::PointCloud<pcl::Poin
   logger.logTime(s, e, "extractBiggestCluster()");
   return true;
 }
+
+/*
+ * Extract all Points above a given pointcloud (hull_cloud)
+ * A Convex Hull will be calculated around this point cloud.
+ * After that, this method will use ExtractPolygonalPrismData to extract everything above the
+ * PointCloud / ConvexHull within cloud_in. The indices will be put into object_indices.
+ * The height of the Prism will be determined by prismZMin and prismZMax.
+ */
+void PointCloudOperations::extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
+    pcl::PointIndices::Ptr object_indices, 
+    int convex_hull_dimension, double prismZMin, double prismZMax)
+{
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::ConvexHull<pcl::PointXYZRGB> hull;
+
+  hull.setDimension (convex_hull_dimension); 
+  hull.setInputCloud (hull_cloud);
+  hull.reconstruct (*hull_points);
+
+  pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+  prism.setInputCloud (cloud_in);
+  prism.setInputPlanarHull (hull_points);
+  prism.setHeightLimits (prismZMin, prismZMax);
+  prism.segment (*object_indices);
+
+  // Create the filtering object
+  pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+  // Extract the inliers of the prism
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
+  extract.setInputCloud (cloud_in);
+  extract.setIndices (object_indices);
+  extract.setNegative (false);
+  extract.filter (*cloud_out);
+}
+
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
