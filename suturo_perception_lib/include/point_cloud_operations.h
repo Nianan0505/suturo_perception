@@ -15,7 +15,6 @@
 #include <pcl/ModelCoefficients.h>
 
 #include "suturo_perception_utils.h"
-#include "color_analysis.h"
 #include "roi.h"
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>

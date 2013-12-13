@@ -15,7 +15,6 @@
 #include <pcl/ModelCoefficients.h>
 
 #include "suturo_perception_utils.h"
-#include "color_analysis.h"
 #include "point_cloud_operations.h"
 #include "roi.h"
 #include "perceived_object.h"
@@ -82,7 +81,6 @@ namespace suturo_perception_lib
 		void processCloudWithProjections(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
     std::vector<PerceivedObject> getPerceivedObjects();
     std::vector<cv::Mat> getPerceivedClusterImages();
-    std::vector<cv::Mat> getPerceivedClusterHistograms();
     std::vector<ROI> getPerceivedClusterROIs();
 
     // Get the cloud that is the basis for the object extraction
@@ -143,9 +141,6 @@ namespace suturo_perception_lib
     // Get the received rgb image, that you are working on
     boost::shared_ptr<cv::Mat> getOriginalRGBImage(){ return original_rgb_image_;}
 
-    // Method for convertig packed RGB color to packed HSV color
-    uint32_t convertRGBToHSV(uint32_t rgb);
-
     // dirty hack collision_objects
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> collision_objects;
 
@@ -172,7 +167,6 @@ namespace suturo_perception_lib
     int ecObjMinClusterSize;
     int ecObjMaxClusterSize;
     std::vector<cv::Mat> perceived_cluster_images_;
-    std::vector<cv::Mat> perceived_cluster_histograms_;
     std::vector<ROI> perceived_cluster_rois_;
 
     // Pointer to the input images. These can be used to review the original input and compare
@@ -200,9 +194,6 @@ namespace suturo_perception_lib
 
     // debug var for time profiling
     bool debug;
-
-    // instances of helper libraries
-    suturo_perception_color_analysis::ColorAnalysis ca;
   };
 }
 
