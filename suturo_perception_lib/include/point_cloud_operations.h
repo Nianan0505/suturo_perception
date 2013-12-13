@@ -55,7 +55,16 @@ namespace suturo_perception_lib
           float zAxisFilterMin, float zAxisFilterMax);
       static void downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, float downsampleLeafSize);
-      // void fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+      static void fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+            pcl::PointIndices::Ptr inliers, pcl::ModelCoefficients::Ptr coefficients, 
+            int planeMaxIterations, 
+            double planeDistanceThreshold);
+      static void extractInliersFromPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+          pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, bool setNegative);
+      static bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers,
+          double ecClusterTolerance,
+          int ecMinClusterSize,
+          int ecMaxClusterSize);
   };
 }
 

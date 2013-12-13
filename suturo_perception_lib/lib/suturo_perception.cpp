@@ -8,7 +8,6 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/features/normal_3d.h>
@@ -213,76 +212,6 @@ pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out
   extract_p.setNegative(setNegative);
   //
   // if(writer_pcd) writer.write ("cloud_plane.pcd", *cloud_plane, false);
-}
-
-
-/* Extract the biggest cluster in PointCloud cloud_in
-* The method returns true, if a cluster has been found.
-* If no Cluster could be extracted, or an error occured, the method returns false.
-* If you want to map the original inliers (which correspond to the input cloud_in), you can pass in a Pointer to the old inliers and receive the new inliers after the clustering in new_inliers.
-* When both inlier pointers are NOT NULL, the mapping will be calculated and put into new_inliers.
-*/
-bool SuturoPerception::extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers)
-{
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-  // Should we map the extracted points to the inliers in the input cloud?
-  bool map_indices=false;
-  if(old_inliers != NULL && new_inliers != NULL)
-    map_indices = true;
-
-  if(cloud_in->points.size() == 0)
-  {
-    logger.logError("Could not extract biggest cluster. input cloud empty");
-    return false;
-  }
-
-  // Use cluster extraction to get rid of the outliers of the segmented table
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr treeTable (new pcl::search::KdTree<pcl::PointXYZRGB>);
-  treeTable->setInputCloud (cloud_in);  
-  std::vector<pcl::PointIndices> cluster_indices;
-  pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ecTable;
-  ecTable.setClusterTolerance (ecClusterTolerance); // 2cm
-  ecTable.setMinClusterSize (ecMinClusterSize);
-  ecTable.setMaxClusterSize (ecMaxClusterSize);
-  ecTable.setSearchMethod (treeTable);
-  ecTable.setInputCloud (cloud_in);
-  ecTable.extract (cluster_indices);
-
-  std::vector<int> cluster_get_indices;
-  cluster_get_indices = *ecTable.getIndices();
-
-  logger.logInfo((boost::format("cluster_indices vector size: %s") % cluster_indices.size()).str());
-
-  if(cluster_indices.size() == 0)
-  {
-    logger.logError("No suitable cluster found for extraction. Skip ...");
-    return false;
-  }
-
-
-  // Extract the biggest cluster (e.g. the table) in the plane cloud
-  std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin ();
-  for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++){
-    cloud_out->points.push_back (cloud_in->points[*pit]); 
-
-    if(map_indices)
-      new_inliers->indices.push_back(cluster_get_indices.at(*pit)); // Map the indices
-                                                                  // from the cluster extraction
-                                                                  // to a proper PointIndicies
-                                                                  // instance relative to our
-                                                                  // original plane
-  }
-  cloud_out->width = cloud_out->points.size ();
-  cloud_out->height = 1;
-  cloud_out->is_dense = true;
-
-  // logger.logError("New Inliers calculated: " << new_inliers->indices.size());
-
-  // if(writer_pcd) writer.write ("cloud_out.pcd", *cloud_out, false);
-
-  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logger.logTime(s, e, "extractBiggestCluster()");
-  return true;
 }
 
 /**
@@ -523,18 +452,19 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   // Find the biggest table plane in the scene
   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
   pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-  fitPlanarModel(cloud_filtered, inliers, coefficients);
+  PointCloudOperations::fitPlanarModel(cloud_filtered, inliers, coefficients, planeMaxIterations, planeDistanceThreshold);
   logger.logInfo((boost::format("Table inlier count: %s") % inliers->indices.size ()).str());
   // Table segmentation done
   
   // Extract the plane as a PointCloud from the calculated inliers
-  extractInliersFromPointCloud(cloud_filtered, inliers, cloud_plane);
+  PointCloudOperations::extractInliersFromPointCloud(cloud_filtered, inliers, cloud_plane, false);
 
   // Take the biggest cluster in the extracted plane. This will be
   // most likely our desired table pointcloud
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointIndices::Ptr new_inliers (new pcl::PointIndices);
-  extractBiggestCluster(cloud_plane, plane_cluster, inliers, new_inliers);
+  PointCloudOperations::extractBiggestCluster(cloud_plane, plane_cluster, inliers, new_inliers,
+    ecObjClusterTolerance, ecMinClusterSize, ecMaxClusterSize);
 
   // NOTE: We need to transform the inliers from table_cluster_indices to inliers
   inliers = new_inliers;
