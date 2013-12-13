@@ -18,7 +18,7 @@ namespace suturo_perception_utils
       // The used filename for the clusters is
       // "debug_pcd_X.pcd" where X is the index of the object
       static void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects);
-      // Write a Vector of Pointclouds to Disk
+      // Write the first element of a Vector of Pointclouds to Disk
       static void writeFirstCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects, std::string filename);
 	};
 }
