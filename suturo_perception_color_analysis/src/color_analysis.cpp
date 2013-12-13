@@ -1,7 +1,5 @@
 #include "color_analysis.h"
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-
 using namespace suturo_perception_color_analysis;
 
 ColorAnalysis::ColorAnalysis()
@@ -311,3 +309,26 @@ ColorAnalysis::getHistogramQuality()
   return histogram_quality;
 }
 
+
+void
+ColorAnalysis::execute()
+{
+  // Get average color of the object
+  uint32_t averageColor = getAverageColor(perceivedObject.pointCloud);
+  uint32_t averageColorHSV = convertRGBToHSV(averageColor);
+
+  // Get hue histogram of the object
+  boost::shared_ptr<std::vector<int> > histogram = getHistogramHue(perceivedObject.pointCloud);
+  uint8_t histogram_quality = getHistogramQuality();
+
+  // generate image of histogram
+  //perceived_cluster_histograms_.push_back(histogramToImage(histogram));
+  perceivedObject.c_color_average_r = (averageColor >> 16) & 0x0000ff;
+  perceivedObject.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
+  perceivedObject.c_color_average_b = (averageColor)       & 0x0000ff;
+  perceivedObject.c_color_average_h = (averageColorHSV >> 16) & 0x0000ff;
+  perceivedObject.c_color_average_s = (averageColorHSV >> 8)  & 0x0000ff;
+  perceivedObject.c_color_average_v = (averageColorHSV)       & 0x0000ff;
+  perceivedObject.c_hue_histogram = *histogram;
+  perceivedObject.c_hue_histogram_quality = histogram_quality;
+}

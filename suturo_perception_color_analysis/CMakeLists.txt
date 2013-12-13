@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   roscpp
   suturo_perception_utils
+  suturo_perception_lib
 )
 link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 

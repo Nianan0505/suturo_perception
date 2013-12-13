@@ -3,6 +3,7 @@
 
 #include "point.h"
 #include "roi.h"
+#include <pcl/point_types.h>
 
 namespace suturo_perception_lib
 {
@@ -23,6 +24,7 @@ namespace suturo_perception_lib
       std::vector<int> c_hue_histogram;
       uint8_t c_hue_histogram_quality;
       ROI c_roi;
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud;
   };
 }
 
