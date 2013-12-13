@@ -1,5 +1,5 @@
 # Compile my_class as library
-add_library(suturo_perception_lib suturo_perception.cpp)
+add_library(suturo_perception_lib suturo_perception.cpp point_cloud_operations.cpp)
 
 # Use the PCL packages for the lib
 find_package(PCL 1.6 REQUIRED COMPONENTS geometry_msgs)

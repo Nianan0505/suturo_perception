@@ -16,6 +16,7 @@
 
 #include "suturo_perception_utils.h"
 #include "color_analysis.h"
+#include "point_cloud_operations.h"
 #include "roi.h"
 
 using namespace suturo_perception_utils;
@@ -41,11 +42,11 @@ namespace suturo_perception_lib
     // TODO Refactor method to a result struct
 		void clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters, pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud, std::vector<int> *removed_indices_filtered, std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &extracted_objects, std::vector<cv::Mat> &extracted_images, std::vector<ROI> &perceived_cluster_rois_);
 
-    void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
-    void filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-                pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
-                pcl::PassThrough<pcl::PointXYZRGB> &pass );
+    // void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+    //                 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
+    // void filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+    //             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
+                // pcl::PassThrough<pcl::PointXYZRGB> &pass );
     void downsample(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
                     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
     void fitPlanarModel(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,

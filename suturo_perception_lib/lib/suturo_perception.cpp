@@ -100,49 +100,49 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr SuturoPerception::getPlaneCloud()
  * Remove NaNs from given pointcloud. 
  * Return the nanles cloud.
  */
-void
-SuturoPerception::removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles)
-{
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+// void
+// SuturoPerception::removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles)
+// {
+//   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+// 
+//   //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
+//   std::vector<int> nans;
+//   pcl::removeNaNFromPointCloud(*cloud_in,*cloud_nanles,nans);
+// 
+//   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+//   logger.logTime(s, e, "removeNans()");
+// }
 
-  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles (new pcl::PointCloud<pcl::PointXYZRGB>());
-  std::vector<int> nans;
-  pcl::removeNaNFromPointCloud(*cloud_in,*cloud_nanles,nans);
-
-  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logger.logTime(s, e, "removeNans()");
-}
-
-/*
- * Filter cloud on z-axis. aka cut off cloud at given distance.
- * This method will use setKeepOrganized on the given PassThrough Filter.
- *
- * Return the filtered cloud.
- */
-void 
-SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PassThrough<pcl::PointXYZRGB> &pass)
-{
-
-  if(cloud_in->points.size() == 0)
-  {
-    logger.logError("Could not filter on Z Axis. input cloud empty");
-    return;
-  }
-
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
-  pass.setInputCloud(cloud_in);
-  pass.setFilterFieldName("z");
-  pass.setFilterLimits(zAxisFilterMin, zAxisFilterMax);
-  pass.setKeepOrganized(true);
-  pass.filter(*cloud_out);
-
-  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
-  logger.logTime(s, e, "filterZAxis()");
-}
-
+// /*
+//  * Filter cloud on z-axis. aka cut off cloud at given distance.
+//  * This method will use setKeepOrganized on the given PassThrough Filter.
+//  *
+//  * Return the filtered cloud.
+//  */
+// void 
+// SuturoPerception::filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, pcl::PassThrough<pcl::PointXYZRGB> &pass)
+// {
+// 
+//   if(cloud_in->points.size() == 0)
+//   {
+//     logger.logError("Could not filter on Z Axis. input cloud empty");
+//     return;
+//   }
+// 
+//   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+// 
+//   pass.setInputCloud(cloud_in);
+//   pass.setFilterFieldName("z");
+//   pass.setFilterLimits(zAxisFilterMin, zAxisFilterMax);
+//   pass.setKeepOrganized(true);
+//   pass.filter(*cloud_out);
+// 
+//   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+//   logger.logTime(s, e, "filterZAxis()");
+// }
+// 
 /*
  * Downsample the input cloud with a pcl::VoxelGrid
  * Return the filtered cloud.
@@ -506,7 +506,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   // Build a filter to filter on the Z Axis
   pcl::PassThrough<pcl::PointXYZRGB> pass(true);
-  filterZAxis(cloud_in, cloud_filtered, pass);
+  PointCloudOperations::filterZAxis(cloud_in, cloud_filtered, pass, zAxisFilterMin, zAxisFilterMax);
   logger.logInfo((boost::format("PointCloud: %s data points") % cloud_filtered->points.size()).str());
 
   std::vector<int> removed_indices_filtered;
@@ -517,7 +517,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   //voxelizing cloud
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled (new pcl::PointCloud<pcl::PointXYZRGB>());
-  downsample(cloud_filtered, cloud_downsampled);
+  PointCloudOperations::downsample(cloud_filtered, cloud_downsampled, downsampleLeafSize);
   cloud_filtered = cloud_downsampled; // Use the downsampled cloud now
 
   // Find the biggest table plane in the scene
