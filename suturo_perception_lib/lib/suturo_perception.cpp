@@ -2,56 +2,6 @@
 //			 Publish the cluster image somewhere .. (we are ROS independent ... :x )	
 
 #include "suturo_perception.h"
-#include "perceived_object.h"
-#include "point.h"
-#include "random_sample_consensus.h"
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/filters/filter.h>
-#include <pcl/filters/crop_hull.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/filters/voxel_grid.h>
-
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/segmentation/extract_polygonal_prism_data.h>
-#include <pcl/ModelCoefficients.h>
-
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/project_inliers.h>
-#include <pcl/surface/convex_hull.h>
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/surface/convex_hull.h>
-
-#include <boost/thread/thread.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
-
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-
-#include "opencv2/core/core.hpp"
-#include "opencv2/highgui/highgui.hpp"
-
 using namespace suturo_perception_lib;
 
 // Comparator function for PerceivedObject's. PerceivedObjects will be compared by their volume
@@ -167,8 +117,6 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_points (new pcl::PointCloud<pcl::PointXYZRGB>());
     PointCloudOperations::extractAllPointsAbovePointCloud(original_cloud, cloud_cluster, object_points, object_indices, 2,
         prismZMin, prismZMax);
-  // PointCloudOperations::extractAllPointsAbovePointCloud(cloud_filtered, plane_cluster,
-  //     object_clusters, object_indices, 2, prismZMin, prismZMax);
     extracted_objects.push_back(object_points);
 
     // logger.logError("After extract");
@@ -231,67 +179,6 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   }
 
   if(writer_pcd) writer.write ("cluster_from_projection_clusters.pcd", *object_clusters, false);
-
-}
-// /*
-//  * Extract all Points above a given pointcloud (hull_cloud)
-//  * A Convex Hull will be calculated around this point cloud.
-//  * After that, this method will use ExtractPolygonalPrismData to extract everything above the
-//  * PointCloud / ConvexHull within cloud_in. The indices will be put into object_indices.
-//  * The height of the Prism will be determined by prismZMin and prismZMax.
-//  */
-// void SuturoPerception::extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
-//     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, 
-//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
-//     pcl::PointIndices::Ptr object_indices, 
-//     int convex_hull_dimension,
-//     double prismZMin,
-//     double prismZMax)
-// {
-//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
-//   pcl::ConvexHull<pcl::PointXYZRGB> hull;
-// 
-//   hull.setDimension (convex_hull_dimension); 
-//   hull.setInputCloud (hull_cloud);
-//   hull.reconstruct (*hull_points);
-// 
-//   pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-//   prism.setInputCloud (cloud_in);
-//   prism.setInputPlanarHull (hull_points);
-//   prism.setHeightLimits (prismZMin, prismZMax);
-//   prism.segment (*object_indices);
-// 
-//   // Create the filtering object
-//   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-//   // Extract the inliers of the prism
-//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>());
-//   extract.setInputCloud (cloud_in);
-//   extract.setIndices (object_indices);
-//   extract.setNegative (false);
-//   extract.filter (*cloud_out);
-// }
-
-/**
- * Project all points referenced by object_indices in cloud_in to a 2dimensional plane defined by coefficients.
- * The projected cloud will be available in cloud_out after the function call.
- *
- * If the object_indices are empty, the method will do nothing.
- */
-void SuturoPerception::projectToPlaneCoefficients(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointIndices::Ptr object_indices, pcl::ModelCoefficients::Ptr coefficients, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
-{
-  if(object_indices->indices.size() == 0)
-  {
-    logger.logError("No object indices in projectToPlaneCoefficients. Skip ...");
-    return;
-  }
-
-  // Project the model inliers
-  pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
-  proj_objs.setModelType (pcl::SACMODEL_PLANE);
-  proj_objs.setIndices (object_indices); // project the whole object cloud to the plane
-  proj_objs.setInputCloud (cloud_in);
-  proj_objs.setModelCoefficients (coefficients); // project to the plane model
-  proj_objs.filter (*cloud_out);
 
 }
 
@@ -374,7 +261,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
   // Project the pointcloud above the table onto the table to get a 2d representation of the objects
   // This will cause every point of an object to be at the base of the object
-  projectToPlaneCoefficients(cloud_filtered, object_indices, coefficients, objects_cloud_projected);
+  PointCloudOperations::projectToPlaneCoefficients(cloud_filtered, object_indices, coefficients, objects_cloud_projected);
   if(writer_pcd) writer.write ("objects_cloud_projected.pcd", *objects_cloud_projected, false);
 
   // Take the projected points, cluster them and extract everything that's above it

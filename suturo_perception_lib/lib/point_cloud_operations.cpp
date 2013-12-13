@@ -252,4 +252,29 @@ void PointCloudOperations::extractAllPointsAbovePointCloud(const pcl::PointCloud
   extract.filter (*cloud_out);
 }
 
+/**
+ * Project all points referenced by object_indices in cloud_in to a 2dimensional plane defined by coefficients.
+ * The projected cloud will be available in cloud_out after the function call.
+ *
+ * If the object_indices are empty, the method will do nothing.
+ */
+void PointCloudOperations::projectToPlaneCoefficients(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointIndices::Ptr object_indices, pcl::ModelCoefficients::Ptr coefficients, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
+{
+  Logger logger("point_cloud_operations");
+  if(object_indices->indices.size() == 0)
+  {
+    logger.logError("No object indices in projectToPlaneCoefficients. Skip ...");
+    return;
+  }
+
+  // Project the model inliers
+  pcl::ProjectInliers<pcl::PointXYZRGB> proj_objs;
+  proj_objs.setModelType (pcl::SACMODEL_PLANE);
+  proj_objs.setIndices (object_indices); // project the whole object cloud to the plane
+  proj_objs.setInputCloud (cloud_in);
+  proj_objs.setModelCoefficients (coefficients); // project to the plane model
+  proj_objs.filter (*cloud_out);
+
+}
+
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

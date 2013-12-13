@@ -42,6 +42,10 @@
 
 namespace suturo_perception_lib
 {
+  /**
+   * This class represents methods for general purpose
+   * pointcloud processing.
+   */
   class PointCloudOperations
   {
     // TODO - PM: Set all Options in one method and use them later?
@@ -49,7 +53,7 @@ namespace suturo_perception_lib
     public:
       PointCloudOperations();
 
-      void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
+      static void removeNans(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_nanles);
       static void filterZAxis(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
@@ -63,17 +67,18 @@ namespace suturo_perception_lib
             double planeDistanceThreshold);
       static void extractInliersFromPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
           pcl::PointIndices::Ptr inliers, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, bool setNegative);
-      static bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers, pcl::PointIndices::Ptr new_inliers,
-          double ecClusterTolerance,
-          int ecMinClusterSize,
-          int ecMaxClusterSize);
+      static bool extractBiggestCluster(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+          pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out, const pcl::PointIndices::Ptr old_inliers,
+          pcl::PointIndices::Ptr new_inliers, double ecClusterTolerance,
+          int ecMinClusterSize, int ecMaxClusterSize);
       static void extractAllPointsAbovePointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
           const pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud, 
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out,
           pcl::PointIndices::Ptr object_indices, 
-          int convex_hull_dimension,
-          double prismZMin,
-          double prismZMax);
+          int convex_hull_dimension, double prismZMin, double prismZMax);
+      static void projectToPlaneCoefficients(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in,
+          pcl::PointIndices::Ptr object_indices, pcl::ModelCoefficients::Ptr coefficients,
+          pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out);
   };
 }
 
