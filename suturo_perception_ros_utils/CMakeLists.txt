@@ -188,6 +188,10 @@ catkin_add_gtest(${PROJECT_NAME}-test
 if(TARGET ${PROJECT_NAME}-test)
 	# target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} suturo_perception_shape_detection)
   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+	# find_package(PCL 1.6 REQUIRED COMPONENTS)
+	# include_directories(${PCL_INCLUDE_DIRS})
+	# link_directories(${PCL_LIBRARY_DIRS})
+	# add_definitions(${PCL_DEFINITIONS})
 	# Link against catkin libs for ROS etc.
 
 	# In contrast to the tests in suturo_perception_lib, i need this declaration ..
