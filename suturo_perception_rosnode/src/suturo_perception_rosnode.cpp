@@ -170,7 +170,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     cv::Mat image_roi = (*sp.getOriginalRGBImage())(region_of_interest);
 
     // ph.publish_cv_mat(CROPPED_IMAGE_PREFIX_TOPIC + ss.str() , image_roi, frameId);
-    suturo_perception_rosnode::ROIPublisher 
+    suturo_perception_2d_capabilities::ROIPublisher 
       rp(ph,sp.getOriginalRGBImage(),frameId);
     rp.setInputPerceivedObject(perceivedObjects.at(i));
     rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());

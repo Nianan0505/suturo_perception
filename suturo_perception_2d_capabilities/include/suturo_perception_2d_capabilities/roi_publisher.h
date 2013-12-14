@@ -4,13 +4,12 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "opencv2/core/core.hpp"
 #include "capability.h"
-#include "suturo_perception_utils.h"
 #include "perceived_object.h"
 #include "publisher_helper.h"
 
 using namespace suturo_perception_ros_utils;
 
-namespace suturo_perception_rosnode
+namespace suturo_perception_2d_capabilities
 {
   /**
    * This class is able to extract a ROI from a given input image (called original_image_)

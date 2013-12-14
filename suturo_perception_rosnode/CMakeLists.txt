@@ -15,6 +15,7 @@ cv_bridge
 image_transport
 roscpp
 std_msgs
+suturo_perception_2d_capabilities
 suturo_perception_2d_object_recognition_lib
 suturo_perception_color_analysis
 suturo_perception_ros_utils 
@@ -148,7 +149,7 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp src/roi_publisher.cpp)
+add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
 
