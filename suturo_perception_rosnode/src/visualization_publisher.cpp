@@ -9,7 +9,7 @@ VisualizationPublisher::VisualizationPublisher(ros::NodeHandle& n, std::string f
 {
   maxMarkerId = 0;
   vis_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 0);  
-  Logger("perception_rosnode");
+  logger = Logger("perception_rosnode");
 }
 
 void VisualizationPublisher::publishMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs)
