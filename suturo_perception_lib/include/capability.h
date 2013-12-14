@@ -8,6 +8,7 @@ namespace suturo_perception_lib
   class Capability
   {
     public:
+      Capability(PerceivedObject &obj) : perceivedObject(obj){};
       // The PerceivedObject that will be modified by the capability
       void setInputPerceivedObject(PerceivedObject &obj) {perceivedObject = obj;};
       /* The execute method that has to be implemented by the deriving classes.
@@ -16,7 +17,8 @@ namespace suturo_perception_lib
       virtual void execute() = 0;
 
     protected:
-      suturo_perception_lib::PerceivedObject perceivedObject;
+      // TODO: Locking when converting to MT
+      suturo_perception_lib::PerceivedObject &perceivedObject;
   };  
 }
 

@@ -2,7 +2,7 @@
 
 using namespace suturo_perception_color_analysis;
 
-ColorAnalysis::ColorAnalysis()
+ColorAnalysis::ColorAnalysis(PerceivedObject &obj) : Capability(obj)
 {
   logger = suturo_perception_utils::Logger("color_analysis");
 }

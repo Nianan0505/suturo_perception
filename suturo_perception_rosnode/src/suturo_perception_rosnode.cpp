@@ -138,10 +138,8 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
   // ****** DEMO: Demo using Coloranalysis for handling of a capability in the new style pipeline ******
   // TODO: iterate over objects and fill perceived_cluster_histograms for publishing
-  ColorAnalysis ca;
-  ca.setInputPerceivedObject(perceivedObjects[0]); //example without iteration
+  ColorAnalysis ca(perceivedObjects[0]);
   ca.execute();
-  // perceivedObjs[0] now contains colordata and histograms
   
   res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
