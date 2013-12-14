@@ -8,6 +8,8 @@
 #include "object_matcher.h"  // Include 2d Object recognizer
 #include "suturo_perception_utils.h"
 
+using namespace suturo_perception_lib;
+
 namespace suturo_perception_2d_capabilities
 {
   /**
@@ -23,7 +25,7 @@ namespace suturo_perception_2d_capabilities
   {
     public:
       // capability method
-      LabelAnnotator2D(boost::shared_ptr<cv::Mat> original_image, ObjectMatcher &object_matcher);
+      LabelAnnotator2D(PerceivedObject &obj, boost::shared_ptr<cv::Mat> original_image, ObjectMatcher &object_matcher);
       void execute();
 
     private:
