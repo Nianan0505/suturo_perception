@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 	roscpp
   suturo_perception_2d_object_recognition_lib
   suturo_perception_lib
+  suturo_perception_utils
   suturo_perception_ros_utils
 )
 
@@ -86,7 +87,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_2d_capabilities
-  CATKIN_DEPENDS pcl pcl_ros suturo_perception_2d_object_recognition_lib suturo_perception_lib suturo_perception_ros_utils cv_bridge roscpp 
+  CATKIN_DEPENDS pcl pcl_ros suturo_perception_2d_object_recognition_lib suturo_perception_lib suturo_perception_utils suturo_perception_ros_utils cv_bridge roscpp 
   DEPENDS opencv
 )
 
@@ -104,6 +105,7 @@ include_directories(
 ## Declare a cpp library
 add_library(suturo_perception_2d_capabilities
    src/roi_publisher.cpp
+   src/label_annotator_2d.cpp
 )
 
 ## Declare a cpp executable
