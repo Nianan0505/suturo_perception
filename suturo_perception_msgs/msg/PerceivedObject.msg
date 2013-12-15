@@ -3,6 +3,7 @@ geometry_msgs/Point c_centroid
 float32 c_volume
 string frame_id
 string recognition_label_2d
+string recognition_label_3d
 
 uint8 NONE=0
 uint8 BOX=1
@@ -21,3 +22,7 @@ uint8 c_color_average_v
 
 int32[] c_hue_histogram
 uint8 c_hue_histogram_quality
+
+geometry_msgs/Point c_roi_origin
+uint32 c_roi_width
+uint32 c_roi_height
