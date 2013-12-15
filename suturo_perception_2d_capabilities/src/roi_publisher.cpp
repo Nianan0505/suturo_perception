@@ -11,7 +11,7 @@ ROIPublisher::ROIPublisher(suturo_perception_lib::PerceivedObject &obj, Publishe
 /**
  * Read the ROI from the given PerceivedObject set by setPerceivedObject
  * Extract a cv::Mat from it
- * Publish it to given topics
+ * Publish it to given topics, if the topic is advertised by the PublisherHelper
  */
 void ROIPublisher::execute()
 {
@@ -23,7 +23,8 @@ void ROIPublisher::execute()
         roi.height);
     cv::Mat image_roi = (*original_image_)(region_of_interest);
 
-    ph_.publish_cv_mat(topic_name_ , image_roi, frame_id_);
+    if(ph_.isAdvertised(topic_name_))
+      ph_.publish_cv_mat(topic_name_ , image_roi, frame_id_);
 }
 void ROIPublisher::setTopicName(const std::string s)
 {
