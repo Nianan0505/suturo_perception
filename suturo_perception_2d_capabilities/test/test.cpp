@@ -12,17 +12,31 @@ using namespace suturo_perception_2d_capabilities;
 TEST(suturo_perception_2d_capabilities, test_execute)
 {
   suturo_perception_lib::PerceivedObject po;
+  // Set the ROI manually, so the object recognizer can pick the correct region
+  po.c_roi.origin.x = 0;
+  po.c_roi.origin.y = 0;
+  po.c_roi.width = 284;
+  po.c_roi.height = 380;
+
   ObjectMatcher om;
   cv::Mat image;
-  std::string path = ros::package::getPath("suturo_perception_2d_capabilities");
+  std::string package_path = ros::package::getPath("suturo_perception_2d_capabilities");
 
-  image = imread(path + "/test/muesli_front.jpg", CV_LOAD_IMAGE_COLOR);   // Read the file
+  image = imread(package_path + "/test/muesli_front.jpg", CV_LOAD_IMAGE_COLOR);   // Read the file
   if(! image.data )                              // Check for invalid input
   {
     std::cerr <<  "Error: Could not open or find the training image" << std::endl ;
     FAIL();
   }
-  // LabelAnnotator2D la(PerceivedObject &obj, boost::shared_ptr<cv::Mat> original_image, ObjectMatcher &object_matcher);
+
+  boost::shared_ptr<cv::Mat> original_image( new cv::Mat(image) );
+  std::vector<std::string> train_images;
+  std::vector<std::string> train_labels;
+  train_images.push_back( package_path + "/test/muesli_front.jpg");
+  train_labels.push_back( "muesli" );
+  om.trainImages(train_images, train_labels);
+  LabelAnnotator2D la(po, original_image, om);
+
   SUCCEED();
 }
 

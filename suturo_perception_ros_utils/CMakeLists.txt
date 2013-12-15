@@ -118,9 +118,9 @@ include_directories(
 )
 
 ## Declare a cpp library
- add_library(suturo_perception_ros_utils
-   src/publisher_helper.cpp
- )
+add_library(suturo_perception_ros_utils
+  src/publisher_helper.cpp
+)
 
 ## Declare a cpp executable
 # add_executable(suturo_perception_utils_node src/suturo_perception_utils_node.cpp)
@@ -129,10 +129,10 @@ include_directories(
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(suturo_perception_utils_node suturo_perception_utils_generate_messages_cpp)
 
-## Specify libraries to link a library or executable target against
-# target_link_libraries(suturo_perception_utils_node
-#   ${catkin_LIBRARIES}
-# )
+# Specify libraries to link a library or executable target against
+target_link_libraries(suturo_perception_ros_utils
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

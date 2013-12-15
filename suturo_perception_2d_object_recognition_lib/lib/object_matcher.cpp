@@ -108,6 +108,8 @@ bool ObjectMatcher::objectRecognized(std::vector< DMatch > &good_matches, std::v
   return false;
 }
 
+// TODO refactor core functions of the following two functions
+
 void ObjectMatcher::trainImages(vector<string> file_names)
 {
   std::cout << "Train given training images" << std::endl;
@@ -120,6 +122,27 @@ void ObjectMatcher::trainImages(vector<string> file_names)
     { std::cout<< " --(!) Error reading images during training" << std::endl; exit(0); }
 
     computeKeyPointsAndDescriptors( ti.img, ti.keypoints, ti.descriptors);
+    training_images_.push_back(ti);
+    std::cout << "Image: " << file_names.at(i) << " stored" << std::endl;
+    std::cout << "Keypoints: " << ti.keypoints.size() << std::endl;
+  }
+}
+void ObjectMatcher::trainImages(vector<string> file_names, vector<string> labels)
+{
+  if(file_names.size() != labels.size() )
+    return;
+
+  std::cout << "Train given training images" << std::endl;
+
+  for(int i = 0; i < file_names.size(); i++)
+  {
+    TrainingImageData ti;
+    ti.img = imread( file_names.at(i), CV_LOAD_IMAGE_GRAYSCALE );
+    if( !(ti.img.data))
+    { std::cout<< " --(!) Error reading images during training" << std::endl; exit(0); }
+
+    computeKeyPointsAndDescriptors( ti.img, ti.keypoints, ti.descriptors);
+    ti.label = labels.at(i);
     training_images_.push_back(ti);
     std::cout << "Image: " << file_names.at(i) << " stored" << std::endl;
     std::cout << "Keypoints: " << ti.keypoints.size() << std::endl;

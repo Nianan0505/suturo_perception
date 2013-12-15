@@ -95,7 +95,11 @@ public:
     void computeKeyPointsAndDescriptors(Mat &img, std::vector<cv::KeyPoint> &keypoints, Mat &descriptors);
     void calculateHomography(std::vector<cv::KeyPoint> &keypoints_object, std::vector<cv::KeyPoint> &keypoints_scene, std::vector<DMatch> &good_matches, Mat &H, std::vector<uchar> &outlier_mask );
     bool objectRecognized(std::vector< DMatch > &good_matches, std::vector<cv::KeyPoint> &keypoints_object, std::vector<cv::KeyPoint> &keypoints_scene, Mat &H);
+    // Train images without a label
     void trainImages(vector<string> file_names);
+    // Train images with a label. Both vector sizes must be equal. Otherwise 
+    // this method will do nothing.
+    void trainImages(vector<string> file_names, vector<string> labels);
     void trainImagesToDatabase(string database_filename, vector<string> training_img_file, vector<string> training_img_label);
     void readTrainImagesFromDatabase(string database_filename);
 };
