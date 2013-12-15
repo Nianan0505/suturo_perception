@@ -17,6 +17,7 @@ TEST(suturo_perception_2d_capabilities, test_execute)
   po.c_roi.origin.y = 0;
   po.c_roi.width = 284;
   po.c_roi.height = 380;
+  po.c_recognition_label_2d = "";
 
   ObjectMatcher om;
   cv::Mat image;
@@ -36,7 +37,10 @@ TEST(suturo_perception_2d_capabilities, test_execute)
   train_labels.push_back( "muesli" );
   om.trainImages(train_images, train_labels);
   LabelAnnotator2D la(po, original_image, om);
-
+  la.execute();
+  // After the object recognition, the perceived object should
+  // contain the 2d label "muesli".
+  ASSERT_STREQ("muesli", po.c_recognition_label_2d.c_str() );
   SUCCEED();
 }
 
