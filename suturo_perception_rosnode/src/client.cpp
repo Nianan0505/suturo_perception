@@ -52,6 +52,7 @@ int main(int argc, char **argv)
           clusterSrv.response.perceivedObjs[i].c_roi_origin.y,
           clusterSrv.response.perceivedObjs[i].c_roi_width, 
           clusterSrv.response.perceivedObjs[i].c_roi_height);
+        ROS_INFO("Quality of hue histogram: %d ", clusterSrv.response.perceivedObjs[i].c_hue_histogram_quality);
         ROS_INFO("Centroid(x) of perceived object is: %f , %f , %f ",
           clusterSrv.response.perceivedObjs[i].c_centroid.x,
           clusterSrv.response.perceivedObjs[i].c_centroid.y,

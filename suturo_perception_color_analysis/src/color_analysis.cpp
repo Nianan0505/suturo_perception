@@ -73,7 +73,7 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
     ret->at(h/3) ++;
   }
 
-  histogram_quality = (uint8_t) ((double) cloud_in->points.size() / (double) excluded_point_cnt);
+  histogram_quality = (uint8_t) (100.0 - ((100.0 / (double) cloud_in->points.size()) * (double) excluded_point_cnt));
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
   logger.logTime(s, e, "getHistogramHue()");
