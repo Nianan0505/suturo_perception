@@ -138,10 +138,37 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
   // ****** DEMO: Demo using Coloranalysis for handling of a capability in the new style pipeline ******
   // TODO: iterate over objects and fill perceived_cluster_histograms for publishing
+  
+  
+  // Execution pipeline
+  // Each capability provides an enrichment for the
+  // returned PerceivedObject
   for (int i = 0; i < perceivedObjects.size(); i++) {
     ColorAnalysis ca(perceivedObjects[i]);
     ca.execute();
+
+    // Is 2d recognition enabled?
+    if(!recognitionDir.empty())
+    {
+      // perceivedObjects[i].c_recognition_label_2d="";
+      suturo_perception_2d_capabilities::LabelAnnotator2D la(perceivedObjects[i], sp.getOriginalRGBImage(), object_matcher_);
+      la.execute();
+    }
+    else
+    {
+      // Set an empty label
+      perceivedObjects[i].c_recognition_label_2d="";
+    }
+
+    // Publish the ROI-cropped images
+    suturo_perception_2d_capabilities::ROIPublisher 
+      rp(perceivedObjects.at(i), ph,sp.getOriginalRGBImage(),frameId);
+    std::stringstream ss;
+    ss << i;
+    rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
+    rp.execute();
   }
+
   // ColorAnalysis ca(perceivedObjects[0]);
   // ca.execute();
   
@@ -162,20 +189,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     std::stringstream ss;
     ss << i;
     ph.publish_cv_mat(IMAGE_PREFIX_TOPIC + ss.str() , perceived_cluster_images.at(i), frameId);
-  
-    suturo_perception_lib::ROI &roi = perceivedObjects.at(i).c_roi;
-    cv::Rect region_of_interest = cv::Rect(
-        roi.origin.x,
-        roi.origin.y,
-        roi.width,
-        roi.height);
-    cv::Mat image_roi = (*sp.getOriginalRGBImage())(region_of_interest);
 
-    // ph.publish_cv_mat(CROPPED_IMAGE_PREFIX_TOPIC + ss.str() , image_roi, frameId);
-    suturo_perception_2d_capabilities::ROIPublisher 
-      rp(perceivedObjects.at(i), ph,sp.getOriginalRGBImage(),frameId);
-    rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
-    rp.execute();
   }
 
   // publish histograms
@@ -188,20 +202,6 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + ss.str(), perceived_cluster_histograms.at(i), frameId);
   }
 
-  /*
-   * TODO Implement, if the vector sizes are equal
-  if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
-  {
-    logger.logDebug("Extracted images vector: %lu", perceived_cluster_images.size());
-    // Create 2d Object recognition capability instance and fill it with
-    // the correct parameters
-    }
-  }
-  else
-  {
-    logger.logError("Image vs. Object Vector differs or no 2D object recognition database file given.");
-  }
-  */
   mutex.unlock();
 
   logger.logInfo("Shutting down subscriber");
@@ -338,9 +338,9 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_roi_height = it->c_roi.height;
     msgObj->c_hue_histogram = it->c_hue_histogram;
     msgObj->c_hue_histogram_quality = it->c_hue_histogram_quality;
+    msgObj->recognition_label_2d = it->c_recognition_label_2d;
 
     // these are not set for now
-    msgObj->recognition_label_2d = "";
     msgObj->recognition_label_3d = "";
     result->push_back(*msgObj);
   }

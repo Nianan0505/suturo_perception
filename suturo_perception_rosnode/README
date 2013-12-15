@@ -1,0 +1,5 @@
+Read 2d Recognition database
+=====
+
+Start the rosnode with an addition argument pointing to a trained database:
+roslaunch suturo_perception_rosnode run_bag.launch 2d_recognition_data:=/path/to/database.yaml

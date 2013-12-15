@@ -27,6 +27,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include "suturo_perception_utils.h"
 #include <sensor_msgs/Image.h>
+#include "suturo_perception_2d_capabilities/label_annotator_2d.h"
 
 using namespace suturo_perception_ros_utils;
 using namespace suturo_perception_utils;
