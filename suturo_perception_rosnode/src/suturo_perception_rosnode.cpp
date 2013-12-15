@@ -138,8 +138,12 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
   // ****** DEMO: Demo using Coloranalysis for handling of a capability in the new style pipeline ******
   // TODO: iterate over objects and fill perceived_cluster_histograms for publishing
-  ColorAnalysis ca(perceivedObjects[0]);
-  ca.execute();
+  for (int i = 0; i < perceivedObjects.size(); i++) {
+    ColorAnalysis ca(perceivedObjects[i]);
+    ca.execute();
+  }
+  // ColorAnalysis ca(perceivedObjects[0]);
+  // ca.execute();
   
   res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
@@ -189,28 +193,8 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   if(perceivedObjects.size() == perceived_cluster_images.size() && !recognitionDir.empty())
   {
     logger.logDebug("Extracted images vector: %lu", perceived_cluster_images.size());
-    for(int i = 0; i < perceived_cluster_images.size(); i++)
-    {
-      std::ostringstream fn;
-      // fn << "/tmp/2dcluster_match_" << i << ".jpg";
-      logger.logDebug("Try to recognize: %i", i);
-      ObjectMatcher::ExecutionResult om_res = object_matcher_.recognizeTrainedImages(perceived_cluster_images.at(i), true); // run headless (true)
-      if(!om_res.label.empty()){
-        logger.logDebug("Recognized a object with the label %s  object_id: %i", om_res.label.c_str(), i);
-        // logger.logDebug("objects vs. images size" << perceivedObjects.size() << " | " << perceived_cluster_images.size() << std::endl;
-        logger.logDebug("Tried to set label %s at idx: %i", om_res.label.c_str(), i);
-        logger.logDebug("perceivedObjects.size(): %lu  perceived_cluster_images.size(): %lu", perceivedObjects.size(), 
-                                                                                        perceived_cluster_images.size());
-
-        res.perceivedObjs.at(i).recognition_label_2d = om_res.label;
-      }else{
-        logger.logDebug("No Label for %i", i);
-      }
-      // else
-      // {
-      //   logger.logDebug("Empty label" << std::endl;
-      // }
-      // cv::imwrite(fn.str(), om_res.match_image);
+    // Create 2d Object recognition capability instance and fill it with
+    // the correct parameters
     }
   }
   else
@@ -348,10 +332,16 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_color_average_h = it->c_color_average_h;
     msgObj->c_color_average_s = it->c_color_average_s;
     msgObj->c_color_average_v = it->c_color_average_v;
-    // these are not set for now
-    msgObj->recognition_label_2d = "";
+    msgObj->c_roi_origin.x = it->c_roi.origin.x;
+    msgObj->c_roi_origin.y = it->c_roi.origin.y;
+    msgObj->c_roi_width = it->c_roi.width;
+    msgObj->c_roi_height = it->c_roi.height;
     msgObj->c_hue_histogram = it->c_hue_histogram;
     msgObj->c_hue_histogram_quality = it->c_hue_histogram_quality;
+
+    // these are not set for now
+    msgObj->recognition_label_2d = "";
+    msgObj->recognition_label_3d = "";
     result->push_back(*msgObj);
   }
   return result;
