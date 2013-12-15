@@ -1,0 +1,8 @@
+# Necessary software
+sudo apt-get install libhdf5-serial-*  # under ubuntu to get the hdf5.h
+
+# Download the data set
+wget http://www.informatik.uni-bremen.de/~pmania/vfh_recognition_tutorial_data.tbz
+bunzip vfh_recognition_tutorial_data.tbz
+tar -xf vfh_recognition_tutorial_data.tar
+# The result should be a folder data/ in vfh_prototype/ , which contains several subfolders with the training data
