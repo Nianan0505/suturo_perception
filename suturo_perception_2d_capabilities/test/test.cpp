@@ -32,14 +32,13 @@ TEST(suturo_perception_2d_capabilities, test_execute)
     FAIL();
   }
 
-  boost::signals2::mutex mutex;
   boost::shared_ptr<cv::Mat> original_image( new cv::Mat(image) );
   std::vector<std::string> train_images;
   std::vector<std::string> train_labels;
   train_images.push_back( package_path + "/test/muesli_front.jpg");
   train_labels.push_back( "muesli" );
   om.trainImages(train_images, train_labels);
-  LabelAnnotator2D la(po, mutex, original_image, om);
+  LabelAnnotator2D la(po, original_image, om);
   la.execute();
   // After the object recognition, the perceived object should
   // contain the 2d label "muesli".
