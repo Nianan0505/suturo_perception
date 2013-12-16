@@ -9,7 +9,8 @@
 TEST(color_analysis_test, color_1_test)
 {
   suturo_perception_lib::PerceivedObject p = suturo_perception_lib::PerceivedObject();
-  suturo_perception_color_analysis::ColorAnalysis ca(p);
+  boost::signals2::mutex mutex;
+  suturo_perception_color_analysis::ColorAnalysis ca(p, mutex);
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>());
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -51,7 +52,8 @@ TEST(color_analysis_test, color_1_test)
 TEST(color_analysis_test, color_2_test)
 {
   suturo_perception_lib::PerceivedObject p = suturo_perception_lib::PerceivedObject();
-  suturo_perception_color_analysis::ColorAnalysis ca(p);
+  boost::signals2::mutex mutex;
+  suturo_perception_color_analysis::ColorAnalysis ca(p, mutex);
 
   uint8_t r = 255, g = 100, b = 150;
   uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
@@ -77,7 +79,8 @@ TEST(color_analysis_test, color_2_test)
 TEST(color_analysis_test, color_3_test)
 {
   suturo_perception_lib::PerceivedObject p = suturo_perception_lib::PerceivedObject();
-  suturo_perception_color_analysis::ColorAnalysis ca(p);
+  boost::signals2::mutex mutex;
+  suturo_perception_color_analysis::ColorAnalysis ca(p, mutex);
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>());
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -110,7 +113,8 @@ TEST(color_analysis_test, color_3_test)
 TEST(color_analysis_test, color_4_test)
 {
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-  
+  boost::signals2::mutex mutex;
+
   std::stringstream boxpath;
   boxpath << "box1.pcd";
 
@@ -123,7 +127,7 @@ TEST(color_analysis_test, color_4_test)
   }
   
   suturo_perception_lib::PerceivedObject p = suturo_perception_lib::PerceivedObject();
-  suturo_perception_color_analysis::ColorAnalysis ca(p);
+  suturo_perception_color_analysis::ColorAnalysis ca(p, mutex);
   boost::shared_ptr<std::vector<int> > hist = ca.getHistogramHue(cloud);
 
   std::ofstream histfile;
