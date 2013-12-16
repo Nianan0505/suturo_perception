@@ -16,9 +16,10 @@
 
 using namespace suturo_perception_shape_detection;
 
-RandomSampleConsensus::RandomSampleConsensus()
+RandomSampleConsensus::RandomSampleConsensus(suturo_perception_lib::PerceivedObject &obj) : suturo_perception_lib::Capability(obj)
 {
  shape = None;
+ logger = suturo_perception_utils::Logger("shape_detection");
 }    
 
 Shape
@@ -123,33 +124,52 @@ RandomSampleConsensus::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudI
     ransacBox.getInliers(inliers); 
     int inCountZ = inliers.size();
 
-    std::cout << "inCountY: " << inCountY << "\n";
+    logger.logInfo((boost::format("inCountY: %s") % inCountY).str());
     float boxCount = inCountY + inCountZ;
     float percBox = boxCount / pcCount;
     
-    std::cout << "inCountBox: " << boxCount << " percBox: " << percBox << "\n";
-    std::cout << "inCountSphere: " << inCountSphere << " percSphere: " << percSphere << "\n";
-    std::cout << "inCountCylinder: " << inCountCylinder << " percCylinder: " << percCylinder <<"\n";
+    logger.logInfo((boost::format("inCountBox: %s  percBox: %s") % boxCount % percBox).str());
+    logger.logInfo((boost::format("inCountSphere: %s  percSphere: %s") % inCountSphere % percSphere).str());
+    logger.logInfo((boost::format("inCountCylinder: %s  percCylinder: %s") % inCountCylinder % percCylinder).str());
 
     if (percCylinder > percBox && percCylinder > percSphere && percCylinder > 0.70)
     {
         shape = Cylinder;
-        std::cout << "Is a cylinder" << "\n" << "percCylinder:  " << percCylinder;
+        logger.logInfo((boost::format("Object is a CYLINDER. percCylinder: %s") % percCylinder).str());
     }
     else if(percBox > percCylinder && percBox > percSphere && percBox > 0.70)
     {
         shape = Box;
-        std::cout << "Is a Box" << "\n" << percBox << " vs " << percSphere;  
+        logger.logInfo((boost::format("Object is a BOX. percBox: %s") % percBox).str());
     }
     else if (percSphere > percBox && percSphere > percCylinder && percSphere > 0.70)
     {
-        shape = Sphere;        
-        std::cout << "Is a sphere" << "\n" << percSphere << " vs " << percBox;
+        shape = Sphere;
+        logger.logInfo((boost::format("Object is a SPHERE. percSphere: %s") % percSphere).str());
     }
     else
     {
         shape = None;
-        std::cout << "No shape could be extracted" << "\n";
+        logger.logInfo("No shape could be extracted");
     }
 
  }
+
+// execute
+ // Detect the shape of the object
+    //rsc.detectShape(*it);
+    //ptShape = rsc.getShape();
+ //   percObj.set_c_shape(ptShape);
+
+// void 
+/*SuturoPerception::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn)
+{   
+    suturo_perception_shape_detection::RandomSampleConsensus rsc;
+    rsc.detectShape(cloudIn);
+}*/
+
+    /*
+    // shape detector to detect shape
+  // int to represent the shape
+  suturo_perception_shape_detection::RandomSampleConsensus rsc;
+  int ptShape;*/
