@@ -321,26 +321,26 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
   for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
   {
     suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
-    msgObj->c_id = it->c_id;
-    msgObj->c_shape = it->c_shape;
-    msgObj->c_volume = it->c_volume;
-    msgObj->c_centroid.x = it->c_centroid.x;
-    msgObj->c_centroid.y = it->c_centroid.y;
-    msgObj->c_centroid.z = it->c_centroid.z;
+    msgObj->c_id = it->get_c_id();
+    msgObj->c_shape = it->get_c_shape();
+    msgObj->c_volume = it->get_c_volume();
+    msgObj->c_centroid.x = it->get_c_centroid().x;
+    msgObj->c_centroid.y = it->get_c_centroid().y;
+    msgObj->c_centroid.z = it->get_c_centroid().z;
     msgObj->frame_id = frameId;
-    msgObj->c_color_average_r = it->c_color_average_r;
-    msgObj->c_color_average_g = it->c_color_average_g;
-    msgObj->c_color_average_b = it->c_color_average_b;
-    msgObj->c_color_average_h = it->c_color_average_h;
-    msgObj->c_color_average_s = it->c_color_average_s;
-    msgObj->c_color_average_v = it->c_color_average_v;
-    msgObj->c_roi_origin.x = it->c_roi.origin.x;
-    msgObj->c_roi_origin.y = it->c_roi.origin.y;
-    msgObj->c_roi_width = it->c_roi.width;
-    msgObj->c_roi_height = it->c_roi.height;
-    msgObj->c_hue_histogram = *(it->c_hue_histogram);
-    msgObj->c_hue_histogram_quality = it->c_hue_histogram_quality;
-    msgObj->recognition_label_2d = it->c_recognition_label_2d;
+    msgObj->c_color_average_r = it->get_c_color_average_r();
+    msgObj->c_color_average_g = it->get_c_color_average_g();
+    msgObj->c_color_average_b = it->get_c_color_average_b();
+    msgObj->c_color_average_h = it->get_c_color_average_h();
+    msgObj->c_color_average_s = it->get_c_color_average_s();
+    msgObj->c_color_average_v = it->get_c_color_average_v();
+    msgObj->c_roi_origin.x = it->get_c_roi().origin.x;
+    msgObj->c_roi_origin.y = it->get_c_roi().origin.y;
+    msgObj->c_roi_width = it->get_c_roi().width;
+    msgObj->c_roi_height = it->get_c_roi().height;
+    msgObj->c_hue_histogram = *it->get_c_hue_histogram();
+    msgObj->c_hue_histogram_quality = it->get_c_hue_histogram_quality();
+    msgObj->recognition_label_2d = it->get_c_recognition_label_2d();
 
     // these are not set for now
     msgObj->recognition_label_3d = "";
