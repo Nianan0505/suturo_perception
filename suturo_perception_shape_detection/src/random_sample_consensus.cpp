@@ -114,7 +114,6 @@ RandomSampleConsensus::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudI
     ransacBox.computeModel();
     ransacBox.getInliers(inliers);
     int inCountY = inliers.size();
-    std::cout << pcCount << "\n" << inCountY << "\n";
     
     // find a plane perpendicular to the x axis, accepting points up to 30°
     p_modelcustom->setAxis (Eigen::Vector3f (0.0, 1.0, 0.0));
