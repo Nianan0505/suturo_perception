@@ -19,7 +19,6 @@
 #include "roi.h"
 #include "perceived_object.h"
 #include "point.h"
-#include "random_sample_consensus.h"
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
@@ -97,9 +96,6 @@ namespace suturo_perception_lib
     // void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects);
 		// void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects, std::string filename);
 		// void writeCloudToDisk(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud, std::string filename);
-
-    // shape detection
-    void detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn);
 
     // getters and setters
     void setZAxisFilterMin(float v) {zAxisFilterMin = v;};

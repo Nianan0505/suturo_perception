@@ -24,7 +24,7 @@ namespace suturo_perception_2d_capabilities
   {
     public:
       // ROIPublisher();
-      ROIPublisher(suturo_perception_lib::PerceivedObject &obj, boost::signals2::mutex &m, PublisherHelper &ph, 
+      ROIPublisher(suturo_perception_lib::PerceivedObject &obj, PublisherHelper &ph, 
                    boost::shared_ptr<cv::Mat> original_image, std::string frame_id);
       void setTopicName(const std::string s); // optional
 

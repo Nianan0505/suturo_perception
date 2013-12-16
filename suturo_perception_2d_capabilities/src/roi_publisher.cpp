@@ -2,11 +2,11 @@
 
 using namespace suturo_perception_2d_capabilities;
 
-ROIPublisher::ROIPublisher(suturo_perception_lib::PerceivedObject &obj, boost::signals2::mutex &m, PublisherHelper &ph, 
+ROIPublisher::ROIPublisher(suturo_perception_lib::PerceivedObject &obj, PublisherHelper &ph, 
                            boost::shared_ptr<cv::Mat> original_image, std::string frame_id) 
     : topic_name_("roi_publisher"),
       ph_(ph), original_image_(original_image), frame_id_(frame_id),
-      suturo_perception_lib::Capability(obj, m) {
+      suturo_perception_lib::Capability(obj) {
 }
 /**
  * Read the ROI from the given PerceivedObject set by setPerceivedObject

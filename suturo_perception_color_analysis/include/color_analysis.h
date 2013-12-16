@@ -24,7 +24,7 @@ namespace suturo_perception_color_analysis
   class ColorAnalysis : public Capability
   {
     public:
-      ColorAnalysis(PerceivedObject &obj, boost::signals2::mutex &m);
+      ColorAnalysis(PerceivedObject &obj);
 
       uint32_t getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
       HSVColor getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);

@@ -274,11 +274,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     
   // temporary list of perceived objects
   std::vector<PerceivedObject> tmpPerceivedObjects;
-
-  // shape detector to detect shape
-  // int to represent the shape
-  suturo_perception_shape_detection::RandomSampleConsensus rsc;
-  int ptShape;
+  
 
   // hack for collision_objects
   collision_objects = extractedObjects;
@@ -308,10 +304,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
     hull.reconstruct (*hull_points);
 
-    // Detect the shape of the object
-    rsc.detectShape(*it);
-    ptShape = rsc.getShape();
-
     // Centroid calulcation
     Eigen::Vector4f centroid;
     pcl::compute3DCentroid (*hull_points, centroid);  
@@ -330,7 +322,6 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     ptCentroid.y=centroid[1];
     ptCentroid.z=centroid[2];
     percObj.set_c_centroid(ptCentroid);
-    percObj.set_c_shape(ptShape);
     percObj.set_c_volume(hull.getTotalVolume());
     percObj.set_c_roi(perceived_cluster_rois_[i]);
     percObj.set_c_color_average_r((0 >> 16) & 0x0000ff);
@@ -372,10 +363,4 @@ std::vector<ROI> SuturoPerception::getPerceivedClusterROIs()
   return perceived_cluster_rois_;
 }
 
-void 
-SuturoPerception::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn)
-{   
-    suturo_perception_shape_detection::RandomSampleConsensus rsc;
-    rsc.detectShape(cloudIn);
-}
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 

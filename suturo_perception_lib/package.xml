@@ -44,7 +44,6 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>pcl</build_depend>
-  <build_depend>suturo_perception_shape_detection</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>roscpp</build_depend>
@@ -59,7 +58,6 @@
   <run_depend>suturo_perception_2d_object_recognition_lib</run_depend>
   <run_depend>pcl</run_depend>
   <run_depend>opencv2</run_depend>
-  <run_depend>suturo_perception_shape_detection</run_depend>
   <run_depend>suturo_perception_utils</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->

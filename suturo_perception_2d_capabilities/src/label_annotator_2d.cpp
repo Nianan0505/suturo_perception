@@ -2,8 +2,8 @@
 
 using namespace suturo_perception_2d_capabilities;
 
-LabelAnnotator2D::LabelAnnotator2D(PerceivedObject &obj, boost::signals2::mutex &m, boost::shared_ptr<cv::Mat> original_image, ObjectMatcher &object_matcher)
-  : original_image_(original_image), object_matcher_(object_matcher), Capability(obj, m)
+LabelAnnotator2D::LabelAnnotator2D(PerceivedObject &obj, boost::shared_ptr<cv::Mat> original_image, ObjectMatcher &object_matcher)
+  : original_image_(original_image), object_matcher_(object_matcher), Capability(obj)
 {
   logger_ = suturo_perception_utils::Logger("LabelAnnotator2D");
 }

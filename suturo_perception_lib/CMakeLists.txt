@@ -16,7 +16,7 @@ SET(POINTCLOUD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/pointclouds" CACHE STRING "Path
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS suturo_perception_shape_detection 
+find_package(catkin REQUIRED COMPONENTS 
   cv_bridge
   image_transport
   roscpp
@@ -25,7 +25,6 @@ find_package(catkin REQUIRED COMPONENTS suturo_perception_shape_detection
   suturo_perception_utils
 )
 link_directories(${suturo_perception_lib_LIBRARY_DIRS})
-link_directories(${suturo_perception_shape_detection_LIBRARY_DIRS})
 link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 link_directories(${suturo_perception_color_analysis_LIBRARY_DIRS})
 
@@ -97,7 +96,7 @@ link_directories(${suturo_perception_color_analysis_LIBRARY_DIRS})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_lib
-  CATKIN_DEPENDS pcl suturo_perception_shape_detection suturo_perception_utils cv_bridge image_transport roscpp std_msgs
+  CATKIN_DEPENDS pcl suturo_perception_utils cv_bridge image_transport roscpp std_msgs
   DEPENDS opencv
 )
 
