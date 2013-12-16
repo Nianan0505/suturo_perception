@@ -144,14 +144,14 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // Each capability provides an enrichment for the
   // returned PerceivedObject
   for (int i = 0; i < perceivedObjects.size(); i++) {
-    ColorAnalysis ca(perceivedObjects[i]);
+    ColorAnalysis ca(perceivedObjects[i], mutex);
     ca.execute();
 
     // Is 2d recognition enabled?
     if(!recognitionDir.empty())
     {
       // perceivedObjects[i].c_recognition_label_2d="";
-      suturo_perception_2d_capabilities::LabelAnnotator2D la(perceivedObjects[i], sp.getOriginalRGBImage(), object_matcher_);
+      suturo_perception_2d_capabilities::LabelAnnotator2D la(perceivedObjects[i], mutex, sp.getOriginalRGBImage(), object_matcher_);
       la.execute();
     }
     else
@@ -162,7 +162,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
     // Publish the ROI-cropped images
     suturo_perception_2d_capabilities::ROIPublisher 
-      rp(perceivedObjects.at(i), ph,sp.getOriginalRGBImage(),frameId);
+      rp(perceivedObjects.at(i), mutex, ph,sp.getOriginalRGBImage(),frameId);
     std::stringstream ss;
     ss << i;
     rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());

@@ -1,6 +1,7 @@
 #ifndef SUTURO_PERCEPTION_LABEL_ANNOTATOR_2D_H
 #define SUTURO_PERCEPTION_LABEL_ANNOTATOR_2D_H
 
+#include <boost/signals2/mutex.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "opencv2/core/core.hpp"
 #include "capability.h"
@@ -25,7 +26,7 @@ namespace suturo_perception_2d_capabilities
   {
     public:
       // capability method
-      LabelAnnotator2D(PerceivedObject &obj, boost::shared_ptr<cv::Mat> original_image, ObjectMatcher &object_matcher);
+      LabelAnnotator2D(PerceivedObject &obj, boost::signals2::mutex &m, boost::shared_ptr<cv::Mat> original_image, ObjectMatcher &object_matcher);
       void execute();
 
     private:

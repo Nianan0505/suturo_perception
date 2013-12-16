@@ -1,6 +1,7 @@
 #ifndef SUTURO_PERCEPTION_ROI_PUBLISHER_H
 #define SUTURO_PERCEPTION_ROI_PUBLISHER_H
 
+#include <boost/signals2/mutex.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "opencv2/core/core.hpp"
 #include "capability.h"
@@ -23,7 +24,7 @@ namespace suturo_perception_2d_capabilities
   {
     public:
       // ROIPublisher();
-      ROIPublisher(suturo_perception_lib::PerceivedObject &obj, PublisherHelper &ph, 
+      ROIPublisher(suturo_perception_lib::PerceivedObject &obj, boost::signals2::mutex &m, PublisherHelper &ph, 
                    boost::shared_ptr<cv::Mat> original_image, std::string frame_id);
       void setTopicName(const std::string s); // optional
 
