@@ -48,6 +48,7 @@ static void onMouseClick( int event, int x, int y, int, void* )
 //This function is called everytime a new image is published
 void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 {
+    // cout << "Received image " << endl;
     //Convert from the ROS image message to a CvImage suitable for working with OpenCV for processing
     cv_bridge::CvImagePtr cv_ptr;
     try
@@ -108,6 +109,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 int main(int argc, char **argv)
 {
 	std::string database_file;
+	std::string image_topic="";
   int min_good_matches;
 
 	ros::init(argc, argv, "image_processor");
@@ -122,6 +124,7 @@ int main(int argc, char **argv)
       ("help", "produce help message")
       ("min-good-matches,m", po::value<int>(&min_good_matches)->default_value(0), "The minimum amount of good matches which must be present to perform object recognition")
       ("database-file,f", po::value<std::string>(&database_file)->required(), "Give a database file with training images and their keypoints/descriptors. By using a database, you don't need to specify your training images every time you call this node")
+      ("topic,t", po::value<std::string>(&image_topic), "The ROS topic this node should listen to")
     ;
 
     po::positional_options_description p;
@@ -163,11 +166,29 @@ int main(int argc, char **argv)
 	cv::namedWindow(WINDOW, CV_WINDOW_AUTOSIZE);
 
 	cv::setMouseCallback(WINDOW, onMouseClick, 0 );
-	image_transport::Subscriber sub = it.subscribe("camera/rgb/image_raw", 1, imageCallback);
+  // cout << "Given topic is " << image_topic << endl;
+  // cout << "Given topic is " << image_topic.empty() << endl;
+  image_transport::Subscriber sub;
+
+  if(image_topic.empty())
+      image_topic = "/camera/rgb/image_raw";
+
+  sub = it.subscribe(image_topic, 1, imageCallback);
+  // sub = it.subscribe("/camera/rgb/image_raw", 1, imageCallback);
+  // if( ! image_topic.empty())
+  // {
+  //   cout << "Subscribed to topic " << image_topic << endl;
+  //   sub = it.subscribe(image_topic, 1, imageCallback);
+  // }
+  // else
+  // {
+  //   sub= it.subscribe("camera/rgb/image_raw", 1, imageCallback);
+  // }
 	//OpenCV HighGUI call to destroy a display window on shut-down.
 	cv::destroyWindow(WINDOW);
 
 	pub = it.advertise("camera/rgb/image_processed", 1);
+  cout << "Waiting for images" << endl;
 	ros::spin();
 }
 

@@ -220,8 +220,18 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
   Mat descriptors_scene;
 
   computeKeyPointsAndDescriptors( img_scene, keypoints_scene, descriptors_scene);
-
   Mat img_matches;
+
+  // At least 1 keypoint has to be present to continue
+  if(keypoints_scene.size() == 0){
+    ExecutionResult result;
+    result.object_recognized = false;
+    result.match_image = img_matches;
+    result.label = "";
+    cerr << "No Keypoints found in scene!" << endl;
+    return result;
+  }
+
   // Check these descriptors against all stored training images
   for(int i = 0; i < training_images_.size(); i++)
   {

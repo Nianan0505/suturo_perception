@@ -78,7 +78,10 @@ public:
      * test image
      *
      * @param headless If this is set to true, no Windows will be opened to display the matches.
-     * @returns ExecutionResult with result=True, if Object has been recognized
+     * @returns ExecutionResult with result=True, if Object has been recognized.
+     *          ExecutionResult with result=false otherwise (note: This includes scenes, where
+     *                          no keypoints couldn't be extracted).
+     *          
      */
     ObjectMatcher::ExecutionResult recognizeTrainedImages(std::string test_image, bool headless);
     ObjectMatcher::ExecutionResult recognizeTrainedImages(cv::Mat &test_image, bool headless);
