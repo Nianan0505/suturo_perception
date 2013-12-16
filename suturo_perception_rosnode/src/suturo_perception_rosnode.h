@@ -10,6 +10,7 @@
 #include "suturo_perception.h"
 #include "visualization_publisher.h"
 #include "suturo_perception_2d_capabilities/roi_publisher.h"
+#include "random_sample_consensus.h" // shape detector capability
 #include "perceived_object.h"
 #include "point.h"
 #include "suturo_perception_msgs/GetClusters.h"

@@ -144,10 +144,13 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // Each capability provides an enrichment for the
   // returned PerceivedObject
   for (int i = 0; i < perceivedObjects.size(); i++) {
+    // Color analysis
     ColorAnalysis ca(perceivedObjects[i]);
     ca.execute();
 
-    // Shape det
+    // Shape detection
+    suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
+    sd.execute();
 
     // Is 2d recognition enabled?
     if(!recognitionDir.empty())

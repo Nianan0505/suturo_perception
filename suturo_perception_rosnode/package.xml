@@ -52,6 +52,7 @@
   <build_depend>suturo_perception_2d_capabilities</build_depend>
   <build_depend>suturo_perception_2d_object_recognition_lib</build_depend>
   <build_depend>suturo_perception_color_analysis</build_depend>
+  <build_depend>suturo_perception_shape_detection</build_depend>
   <build_depend>suturo_perception_ros_utils</build_depend>
   <build_depend>suturo_perception_utils</build_depend>
   <run_depend>roscpp</run_depend>
@@ -66,6 +67,7 @@
   <run_depend>opencv2</run_depend>
   <run_depend>suturo_perception_2d_capabilities</run_depend>
   <run_depend>suturo_perception_color_analysis</run_depend>
+  <run_depend>suturo_perception_shape_detection</run_depend>
   <run_depend>suturo_perception_ros_utils</run_depend>
   <run_depend>suturo_perception_utils</run_depend>
 
