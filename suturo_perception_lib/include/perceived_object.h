@@ -21,7 +21,7 @@ namespace suturo_perception_lib
       double c_color_average_s;
       double c_color_average_v;
       std::string c_recognition_label_2d;
-      std::vector<uint32_t> c_hue_histogram;
+      std::vector<uint32_t> *c_hue_histogram;
       uint8_t c_hue_histogram_quality;
       ROI c_roi;
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud;

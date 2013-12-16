@@ -336,7 +336,7 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_roi_origin.y = it->c_roi.origin.y;
     msgObj->c_roi_width = it->c_roi.width;
     msgObj->c_roi_height = it->c_roi.height;
-    msgObj->c_hue_histogram = it->c_hue_histogram;
+    msgObj->c_hue_histogram = *(it->c_hue_histogram);
     msgObj->c_hue_histogram_quality = it->c_hue_histogram_quality;
     msgObj->recognition_label_2d = it->c_recognition_label_2d;
 

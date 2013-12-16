@@ -41,12 +41,12 @@ ColorAnalysis::getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
   return convertRGBToHSV(getAverageColor(cloud_in));
 }
 
-boost::shared_ptr<std::vector<uint32_t> >
+std::vector<uint32_t> *
 ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
-  boost::shared_ptr<std::vector<uint32_t> > ret (new std::vector<uint32_t>(120)); // 360 / 3 = 120
+  std::vector<uint32_t> *ret = new std::vector<uint32_t>(121); // 360 / 3 = 120
   uint32_t excluded_point_cnt = 0;
 
   if(cloud_in->points.size() == 0) return ret;
@@ -61,12 +61,14 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
     uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
     HSVColor hsv = convertRGBToHSV(rgb);
 
-    if (hsv.s < 20 || hsv.v < 20)
+    if (hsv.s < 0.3 || hsv.v < 0.3)
     {
       excluded_point_cnt++;
       continue;
     }
 
+    if (hsv.h/3 > 120)
+      logger.logWarn((boost::format("bad shit going to happen! %d") % (hsv.h / 3)).str());
     ret->at(hsv.h/3) ++;
   }
 
@@ -88,12 +90,14 @@ HSVColor
 ColorAnalysis::convertRGBToHSV(uint32_t rgb) 
 {
   HSVColor hsv;
-  uint8_t r = (uint8_t) ((rgb & 0xff0000) >> 16);
-  uint8_t g = (uint8_t) ((rgb & 0xff00) >> 8);
-  uint8_t b = (uint8_t) (rgb & 0xff);
+  double r = ((uint8_t) ((rgb & 0xff0000) >> 16)) / 255.0;
+  double g = ((uint8_t) ((rgb & 0xff00) >> 8)) / 255.0;
+  double b = ((uint8_t) (rgb & 0xff)) / 255.0;
+  //logger.logWarn((boost::format("convertRGBToHSV input: %f, %f, %f") % r % g % b).str());
   double rgb_min, rgb_max;
   rgb_min = std::min(r, std::min(g, b));
   rgb_max = std::max(r, std::max(g, b));
+  //logger.logWarn((boost::format("convertRGBToHSV(1) rgb %f, %f, %f, max = %f, min = %f") % r % g % b % rgb_max % rgb_min).str());
   hsv.v = rgb_max;
   if (hsv.v == 0) {
       hsv.h = hsv.s = 0;
@@ -105,6 +109,7 @@ ColorAnalysis::convertRGBToHSV(uint32_t rgb)
   b /= hsv.v;
   rgb_min = std::min(r, std::min(g, b));
   rgb_max = std::max(r, std::max(g, b));
+  //logger.logWarn((boost::format("convertRGBToHSV(2) rgb %f, %f, %f, max = %f, min = %f") % r % g % b % rgb_max % rgb_min).str());
   hsv.s = rgb_max - rgb_min;
   if (hsv.s == 0) {
       hsv.h = 0;
@@ -116,16 +121,22 @@ ColorAnalysis::convertRGBToHSV(uint32_t rgb)
   b = (b - rgb_min)/(rgb_max - rgb_min);
   rgb_min = std::min(r, std::min(g, b));
   rgb_max = std::max(r, std::max(g, b));
+  //logger.logWarn((boost::format("convertRGBToHSV(3) rgb %f, %f, %f, max = %f, min = %f") % r % g % b % rgb_max % rgb_min).str());
   /* Compute hue */
   if (rgb_max == r) {
-      hsv.h = 0.0 + 60.0*(g - b);
-      if (hsv.h < 0.0) {
-          hsv.h += 360.0;
+      int h_tmp = 0.0 + 60.0*(g - b);
+      //logger.logWarn((boost::format("convertRGBToHSV hue: %f, %f, %f") % hsv.h % g % b).str());
+      if (h_tmp < 0.0) {
+          h_tmp += 360.0;
       }
+      hsv.h = h_tmp;
+      //logger.logWarn((boost::format("convertRGBToHSV hue2: %f") % hsv.h).str());
   } else if (rgb_max == g) {
       hsv.h = 120.0 + 60.0*(b - r);
+      //logger.logWarn((boost::format("convertRGBToHSV hue3: %f") % hsv.h).str());
   } else /* rgb_max == b */ {
       hsv.h = 240.0 + 60.0*(r - g);
+      //logger.logWarn((boost::format("convertRGBToHSV hue4: %f") % hsv.h).str());
   }
   return hsv;
 }
@@ -288,7 +299,7 @@ ColorAnalysis::execute()
   HSVColor averageColorHSV = convertRGBToHSV(averageColor);
 
   // Get hue histogram of the object
-  boost::shared_ptr<std::vector<uint32_t> > histogram = getHistogramHue(perceivedObject.pointCloud);
+  std::vector<uint32_t> *histogram = getHistogramHue(perceivedObject.pointCloud);
   uint8_t histogram_quality = getHistogramQuality();
 
   // generate image of histogram
@@ -299,6 +310,6 @@ ColorAnalysis::execute()
   perceivedObject.c_color_average_h = averageColorHSV.h;
   perceivedObject.c_color_average_s = averageColorHSV.s;
   perceivedObject.c_color_average_v = averageColorHSV.v;
-  perceivedObject.c_hue_histogram = *histogram;
+  perceivedObject.c_hue_histogram = histogram;
   perceivedObject.c_hue_histogram_quality = histogram_quality;
 }
