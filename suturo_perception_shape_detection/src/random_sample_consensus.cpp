@@ -155,6 +155,11 @@ RandomSampleConsensus::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudI
 
  }
 
+void RandomSampleConsensus::execute()
+{
+  detectShape(perceivedObject.get_pointCloud());
+  perceivedObject.set_c_shape(getShape());
+}
 // execute
  // Detect the shape of the object
     //rsc.detectShape(*it);

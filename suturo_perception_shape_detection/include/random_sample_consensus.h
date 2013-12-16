@@ -14,6 +14,9 @@ namespace suturo_perception_shape_detection
             RandomSampleConsensus(suturo_perception_lib::PerceivedObject &obj);
             void detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudIn);
             Shape getShape();
+
+            // capability method
+            void execute();
         private:
             Shape shape;
             suturo_perception_utils::Logger logger;
