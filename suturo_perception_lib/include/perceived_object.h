@@ -5,6 +5,7 @@
 #include "roi.h"
 #include <pcl/point_types.h>
 #include <boost/signals2/mutex.hpp>
+#include "opencv2/core/core.hpp"
 
 namespace suturo_perception_lib
 {
@@ -120,6 +121,14 @@ namespace suturo_perception_lib
         return res;
       };
 
+      cv::Mat *get_c_hue_histogram_image() const
+      {
+        mutex->lock();
+        cv::Mat *res = c_hue_histogram_image;
+        mutex->unlock();
+        return res;
+      }
+
       ROI get_c_roi() const
       {
         mutex->lock(); 
@@ -215,6 +224,12 @@ namespace suturo_perception_lib
         c_hue_histogram_quality = value;
         mutex->unlock();
       };
+      void set_c_hue_histogram_image(cv::Mat *histImg)
+      {
+        mutex->lock();
+        c_hue_histogram_image = histImg;
+        mutex->unlock();
+      }
       void set_c_roi(ROI value)
       {
         mutex->lock();
@@ -242,6 +257,7 @@ namespace suturo_perception_lib
       std::string c_recognition_label_2d;
       std::vector<uint32_t> *c_hue_histogram;
       uint8_t c_hue_histogram_quality;
+      cv::Mat *c_hue_histogram_image;
       ROI c_roi;
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud;
 

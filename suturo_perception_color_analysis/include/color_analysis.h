@@ -31,7 +31,7 @@ namespace suturo_perception_color_analysis
       std::vector<uint32_t> *getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
       HSVColor convertRGBToHSV(uint32_t rgb);
       uint32_t convertHSVToRGB(HSVColor hsv);
-      cv::Mat histogramToImage(boost::shared_ptr<std::vector<uint32_t> > histogram);
+      cv::Mat *histogramToImage(std::vector<uint32_t> *histogram);
       uint8_t getHistogramQuality();
       std::vector<cv::Mat> getPerceivedClusterHistograms();
 
