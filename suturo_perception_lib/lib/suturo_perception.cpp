@@ -7,7 +7,7 @@ using namespace suturo_perception_lib;
 bool ReceivedObjectGreaterThan(const PerceivedObject& p1, 
     const PerceivedObject& p2)
 {
-  return p1.c_volume > p2.c_volume;
+  return p1.get_c_volume() > p2.get_c_volume();
 }
 
 /*
@@ -321,26 +321,27 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     // Add the detected cluster to the list of perceived objects
     std::vector<uint32_t> *emptyHistogram = new std::vector<uint32_t>(120);
     uint8_t emptyHistogramQuality = 0;
+
     PerceivedObject percObj;
-    percObj.c_id= objectID;
+    percObj.set_c_id(objectID);
     objectID++;
     Point ptCentroid;
     ptCentroid.x=centroid[0];
     ptCentroid.y=centroid[1];
     ptCentroid.z=centroid[2];
-    percObj.c_centroid = ptCentroid;
-    percObj.c_shape = ptShape;
-    percObj.c_volume = hull.getTotalVolume();
-    percObj.c_roi = perceived_cluster_rois_[i];
-    percObj.c_color_average_r = (0 >> 16) & 0x0000ff;
-    percObj.c_color_average_g = (0 >> 8)  & 0x0000ff;
-    percObj.c_color_average_b = (0)       & 0x0000ff;
-    percObj.c_color_average_h = 0;
-    percObj.c_color_average_s = 0.0;
-    percObj.c_color_average_v = 0.0;
-    percObj.c_hue_histogram = emptyHistogram;
-    percObj.c_hue_histogram_quality = emptyHistogramQuality;
-    percObj.pointCloud = *it;
+    percObj.set_c_centroid(ptCentroid);
+    percObj.set_c_shape(ptShape);
+    percObj.set_c_volume(hull.getTotalVolume());
+    percObj.set_c_roi(perceived_cluster_rois_[i]);
+    percObj.set_c_color_average_r((0 >> 16) & 0x0000ff);
+    percObj.set_c_color_average_g((0 >> 8)  & 0x0000ff);
+    percObj.set_c_color_average_b((0)       & 0x0000ff);
+    percObj.set_c_color_average_h(0);
+    percObj.set_c_color_average_s(0.0);
+    percObj.set_c_color_average_v(0.0);
+    percObj.set_c_hue_histogram(emptyHistogram);
+    percObj.set_c_hue_histogram_quality(emptyHistogramQuality);
+    percObj.set_pointCloud(*it);
 
     tmpPerceivedObjects.push_back(percObj);
     i++;

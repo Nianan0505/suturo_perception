@@ -15,7 +15,7 @@ ROIPublisher::ROIPublisher(suturo_perception_lib::PerceivedObject &obj, boost::s
  */
 void ROIPublisher::execute()
 {
-    suturo_perception_lib::ROI &roi = perceivedObject.c_roi;
+    suturo_perception_lib::ROI roi = perceivedObject.get_c_roi();
     cv::Rect region_of_interest = cv::Rect(
         roi.origin.x,
         roi.origin.y,

@@ -295,21 +295,21 @@ void
 ColorAnalysis::execute()
 {
   // Get average color of the object
-  uint32_t averageColor = getAverageColor(perceivedObject.pointCloud);
+  uint32_t averageColor = getAverageColor(perceivedObject.get_pointCloud());
   HSVColor averageColorHSV = convertRGBToHSV(averageColor);
 
   // Get hue histogram of the object
-  std::vector<uint32_t> *histogram = getHistogramHue(perceivedObject.pointCloud);
+  std::vector<uint32_t> *histogram = getHistogramHue(perceivedObject.get_pointCloud());
   uint8_t histogram_quality = getHistogramQuality();
 
   // generate image of histogram
   //perceived_cluster_histograms_.push_back(histogramToImage(histogram));
-  perceivedObject.c_color_average_r = (averageColor >> 16) & 0x0000ff;
-  perceivedObject.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
-  perceivedObject.c_color_average_b = (averageColor)       & 0x0000ff;
-  perceivedObject.c_color_average_h = averageColorHSV.h;
-  perceivedObject.c_color_average_s = averageColorHSV.s;
-  perceivedObject.c_color_average_v = averageColorHSV.v;
-  perceivedObject.c_hue_histogram = histogram;
-  perceivedObject.c_hue_histogram_quality = histogram_quality;
+  perceivedObject.set_c_color_average_r((averageColor >> 16) & 0x0000ff);
+  perceivedObject.set_c_color_average_g((averageColor >> 8)  & 0x0000ff);
+  perceivedObject.set_c_color_average_b((averageColor)       & 0x0000ff);
+  perceivedObject.set_c_color_average_h(averageColorHSV.h);
+  perceivedObject.set_c_color_average_s(averageColorHSV.s);
+  perceivedObject.set_c_color_average_v(averageColorHSV.v);
+  perceivedObject.set_c_hue_histogram(histogram);
+  perceivedObject.set_c_hue_histogram_quality(histogram_quality);
 }

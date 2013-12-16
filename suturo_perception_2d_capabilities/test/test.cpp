@@ -13,11 +13,13 @@ TEST(suturo_perception_2d_capabilities, test_execute)
 {
   suturo_perception_lib::PerceivedObject po;
   // Set the ROI manually, so the object recognizer can pick the correct region
-  po.c_roi.origin.x = 0;
-  po.c_roi.origin.y = 0;
-  po.c_roi.width = 284;
-  po.c_roi.height = 380;
-  po.c_recognition_label_2d = "";
+  suturo_perception_lib::ROI roi;
+  roi.origin.x = 0;
+  roi.origin.y = 0;
+  roi.width = 284;
+  roi.height = 380;
+  po.set_c_roi(roi);
+  po.set_c_recognition_label_2d("");
 
   ObjectMatcher om;
   cv::Mat image;
@@ -41,7 +43,7 @@ TEST(suturo_perception_2d_capabilities, test_execute)
   la.execute();
   // After the object recognition, the perceived object should
   // contain the 2d label "muesli".
-  ASSERT_STREQ("muesli", po.c_recognition_label_2d.c_str() );
+  ASSERT_STREQ("muesli", po.get_c_recognition_label_2d().c_str() );
   SUCCEED();
 }
 
