@@ -319,7 +319,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     logger.logInfo((boost::format("Centroid: %s, %s, %s") % centroid[0] % centroid[1] % centroid[2]).str());
 
     // Add the detected cluster to the list of perceived objects
-    std::vector<int> emptyHistogram;
+    std::vector<uint32_t> emptyHistogram;
     uint8_t emptyHistogramQuality = 0;
     PerceivedObject percObj;
     percObj.c_id= objectID;
@@ -335,9 +335,9 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     percObj.c_color_average_r = (0 >> 16) & 0x0000ff;
     percObj.c_color_average_g = (0 >> 8)  & 0x0000ff;
     percObj.c_color_average_b = (0)       & 0x0000ff;
-    percObj.c_color_average_h = (0 >> 16) & 0x0000ff;
-    percObj.c_color_average_s = (0 >> 8)  & 0x0000ff;
-    percObj.c_color_average_v = (0)       & 0x0000ff;
+    percObj.c_color_average_h = 0;
+    percObj.c_color_average_s = 0.0;
+    percObj.c_color_average_v = 0.0;
     percObj.c_hue_histogram = emptyHistogram;
     percObj.c_hue_histogram_quality = emptyHistogramQuality;
     percObj.pointCloud = *it;

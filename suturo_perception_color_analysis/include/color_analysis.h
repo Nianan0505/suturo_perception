@@ -15,17 +15,23 @@ using namespace suturo_perception_lib;
 
 namespace suturo_perception_color_analysis
 {
+  typedef struct HSVColor_ {
+    uint32_t h;
+    double s;
+    double v;
+  } HSVColor;
+
   class ColorAnalysis : public Capability
   {
     public:
       ColorAnalysis(PerceivedObject &obj, boost::signals2::mutex &m);
 
       uint32_t getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-      uint32_t getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-      boost::shared_ptr<std::vector<int> > getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-      uint32_t convertRGBToHSV(uint32_t rgb);
-      uint32_t convertHSVToRGB(uint32_t hsv);
-      cv::Mat histogramToImage(boost::shared_ptr<std::vector<int> > histogram);
+      HSVColor getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+      boost::shared_ptr<std::vector<uint32_t> > getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
+      HSVColor convertRGBToHSV(uint32_t rgb);
+      uint32_t convertHSVToRGB(HSVColor hsv);
+      cv::Mat histogramToImage(boost::shared_ptr<std::vector<uint32_t> > histogram);
       uint8_t getHistogramQuality();
       std::vector<cv::Mat> getPerceivedClusterHistograms();
 

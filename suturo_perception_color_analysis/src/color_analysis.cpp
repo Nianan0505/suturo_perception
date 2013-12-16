@@ -35,18 +35,18 @@ ColorAnalysis::getAverageColor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
 
 }
 
-uint32_t
+HSVColor
 ColorAnalysis::getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
   return convertRGBToHSV(getAverageColor(cloud_in));
 }
 
-boost::shared_ptr<std::vector<int> >
+boost::shared_ptr<std::vector<uint32_t> >
 ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
-  boost::shared_ptr<std::vector<int> > ret (new std::vector<int>(86)); // 86 = 255 / 3 + 1
+  boost::shared_ptr<std::vector<uint32_t> > ret (new std::vector<uint32_t>(120)); // 360 / 3 = 120
   uint32_t excluded_point_cnt = 0;
 
   if(cloud_in->points.size() == 0) return ret;
@@ -59,18 +59,15 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
   for(int i = 0; i < cloud_in->points.size(); ++i)
   {
     uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
-    uint32_t hsv = convertRGBToHSV(rgb);
-    uint8_t h = (hsv >> 16) & 0x0000ff;
-    uint8_t s = (hsv >> 8) & 0x0000ff;
-    uint8_t v = (hsv) & 0x0000ff;
+    HSVColor hsv = convertRGBToHSV(rgb);
 
-    if (s < 20 || v < 20)
+    if (hsv.s < 20 || hsv.v < 20)
     {
       excluded_point_cnt++;
       continue;
     }
 
-    ret->at(h/3) ++;
+    ret->at(hsv.h/3) ++;
   }
 
   histogram_quality = (uint8_t) (100.0 - ((100.0 / (double) cloud_in->points.size()) * (double) excluded_point_cnt));
@@ -87,75 +84,50 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
  * turns on debugging
  * based on: http://en.literateprograms.org/RGB_to_HSV_color_space_conversion_%28C%29
  */
-uint32_t
+HSVColor
 ColorAnalysis::convertRGBToHSV(uint32_t rgb) 
 {
-  uint8_t debug = (rgb >> 24) & 0x000000ff;
-  double r = ((double) ((rgb >> 16) & 0x0000ff)) / 255;
-  double g = ((double) ((rgb >> 8) & 0x0000ff)) / 255;
-  double b = ((double) ((rgb) & 0x0000ff)) / 255;
-  double cmax = std::max(r,std::max(g,b));
-  double h = 0;
-  double s = 0;
-  double v = cmax;
-  if (debug)
-    printf("r = %f, g = %f, b = %f\n", r,g,b);
-  if (v == 0) {
-    h = 0;
-    s = 0;
-  } 
-  else 
-  {
-    double rr = r / v;
-    double gg = g / v;
-    double bb = b / v;
-    if (debug)
-      printf("rr = %f, gg = %f, bb = %f\n", rr,gg,bb);
-
-    cmax = std::max(rr,std::max(gg,bb));
-    double cmin = std::min(rr,std::min(gg,bb));
-
-    s = cmax - cmin;
-    if (s == 0)
-    {
-      h = 0;
-    }
-    else
-    {
-      double rrr = (rr - cmin) / s;
-      double ggg = (gg - cmin) / s;
-      double bbb = (bb - cmin) / s;
-      cmax = std::max(rrr, std::max(ggg, bbb));
-      cmin = std::min(rrr, std::min(ggg, bbb));
-    
-      if (debug) 
-        printf("rrr = %f, ggg = %f, bbb = %f\n", rrr,ggg,bbb);
-
-      if (cmax == rrr)
-      {
-        h = 0.0 + 60.0 * (ggg - bbb);
-        if (h < 0.0)
-        {
-          h += 360;
-        }
-      }
-      else if (cmax == ggg)
-      {
-        h = 120.0 + 60.0 * (bbb - rrr);
-      }
-      else 
-      {
-        h = 240.0 + 60.0 * (rrr - ggg);
-      }
-    }
+  HSVColor hsv;
+  uint8_t r = (uint8_t) ((rgb & 0xff0000) >> 16);
+  uint8_t g = (uint8_t) ((rgb & 0xff00) >> 8);
+  uint8_t b = (uint8_t) (rgb & 0xff);
+  double rgb_min, rgb_max;
+  rgb_min = std::min(r, std::min(g, b));
+  rgb_max = std::max(r, std::max(g, b));
+  hsv.v = rgb_max;
+  if (hsv.v == 0) {
+      hsv.h = hsv.s = 0;
+      return hsv;
   }
-
-  logger.logDebug((boost::format("h = %f, s = %f, v = %f") % h % s % v).str());
-
-  h = (h / 360) * 255;
-  s *= 255;
-  v *= 255;
-  return ((uint32_t)h << 16 | (uint32_t)s << 8 | (uint32_t)v);
+  /* Normalize value to 1 */
+  r /= hsv.v;
+  g /= hsv.v;
+  b /= hsv.v;
+  rgb_min = std::min(r, std::min(g, b));
+  rgb_max = std::max(r, std::max(g, b));
+  hsv.s = rgb_max - rgb_min;
+  if (hsv.s == 0) {
+      hsv.h = 0;
+      return hsv;
+  }
+  /* Normalize saturation to 1 */
+  r = (r - rgb_min)/(rgb_max - rgb_min);
+  g = (g - rgb_min)/(rgb_max - rgb_min);
+  b = (b - rgb_min)/(rgb_max - rgb_min);
+  rgb_min = std::min(r, std::min(g, b));
+  rgb_max = std::max(r, std::max(g, b));
+  /* Compute hue */
+  if (rgb_max == r) {
+      hsv.h = 0.0 + 60.0*(g - b);
+      if (hsv.h < 0.0) {
+          hsv.h += 360.0;
+      }
+  } else if (rgb_max == g) {
+      hsv.h = 120.0 + 60.0*(b - r);
+  } else /* rgb_max == b */ {
+      hsv.h = 240.0 + 60.0*(r - g);
+  }
+  return hsv;
 }
 
 /*
@@ -163,21 +135,15 @@ ColorAnalysis::convertRGBToHSV(uint32_t rgb)
  * taken from: http://stackoverflow.com/a/6930407
  */
 uint32_t
-ColorAnalysis::convertHSVToRGB(uint32_t hsv)
+ColorAnalysis::convertHSVToRGB(HSVColor hsv)
 {
   double hh, p, q, t, ff;
   long i;
   uint8_t r,g,b;
-  uint8_t hi = (uint8_t) ((hsv & 0xff0000) >> 16);
-  uint8_t si = (uint8_t) ((hsv & 0xff00) >> 8);
-  uint8_t vi = (uint8_t) (hsv & 0xff);
-  double h = (double) hi;
-  double s = (double) si;
-  double v = (double) vi;
 
-  h = h / 255 * 360;
-  s /= 255;
-  v /= 255;
+  uint32_t h = hsv.h;
+  double s = hsv.s;
+  double v = hsv.v;
 
   if(s <= 0.0)
   {
@@ -234,7 +200,7 @@ ColorAnalysis::convertHSVToRGB(uint32_t hsv)
 }
 
 cv::Mat
-ColorAnalysis::histogramToImage(boost::shared_ptr<std::vector<int> > histogram)
+ColorAnalysis::histogramToImage(boost::shared_ptr<std::vector<uint32_t> > histogram)
 {
   uint32_t hw = 1024;
   uint32_t hh = 768;
@@ -253,7 +219,7 @@ ColorAnalysis::histogramToImage(boost::shared_ptr<std::vector<int> > histogram)
   cv::line(hist, cv::Point(10 + txt_size_yaxis.width, 10), cv::Point(10 + txt_size_yaxis.width, hh - 20), fg_color);
   cv::line(hist, cv::Point(10 + txt_size_yaxis.width, hh - 20), cv::Point(hw - 20, hh - 20), fg_color);
   
-  int max_h = 0;
+  uint32_t max_h = 0;
   for (int j = 0; j < histogram->size(); j++)
   {
     max_h = std::max(max_h, histogram->at(j));
@@ -273,7 +239,11 @@ ColorAnalysis::histogramToImage(boost::shared_ptr<std::vector<int> > histogram)
     // draw xaxis color line
     hue = (uint8_t) ((255.0 / (double)x_axis_width) * j);
 
-    uint32_t tmp_color = convertHSVToRGB(hue << 16 | 0xffff);
+    HSVColor hsv_tmp;
+    hsv_tmp.h = hue;
+    hsv_tmp.s = 1.0;
+    hsv_tmp.v = 1.0;
+    uint32_t tmp_color = convertHSVToRGB(hsv_tmp);
     cv::Scalar x_color(
       tmp_color & 0xff,
       (tmp_color & 0xff00) >> 8,
@@ -315,10 +285,10 @@ ColorAnalysis::execute()
 {
   // Get average color of the object
   uint32_t averageColor = getAverageColor(perceivedObject.pointCloud);
-  uint32_t averageColorHSV = convertRGBToHSV(averageColor);
+  HSVColor averageColorHSV = convertRGBToHSV(averageColor);
 
   // Get hue histogram of the object
-  boost::shared_ptr<std::vector<int> > histogram = getHistogramHue(perceivedObject.pointCloud);
+  boost::shared_ptr<std::vector<uint32_t> > histogram = getHistogramHue(perceivedObject.pointCloud);
   uint8_t histogram_quality = getHistogramQuality();
 
   // generate image of histogram
@@ -326,9 +296,9 @@ ColorAnalysis::execute()
   perceivedObject.c_color_average_r = (averageColor >> 16) & 0x0000ff;
   perceivedObject.c_color_average_g = (averageColor >> 8)  & 0x0000ff;
   perceivedObject.c_color_average_b = (averageColor)       & 0x0000ff;
-  perceivedObject.c_color_average_h = (averageColorHSV >> 16) & 0x0000ff;
-  perceivedObject.c_color_average_s = (averageColorHSV >> 8)  & 0x0000ff;
-  perceivedObject.c_color_average_v = (averageColorHSV)       & 0x0000ff;
+  perceivedObject.c_color_average_h = averageColorHSV.h;
+  perceivedObject.c_color_average_s = averageColorHSV.s;
+  perceivedObject.c_color_average_v = averageColorHSV.v;
   perceivedObject.c_hue_histogram = *histogram;
   perceivedObject.c_hue_histogram_quality = histogram_quality;
 }
