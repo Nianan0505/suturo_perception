@@ -1,7 +1,8 @@
 #include "ros/ros.h"
 #include <boost/signals2/mutex.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/date_time.hpp>
+#include <boost/thread.hpp>
+#include <boost/asio.hpp>
 #include <dynamic_reconfigure/server.h>
 #include <suturo_perception_rosnode/SuturoPerceptionConfig.h>
 #include <pcl_ros/point_cloud.h>

@@ -64,9 +64,10 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
 void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
   // process only one cloud
-  logger.logInfo("Receiving cloud");
+  
   if(processing)
   {
+    logger.logInfo("Receiving cloud");
     logger.logInfo("processing...");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*inputCloud,*cloud_in);
@@ -98,6 +99,8 @@ void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageCo
 bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::Request &req,
   suturo_perception_msgs::GetClusters::Response &res)
 {
+  boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
+
   // ros::Subscriber sub;
   processing = true;
 
@@ -143,14 +146,53 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // Execution pipeline
   // Each capability provides an enrichment for the
   // returned PerceivedObject
-  for (int i = 0; i < perceivedObjects.size(); i++) {
-    // Color analysis
-    ColorAnalysis ca(perceivedObjects[i]);
-    ca.execute();
 
-    // Shape detection
+  // initialize threadpool
+  boost::asio::io_service ioService;
+  boost::thread_group threadpool;
+
+  // Add worker threads to threadpool
+  threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+  );
+  /* just one thread for now. investigating strange boost behavior
+  threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+  );
+  threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+  );
+  threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+  );
+  threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+  );
+  threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+  );
+  threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+  );
+  threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+  );*/
+  
+  
+  for (int i = 0; i < perceivedObjects.size(); i++) 
+  {
+    ioService.reset(); // workaround
+    // Initialize Capabilities
+    ColorAnalysis ca(perceivedObjects[i]);
     suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
-    sd.execute();
+
+    // post work to threadpool
+    ioService.post(boost::bind(&ColorAnalysis::execute, ca));
+    ioService.post(boost::bind(&suturo_perception_shape_detection::RandomSampleConsensus::execute, sd));
+
+    //boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+    ioService.run();
+    threadpool.join_all();
 
     // Is 2d recognition enabled?
     if(!recognitionDir.empty())
@@ -173,7 +215,12 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
     rp.execute();
   }
+  //boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+  // wait for thread completion -- should be this way
+  //ioService.run();
+  //threadpool.join_all();
   
+
   res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_cloud_publish = sp.getPlaneCloud();
@@ -205,6 +252,9 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   mutex.unlock();
+
+  boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
+  logger.logTime(start, end, "TOTAL");
 
   logger.logInfo("Shutting down subscriber");
   image_sub.unsubscribe(); // shutdown subscriber, to mitigate funky behavior
@@ -264,6 +314,9 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   logger.logInfo("Service call finished. return");
+  
+  
+  
   return true;
 }
 

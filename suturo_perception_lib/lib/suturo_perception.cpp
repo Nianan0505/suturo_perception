@@ -344,7 +344,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   mutex.unlock();
 
   boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
-  logger.logTime(start, end, "TOTAL");
+  logger.logTime(start, end, "SEGMENTATION");
 }
 
 
