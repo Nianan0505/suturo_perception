@@ -56,6 +56,7 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   object_matcher_.setVerboseLevel(0); // TODO use constant
   object_matcher_.setMinGoodMatches(7);
 
+   numThreads = 8;
 }
 
 /*
@@ -146,7 +147,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     new boost::asio::io_service::work(ioService));
 
   // Add worker threads to threadpool
-  for(int i = 0; i < 8; ++i)
+  for(int i = 0; i < numThreads; ++i)
   {
     threadpool.create_thread(
       boost::bind(&boost::asio::io_service::run, &ioService)
@@ -298,23 +299,25 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 void SuturoPerceptionROSNode::reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level)
 {
   logger.logInfo((boost::format("Reconfigure request : \n"
-            "zAxisFilterMin: %f \n"
-            "zAxisFilterMax: %f \n"
-            "downsampleLeafSize: %f \n"
-            "planeMaxIterations: %i \n"
-            "planeDistanceThreshold: %f \n"
-            "ecClusterTolerance: %f \n"
-            "ecMinClusterSize: %i \n"
-            "ecMaxClusterSize: %i \n"
-            "prismZMin: %f \n"
-            "prismZMax: %f \n"
-            "ecObjClusterTolerance: %f \n"
-            "ecObjMinClusterSize: %i \n"
-            "ecObjMaxClusterSize: %i \n") %
+            "segmenter: zAxisFilterMin: %f \n"
+            "segmenter: zAxisFilterMax: %f \n"
+            "segmenter: downsampleLeafSize: %f \n"
+            "segmenter: planeMaxIterations: %i \n"
+            "segmenter: planeDistanceThreshold: %f \n"
+            "segmenter: ecClusterTolerance: %f \n"
+            "segmenter: ecMinClusterSize: %i \n"
+            "segmenter: ecMaxClusterSize: %i \n"
+            "segmenter: prismZMin: %f \n"
+            "segmenter: prismZMax: %f \n"
+            "segmenter: ecObjClusterTolerance: %f \n"
+            "segmenter: ecObjMinClusterSize: %i \n"
+            "segmenter: ecObjMaxClusterSize: %i \n"
+            "general: numThreads: %i \n") %
             config.zAxisFilterMin % config.zAxisFilterMax % config.downsampleLeafSize %
             config.planeMaxIterations % config.planeDistanceThreshold % config.ecClusterTolerance %
             config.ecMinClusterSize % config.ecMaxClusterSize % config.prismZMin % config.prismZMax %
-            config.ecObjClusterTolerance % config.ecObjMinClusterSize % config.ecObjMaxClusterSize).str());
+            config.ecObjClusterTolerance % config.ecObjMinClusterSize % config.ecObjMaxClusterSize % 
+            config.numThreads).str());
   /*while(processing) // wait until current processing run is completed 
   { 
     boost::this_thread::sleep(boost::posix_time::milliseconds(1));

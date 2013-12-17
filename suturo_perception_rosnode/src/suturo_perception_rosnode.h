@@ -80,8 +80,7 @@ private:
   VisualizationPublisher visualizationPublisher;
   Logger logger;
 
-  // capabilities
-
+  int numThreads;
 
   /*
    * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
