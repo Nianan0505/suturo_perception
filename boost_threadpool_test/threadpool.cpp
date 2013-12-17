@@ -1,7 +1,8 @@
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 #include <iostream>
-#include <string>
+
+#include "threadpool.h"
 
 boost::mutex mutex;
 
@@ -13,16 +14,15 @@ int fib(int x) {
 
 void doSomething(int value)
 {
-  mutex.lock();
+  int res = fib(value);
+  boost::lock_guard<boost::mutex> lock(mutex);
   std::cout << "doSomething(): " << fib(value) << std::endl;
-  mutex.unlock();
 }
 
 void doSomethingElse(int value)
 {
-  mutex.lock();
+  boost::lock_guard<boost::mutex> lock(mutex); 
   std::cout << "doSomethingElse(): " << value+value << std::endl;
-  mutex.unlock();
 }
 
 int main(int argc, char** argv)
@@ -30,35 +30,32 @@ int main(int argc, char** argv)
   // create asio ioservice and threadgroup for the pool
   boost::asio::io_service ioService;
   boost::thread_group threadpool;
+  //boost::asio::io_service::work work(ioService);
+  std::auto_ptr<boost::asio::io_service::work> work(
+    new boost::asio::io_service::work(ioService));
 
   // Add worker threads to threadpool
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-
- 
-  // Work object can be used to block the ioservice. it will not return and has to be stopped manually
-  //boost::asio::io_service::work work(ioService);
+  for(int i = 0; i < 2; ++i)
+  {
+    threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService));  
+  }
 
   // post work to the ioservice
-  ioService.post(boost::bind(doSomething, 42));
-  ioService.post(boost::bind(doSomethingElse, 3));
-  ioService.post(boost::bind(doSomething, 42));
-  ioService.post(boost::bind(doSomethingElse, 3));
-
-  // this wait is needed, if a work object is used. otherwise the tasks may not be in state 'working'
-  // and the service will stop immediately.
-  //boost::this_thread::sleep(boost::posix_time::microseconds(10));
-  //ioService.stop();
+  {
+    ioService.post(boost::bind(doSomething, 40));
+    ioService.post(boost::bind(doSomethingElse, 3));
+    ioService.post(boost::bind(doSomething, 40));
+    ioService.post(boost::bind(doSomethingElse, 3));
+    ioService.post(boost::bind(doSomething, 40));
+    ioService.post(boost::bind(doSomethingElse, 3));  
+  }
   
   // run the tasks and return, if all queued work is finished
+  work.reset();
   ioService.run();
   //ioService.reset(); //needs to be done before run can be executed again
   
   // join all threads of the group
   threadpool.join_all();
-
 }
