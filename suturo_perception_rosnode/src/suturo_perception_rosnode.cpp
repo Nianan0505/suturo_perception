@@ -142,38 +142,19 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // initialize threadpool
   boost::asio::io_service ioService;
   boost::thread_group threadpool;
+  std::auto_ptr<boost::asio::io_service::work> work(
+    new boost::asio::io_service::work(ioService));
 
   // Add worker threads to threadpool
-  threadpool.create_thread(
+  for(int i = 0; i < 8; ++i)
+  {
+    threadpool.create_thread(
       boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-  /* just one thread for now. investigating strange boost behavior
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );
-  threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-  );*/
-  
-  
+      );
+  }
+
   for (int i = 0; i < perceivedObjects.size(); i++) 
   {
-    ioService.reset(); // workaround
     // Initialize Capabilities
     ColorAnalysis ca(perceivedObjects[i]);
     suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
@@ -181,10 +162,6 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     // post work to threadpool
     ioService.post(boost::bind(&ColorAnalysis::execute, ca));
     ioService.post(boost::bind(&suturo_perception_shape_detection::RandomSampleConsensus::execute, sd));
-
-    //boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-    ioService.run();
-    threadpool.join_all();
 
     // Is 2d recognition enabled?
     if(!recognitionDir.empty())
@@ -209,10 +186,11 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
  
   }
   //boost::this_thread::sleep(boost::posix_time::microseconds(1000));
-  // wait for thread completion -- should be this way
-  //ioService.run();
-  //threadpool.join_all();
-  
+  // wait for thread completion.
+  // destroy the work object to wait for all queued tasks to finish
+  work.reset();
+  ioService.run();
+  threadpool.join_all();
 
   res.perceivedObjs = *convertPerceivedObjects(&perceivedObjects); // TODO handle images in this method
 
