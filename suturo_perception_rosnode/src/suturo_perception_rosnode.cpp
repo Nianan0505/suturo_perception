@@ -130,18 +130,10 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   std::vector<cv::Mat> perceived_cluster_images;
-  std::vector<cv::Mat> perceived_cluster_histograms;
 
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
   perceived_cluster_images = sp.getPerceivedClusterImages();
-  
-  // TODO: get this from new style pipeline later
-  //perceived_cluster_histograms = sp.getPerceivedClusterHistograms();
-
-  // ****** DEMO: Demo using Coloranalysis for handling of a capability in the new style pipeline ******
-  // TODO: iterate over objects and fill perceived_cluster_histograms for publishing
-  
   
   // Execution pipeline
   // Each capability provides an enrichment for the
@@ -214,6 +206,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     ss << i;
     rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
     rp.execute();
+ 
   }
   //boost::this_thread::sleep(boost::posix_time::microseconds(1000));
   // wait for thread completion -- should be this way
@@ -228,7 +221,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
 	ph.publish_pointcloud(TABLE_PLANE_TOPIC,plane_cloud_publish, frameId);
 	ph.publish_pointcloud(ALL_OBJECTS_ON_PLANE_TOPIC,object_cloud_publish, frameId);
-  logger.logInfo((boost::format(" Extracted images vector: %s vs. Extracted PointCloud Vector: %s vs. Extracted histogram vector: %s") % perceived_cluster_images.size() % perceivedObjects.size() % perceived_cluster_histograms.size()).str());
+  logger.logInfo((boost::format(" Extracted images vector: %s vs. Extracted PointCloud Vector: %s") % perceived_cluster_images.size() % perceivedObjects.size()).str());
 
   // Publish the images of the clusters
   for(int i = 0; i < perceived_cluster_images.size(); i++)
@@ -242,13 +235,14 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   // publish histograms
-  for (int i = 0; i < perceived_cluster_histograms.size(); i++)
+  for (int i = 0; i < perceivedObjects.size(); i++)
   {
-    if (i > 6)
-      continue;
-    std::stringstream ss;
-    ss << i;
-    ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + ss.str(), perceived_cluster_histograms.at(i), frameId);
+    if (i <= 6 && perceivedObjects.at(i).get_c_hue_histogram_image() != NULL)
+    {
+      std::stringstream ss;
+      ss << i;
+      ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + ss.str(), *(perceivedObjects.at(i).get_c_hue_histogram_image()), frameId);
+    }
   }
 
   mutex.unlock();

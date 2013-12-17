@@ -46,7 +46,7 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
 {
   boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
 
-  std::vector<uint32_t> *ret = new std::vector<uint32_t>(121); // 360 / 3 = 120
+  std::vector<uint32_t> *ret = new std::vector<uint32_t>(120); // 360 / 3 = 120
   uint32_t excluded_point_cnt = 0;
 
   if(cloud_in->points.size() == 0) return ret;
@@ -67,8 +67,6 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
       continue;
     }
 
-    if (hsv.h/3 > 120)
-      logger.logWarn((boost::format("bad shit going to happen! %d") % (hsv.h / 3)).str());
     ret->at(hsv.h/3) ++;
   }
 
@@ -235,12 +233,12 @@ ColorAnalysis::histogramToImage(std::vector<uint32_t> *histogram)
   {
     max_h = std::max(max_h, histogram->at(j));
   }
-  int step = max_h / 10;
-  int y_axis_txt = 0;
+  double step = max_h / 10;
+  double y_axis_txt = 0;
   for (int j = 0; j < 11; j++)
   {
     cv::Point text_org(5, hh - j*(hh / 10) - 20);
-    cv::putText(*hist, boost::lexical_cast<std::string>(y_axis_txt), text_org, fontFace, fontScale, fg_color, thickness, 8);
+    cv::putText(*hist, boost::lexical_cast<std::string>((int)y_axis_txt), text_org, fontFace, fontScale, fg_color, thickness, 8);
     y_axis_txt += step;
   }
   int x_axis_width = hw - 20 - txt_size_yaxis.width - 10;
