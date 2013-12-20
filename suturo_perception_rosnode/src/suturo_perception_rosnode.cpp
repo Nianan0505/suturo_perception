@@ -1,8 +1,8 @@
 #include "suturo_perception_rosnode.h"
 
-const std::string SuturoPerceptionROSNode::TABLE_PLANE_TOPIC = "suturo_perception_table";
-const std::string SuturoPerceptionROSNode::ALL_OBJECTS_ON_PLANE_TOPIC = "suturo_perception_objects_ontable"; // TODO use /suturo/objects_on_table
-const std::string SuturoPerceptionROSNode::COLLISION_CLOUD_TOPIC = "suturo_perception_collision_cloud";
+const std::string SuturoPerceptionROSNode::TABLE_PLANE_TOPIC = "suturo/table";
+const std::string SuturoPerceptionROSNode::ALL_OBJECTS_ON_PLANE_TOPIC = "suturo/objects_on_table"; // TODO use /suturo/objects_on_table
+const std::string SuturoPerceptionROSNode::COLLISION_CLOUD_TOPIC = "suturo/collision_cloud";
 const std::string SuturoPerceptionROSNode::IMAGE_PREFIX_TOPIC= "/suturo/cluster_image/";
 const std::string SuturoPerceptionROSNode::CROPPED_IMAGE_PREFIX_TOPIC= "/suturo/cropped_cluster_image/";
 const std::string SuturoPerceptionROSNode::HISTOGRAM_PREFIX_TOPIC= "/suturo/cluster_histogram/";
@@ -21,7 +21,7 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   visualizationPublisher(n, fi)
 {
   logger = Logger("perception_rosnode");
-  clusterService = nh.advertiseService("GetClusters", 
+  clusterService = nh.advertiseService("/suturo/GetClusters", 
     &SuturoPerceptionROSNode::getClusters, this);
   
   is_edible_service = nh.serviceClient<suturo_perception_msgs::PrologQuery>("json_prolog/simple_query");
