@@ -16,6 +16,7 @@ int main (int argc, char** argv)
 
   // get parameters
   std::string pointTopic;
+  std::string colorTopic;
   std::string frameId;
 
   // ros strangeness strikes again. don't try to && these!
@@ -23,8 +24,10 @@ int main (int argc, char** argv)
   else { pointTopic = "/camera/depth_registered/points"; ROS_INFO("Using default parameters");}
   if(ros::param::get("/suturo_perception/frame_id", frameId));
   else frameId = "camera_rgb_optical_frame";
-  
-  SuturoPerceptionROSNode spr(nh, pointTopic, frameId, recognitionDir);
+  if(ros::param::get("/suturo_perception/color_topic", colorTopic)) ROS_INFO("Using parameters from Parameter Server");
+  else { colorTopic = "/camera/rgb/image_color"; ROS_INFO("Using default parameters");}
+
+  SuturoPerceptionROSNode spr(nh, pointTopic, colorTopic, frameId, recognitionDir);
 
   ROS_INFO("                    _____ ");
   ROS_INFO("                   |     | ");

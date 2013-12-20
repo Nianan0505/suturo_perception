@@ -9,6 +9,7 @@
 
   <node pkg="suturo_perception_rosnode" name="suturo_perception_rosnode" type="suturo_perception_rosnode" output="screen"  args="$(arg 2d_recognition_data)"></node>
   <param name="suturo_perception/point_topic" type="string" value="/cloud_pcd" />
+  <param name="suturo_perception/color_topic" type="string" value="/rgb/image_color" />
   <param name="suturo_perception/frame_id" type="string" value="camera_rgb_optical_frame" />
 
 </launch>

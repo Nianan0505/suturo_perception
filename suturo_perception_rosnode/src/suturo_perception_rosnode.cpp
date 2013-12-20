@@ -12,9 +12,10 @@ namespace enc = sensor_msgs::image_encodings;
 /*
  * Constructor
  */
-SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string fi, std::string rd) : 
+SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string ct, std::string fi, std::string rd) : 
   nh(n), 
-  pointTopic(pt), 
+  pointTopic(pt),
+  colorTopic(ct), 
   frameId(fi),
   recognitionDir(rd),
   ph(n),
@@ -112,7 +113,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   // TODO Make this configurable!!
-  message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, "/camera/rgb/image_color", 1);
+  message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, colorTopic, 1);
   message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub(nh, pointTopic, 1);
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::PointCloud2> MySyncPolicy;
   message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image_sub, pc_sub);

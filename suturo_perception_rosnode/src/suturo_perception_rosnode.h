@@ -38,7 +38,7 @@ using namespace suturo_perception_color_analysis;
 class SuturoPerceptionROSNode
 {
 public:
-  SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string fi, std::string rd);
+  SuturoPerceptionROSNode(ros::NodeHandle& n, std::string pt, std::string ct, std::string fi, std::string rd);
   void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud);
   void receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud);
   bool getClusters(suturo_perception_msgs::GetClusters::Request &req,
@@ -69,6 +69,7 @@ private:
   ros::ServiceClient is_edible_service_finish;
   
   std::string pointTopic;
+  std::string colorTopic;
   std::string frameId;
   std::string recognitionDir;
   // Helper Class for Publishing Business
