@@ -150,6 +150,7 @@ include_directories(
 # )
 
 ## Declare a cpp executable
+add_executable(segment_objects src/segment_objects.cpp)
 add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
@@ -169,6 +170,10 @@ target_link_libraries(suturo_perception_dummynode
 )
 
 target_link_libraries(suturo_perception_rosclient
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(segment_objects
   ${catkin_LIBRARIES}
 )
 #############
