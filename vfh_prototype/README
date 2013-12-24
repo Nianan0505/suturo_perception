@@ -9,3 +9,6 @@ tar -xf vfh_recognition_tutorial_data.tar
 
 # Execute the training and the testing phase
 rosrun vfh_prototype build_tree data/ # you have to be in the vfh_prototype package before executing this
+# Test an image against the trained data
+rosrun vfh_prototype nearest_neighbors data/100.919.00/1258146320333_cluster_0_nxyz_vfh.pcd
+

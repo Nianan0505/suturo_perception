@@ -1,6 +1,10 @@
 /**
  * This class can be used to extract the VFH descriptor
- * from a given PointCloud
+ * from a given PointCloud.
+ *
+ * The node should be passed an argument, which is the path to the PCD file
+ * to use.
+ * The path must be relative to the root of the vfh_prototype package!
  */
 #include <pcl/point_types.h>
 #include <pcl/features/vfh.h>
@@ -15,14 +19,26 @@ main (int argc, char** argv)
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
   std::string package_path = ros::package::getPath("vfh_prototype");
+  std::string file_path = "";
+  
+  if(argc == 2)
+  {
+    // Take the second argument as the path to the pcd file
+    file_path.append(argv[1]);
+  }
+  else
+  {
+    std::cout <<  "Usage: rosrun vfh_prototype estimate_vfh_features PATH_TO_PCD" << std::endl;
+    return(-1);
+  }
 
   // This file is provided by the VFH data set
   // Please read the README file in the vfh_prototype package
   // to get this data.
-  if (pcl::io::loadPCDFile<pcl::PointXYZ> (package_path + "/data/000.580.67/1258250240333_cluster_0_nxyz.pcd", *cloud) == -1)
+  if (pcl::io::loadPCDFile<pcl::PointXYZ> (package_path + "/" + file_path, *cloud) == -1)
 
   {
-    PCL_ERROR ("Couldn't read file test_pcd.pcd \n");
+    PCL_ERROR ("Couldn't read given pcd file for VFH estimation \n");
     return (-1);
   }
 
@@ -59,7 +75,7 @@ main (int argc, char** argv)
 
   // Compute the features
   vfh.compute (*vfhs);
-  pcl::io::savePCDFile(package_path + "/estimated_descriptor_vfh.pcd", *vfhs);
+  pcl::io::savePCDFile(package_path + "/" + file_path + "_vfh", *vfhs);
   // vfhs->points.size () should be of size 1*
   return 0;
 }
