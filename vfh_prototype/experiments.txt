@@ -1,0 +1,34 @@
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xx Testing the collected data in test_data/ against start_data/
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Thu Jan  2 15:08:21 CET 2014
+
+Test parameters:
+-k = 4
+-thresh = 50
+
+Test files:
+- pringles_laying_mid_vfh.pcd
+Correctly classified pringles_laying.pcd as nearest neighbour
+Distance: 33.4979
+
+- pringles_standing_left_vfh.pcd
+Incorrectly classified pringles_laying as nearest neighbour
+Distance: 110.25
+The correct result has a distance of 276 (4. place)
+
+- pringles_standing_mid_far_vfh.pcd
+Incorrectly classified pringles_laying as nearest neighbour
+Distance: 60.8415
+The correct result has a distance of 283 (4. place)
+
+- pringles_standing_mid_vfh.pcd
+Incorrectly classified pringles_laying as nearest neighbour
+Distance: 156.712
+The correct result has a distance of 219.455 (4. place)
+
+- pringles_standing_right_vfh.pcd
+Incorrectly classified pringles_laying_rotated as nearest neighbour
+Distance: 152.627
+The correct result has a distance of 204.6 (4. place)
+
