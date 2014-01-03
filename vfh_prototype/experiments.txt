@@ -32,3 +32,5 @@ Incorrectly classified pringles_laying_rotated as nearest neighbour
 Distance: 152.627
 The correct result has a distance of 204.6 (4. place)
 
+The CVFH paper states, that a successful classification as the nearest neighbour has a chance of ~40%.
+
