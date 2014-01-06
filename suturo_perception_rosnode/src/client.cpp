@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 
   ros::NodeHandle n;
 
-  ros::ServiceClient clusterClient = n.serviceClient<suturo_perception_msgs::GetClusters>("GetClusters");
+  ros::ServiceClient clusterClient = n.serviceClient<suturo_perception_msgs::GetClusters>("/suturo/GetClusters");
   suturo_perception_msgs::GetClusters clusterSrv;
   clusterSrv.request.s = "get";
   ROS_INFO_STREAM("ServiceClient initialized");
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     }
     else
     {
-      ROS_ERROR("Failed to call service GetClusters");
+      ROS_ERROR("Failed to call service /suturo/GetClusters");
       return 1;
     }
     boost::this_thread::sleep(boost::posix_time::seconds(1));
