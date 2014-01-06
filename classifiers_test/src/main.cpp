@@ -1,8 +1,12 @@
+/*
+ * roslaunch ml_classifiers classifier_server.launch
+ */
 #include "ros/ros.h"
 #include <cstdlib>
 #include "classifiers_test/ClassDataPoint.h"
 #include "classifiers_test/CreateClassifier.h"
 #include "classifiers_test/AddClassData.h"
+#include "classifiers_test/TrainClassifier.h"
 
 bool createClassifier(std::string identifier, std::string type)
 {
@@ -54,6 +58,25 @@ bool addClassDataPoints(std::string identifier, std::vector<classifiers_test::Cl
   return true;
 }
 
+bool trainClassifier(std::string identifier)
+{
+  ros::NodeHandle n;
+  ros::ServiceClient train_classifier = n.serviceClient<classifiers_test::TrainClassifier>("/ml_classifiers/train_classifier", true);
+  classifiers_test::TrainClassifier t_srv;
+  t_srv.request.identifier = identifier;
+  if (train_classifier.call(t_srv))
+  {
+    ROS_INFO("call to train_classifier successful!");
+    return true;
+  }
+  else
+  {
+    ROS_ERROR("Failed to call service train_classifier");
+    return false;
+  }
+}
+
+
 /*
 std::vector<classifiers_test::ClassDataPoint> rawToClassDataPoint(int data_dimension, int size, float[][] data, float[] targets)
 {
@@ -103,8 +126,10 @@ int main(int argc, char **argv)
   if (!createClassifier("test", "ml_classifiers/SVMClassifier"))
       return 1;
   
-
   if (!addClassDataPoints("test", train_points))
+    return 1;
+
+  if (!trainClassifier("test"))
     return 1;
   
   return 0;
