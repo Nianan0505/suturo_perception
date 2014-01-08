@@ -10,49 +10,37 @@ BasicIOPCD::BasicIOPCD(int argc, char** argv)
     std::cout << "Usage: input_file_path.pcd output_file_path.pcd\n";
     exit (-1);
   }
+  input_filename_ = argv[filenames.at(0)];
+  output_filename_ = argv[filenames.at(1)];
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  input_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
+  output_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
 
-  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (argv[filenames.at(0)], *cloud) == -1) //* load the file
+  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (input_filename_, *input_cloud_) == -1) //* load the file
   {
     PCL_ERROR ("Couldn't read input file\n");
     exit (-1);
   }
   std::cout << "Loaded "
-            << cloud->width * cloud->height
+            << input_cloud_->width * input_cloud_->height
             << " data points from input pcd" << std::endl;
 }
-// int
-// main (int argc, char** argv)
-// {
-//   //Model & scene filenames
-//   std::vector<int> filenames;
-//   filenames = pcl::console::parse_file_extension_argument (argc, argv, ".pcd");
-//   if (filenames.size () != 2)
-//   {
-//     std::cout << "Usage: input_file_path.pcd output_file_path.pcd\n";
-//     exit (-1);
-//   }
-// 
-//   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-// 
-//   if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (argv[filenames.at(0)], *cloud) == -1) //* load the file
-//   {
-//     PCL_ERROR ("Couldn't read input file\n");
-//     return (-1);
-//   }
-//   std::cout << "Loaded "
-//             << cloud->width * cloud->height
-//             << " data points from input pcd" << std::endl;
-//   //remove NAN points from the cloud
-//   std::vector<int> indices;
-//   pcl::removeNaNFromPointCloud(*cloud,*cloud, indices);
-// 
-//   // write pcd
-//   pcl::PCDWriter writer;
-//   std::stringstream ss;
-//   ss << argv[filenames.at(1)];
-//   writer.write(ss.str(), *cloud);
-//   std::cerr << "Saved " << cloud->points.size () << " data points" << std::endl;
-//   return (0);
-// }
+
+void BasicIOPCD::execute()
+{
+  // Overwrite this method and access the class member 'input_cloud_'
+  // to access the input cloud that has been passed as a parameter
+  // Save the finished pointcloud to 'output_cloud_'
+  // and call write_pcd() to write it
+  output_cloud_ = input_cloud_;
+}
+
+void BasicIOPCD::write_pcd()
+{
+  // write pcd
+  pcl::PCDWriter writer;
+  std::stringstream ss;
+  ss << output_filename_;
+  writer.write(ss.str(), *output_cloud_);
+  std::cerr << "Saved " << output_cloud_->points.size () << " data points" << std::endl;
+}
