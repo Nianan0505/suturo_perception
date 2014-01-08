@@ -127,6 +127,10 @@ add_executable(remove_nans
   src/remove_nans.cpp
   src/basic_io_pcd.cpp)
 
+add_executable(smooth_surface 
+  src/smooth_surface.cpp
+  src/basic_io_pcd.cpp)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(suturo_perception_utils_node suturo_perception_utils_generate_messages_cpp)
@@ -137,6 +141,10 @@ target_link_libraries(suturo_perception_ros_utils
 )
 
 target_link_libraries(remove_nans
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(smooth_surface
   ${catkin_LIBRARIES}
 )
 
