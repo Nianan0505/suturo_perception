@@ -147,6 +147,10 @@ add_executable(downsample_cloud
   src/downsample_cloud.cpp
   src/basic_io_pcd.cpp)
 
+add_executable(segment_plane_and_show
+  src/segment_plane_and_show.cpp
+  src/basic_io_pcd.cpp)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(suturo_perception_utils_node suturo_perception_utils_generate_messages_cpp)
@@ -177,6 +181,10 @@ target_link_libraries(get_min_max_3d
 )
 
 target_link_libraries(downsample_cloud
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(segment_plane_and_show
   ${catkin_LIBRARIES}
 )
 
