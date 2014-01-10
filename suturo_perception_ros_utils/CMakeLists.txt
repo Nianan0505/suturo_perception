@@ -135,6 +135,18 @@ add_executable(compute_bounding_box
   src/compute_bounding_box.cpp
   src/basic_io_pcd.cpp)
 
+add_executable(compute_convex_hull 
+  src/compute_convex_hull.cpp
+  src/basic_io_pcd.cpp)
+
+add_executable(get_min_max_3d 
+  src/get_min_max_3d.cpp
+  src/basic_io_pcd.cpp)
+
+add_executable(downsample_cloud
+  src/downsample_cloud.cpp
+  src/basic_io_pcd.cpp)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(suturo_perception_utils_node suturo_perception_utils_generate_messages_cpp)
@@ -153,6 +165,18 @@ target_link_libraries(smooth_surface
 )
 
 target_link_libraries(compute_bounding_box
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(compute_convex_hull
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(get_min_max_3d
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(downsample_cloud
   ${catkin_LIBRARIES}
 )
 
