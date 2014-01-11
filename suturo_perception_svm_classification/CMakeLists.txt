@@ -1,33 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(suturo_perception_lib)
+project(suturo_perception_svm_classification)
 
-SET(POINTCLOUD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/pointclouds" CACHE STRING "Path of Pointclouds")
-
-#include(ExternalProject)
-#ExternalProject_Add(
-#  suturo_pcd_files
-#  DOWNLOAD_COMMAND ""
-#  CONFIGURE_COMMAND ""
-#  BUILD_COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/sync_pointclouds.sh" "${POINTCLOUD_PATH}"
-#  INSTALL_COMMAND ""
-#)
-
-#add_dependencies(suturo_perception_lib suturo_pcd_files)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS 
-  pcl
-  cv_bridge
-  image_transport
+find_package(catkin REQUIRED COMPONENTS
   roscpp
-  std_msgs
-  suturo_perception_2d_object_recognition_lib
   suturo_perception_utils
+  suturo_perception_lib
+  suturo_perception_ml_classifiers_msgs
 )
-link_directories(${suturo_perception_lib_LIBRARY_DIRS})
 link_directories(${suturo_perception_utils_LIBRARY_DIRS})
-link_directories(${suturo_perception_color_analysis_LIBRARY_DIRS})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -96,9 +79,9 @@ link_directories(${suturo_perception_color_analysis_LIBRARY_DIRS})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES suturo_perception_lib
-  CATKIN_DEPENDS pcl suturo_perception_utils cv_bridge image_transport roscpp std_msgs
-  DEPENDS opencv
+  LIBRARIES suturo_perception_svm_classification
+  CATKIN_DEPENDS roscpp suturo_perception_lib suturo_perception_utils suturo_perception_ml_classifiers_msgs 
+  #  DEPENDS opencv
 )
 
 ###########
@@ -113,8 +96,8 @@ include_directories(
 )
 
 ## Declare a cpp library
-#add_library(suturo_perception_lib
-# lib/suturo_perception.cpp
+#add_library(suturo_perception_svm_classification
+#  lib/svm_classification.cpp
 #)
 
 ## Declare a cpp executable
@@ -124,6 +107,10 @@ include_directories(
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(perception_node perception_generate_messages_cpp)
 
+## Specify libraries to link a library or executable target against
+# target_link_libraries(perception_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -165,32 +152,31 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-catkin_add_gtest(${PROJECT_NAME}-test 
-  test/test.cpp
-  WORKING_DIRECTORY ${POINTCLOUD_PATH}
-)
-if(TARGET ${PROJECT_NAME}-test)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
-  
-  # other stuff neded for the test
-  #configure_file( test/pointcloud_path.h.in ${CMAKE_BINARY_DIR}/generated/pointcloud_path.h )
-  #include_directories( ${CMAKE_BINARY_DIR}/generated/ )
-  
-  # test needs pcl
-  find_package(PCL 1.6 REQUIRED COMPONENTS)
-
-  # Include PCL directories after discovery of PCL
-  include_directories(${PCL_INCLUDE_DIRS})
-  link_directories(${PCL_LIBRARY_DIRS})
-  add_definitions(${PCL_DEFINITIONS})
-  
-  # used to execute the sync_pointclouds.sh script
-  #add_dependencies(${PROJECT_NAME}-test suturo_pcd_files)
-endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+#catkin_add_gtest(${PROJECT_NAME}-test 
+#  test/test.cpp
+#  WORKING_DIRECTORY ${POINTCLOUD_PATH}
+#)
+#if(TARGET ${PROJECT_NAME}-test)
+#  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+#  
+#  # other stuff neded for the test
+#  #configure_file( test/pointcloud_path.h.in ${CMAKE_BINARY_DIR}/generated/pointcloud_path.h )
+#  #include_directories( ${CMAKE_BINARY_DIR}/generated/ )
+#  
+#  # test needs pcl
+#  find_package(PCL 1.6 REQUIRED COMPONENTS)
+#
+#  find_package( OpenCV REQUIRED )
+#
+#  # Include PCL directories after discovery of PCL
+#  include_directories(${PCL_INCLUDE_DIRS})
+#  link_directories(${PCL_LIBRARY_DIRS} ${OpenCV_LIBS})
+#  add_definitions(${PCL_DEFINITIONS})
+#  
+#
+#  # used to execute the sync_pointclouds.sh script
+#  #add_dependencies(${PROJECT_NAME}-test suturo_pcd_files)
+#endif()
 
 # Search the following folders for additional CMakeLists.txt
-add_subdirectory(lib)
-#add_subdirectory(test)
+add_subdirectory(src)
