@@ -147,7 +147,8 @@ main (int argc, char** argv)
   color_sequence.push_back(green);
   color_sequence.push_back(red);
   color_sequence.push_back(blue);
-
+  
+  /*
   Eigen::Matrix< float, 4, 4 > rotationBox;
   // Rotate 90° DEG = PI/2 RAD around X
   rotationBox(0,0) = 1;
@@ -172,23 +173,14 @@ main (int argc, char** argv)
   rotationBox(3,1) = 0;
   rotationBox(3,2) = 0;
   rotationBox(3,3) = 1;
-
-  float rot_x     = 0;
-  float rot_y     = 0;
-  float rot_z     = 0;
-  float rot_roll  = 1.63; // Rotate around X axis
-  float rot_pitch = 0;
-  float rot_yaw   = 0;
-  Eigen::Affine3f t;
-
-  // Compute the necessary rotation to align a face of the object with the camera's
-  // imaginary image plane
-  Eigen::Vector3f camera_normal;
-  camera_normal(0)=0;
-  camera_normal(1)=0;
-  camera_normal(2)=1;
-  Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
-
+*/
+  // float rot_x     = 0;
+  // float rot_y     = 0;
+  // float rot_z     = 0;
+  // float rot_roll  = 1.63; // Rotate around X axis
+  // float rot_pitch = 0;
+  // float rot_yaw   = 0;
+  // Eigen::Affine3f t;
 
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr rotated_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -215,9 +207,6 @@ main (int argc, char** argv)
   viewer.createViewPort(0.5, 0.0, 1.0, 1.0, v2);
   viewer.addCoordinateSystem(1.0,v2);
 
-  // Draw the rotated object
-  pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
-  viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
   // For each segmented plane
   for (int i = 0; i < vecPlanePoints.size(); i++) {
     // Select a color from the color_sequence vector for the discovered plane
@@ -245,6 +234,89 @@ main (int argc, char** argv)
       dest.x = vecPlaneCoefficients.at(i)->values.at(0);
       dest.y = vecPlaneCoefficients.at(i)->values.at(1);
       dest.z = vecPlaneCoefficients.at(i)->values.at(2);
+
+
+      //
+      // ROTATE THE OBJECT AROUND THE FIRST RECEIVED NORMAL
+      //
+      //
+      if(i == 0)
+      {
+        // M
+        Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
+
+        // Compute the necessary rotation to align a face of the object with the camera's
+        // imaginary image plane
+        // N
+        Eigen::Vector3f camera_normal;
+        camera_normal(0)=0;
+        camera_normal(1)=0;
+        camera_normal(2)=1;
+        // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+        float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+
+        Eigen::Vector3f axis;
+        axis = plane_normal.cross(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+        float c = costheta;
+        float s = sqrt(1-c*c);
+        float CO = 1-c;
+
+
+        Eigen::Matrix< float, 4, 4 > rotationBox;
+        float x = axis(0);
+        float y = axis(1);
+        float z = axis(2);
+        // Rotate 90° DEG = PI/2 RAD around X
+        
+        // rotationBox(0,0) = x*x*CO+c;
+        // rotationBox(1,0) = y*x*CO+z*s;
+        // rotationBox(2,0) = z*x*CO-y*s;
+
+        // rotationBox(0,1) = x*y*CO-z*s;
+        // rotationBox(1,1) = y*y*CO+c;
+        // rotationBox(2,1) = z*y*CO+x*s;
+
+        // rotationBox(0,2) = x*z*CO+y*s;
+        // rotationBox(1,2) = y*z*CO-x*s;
+        // rotationBox(2,2) = z*z*CO+c;
+
+        rotationBox(0,0) = 1;
+        rotationBox(1,0) = 0;
+        rotationBox(2,0) = 0;
+
+        rotationBox(0,1) = 0;
+        rotationBox(1,1) = cos(M_PI);
+        rotationBox(2,1) = sin(M_PI);
+
+        rotationBox(0,2) = 0;
+        rotationBox(1,2) = -sin(M_PI);
+        rotationBox(2,2) = cos(M_PI);
+
+        // Translation vector
+        rotationBox(0,3) = 0;
+        rotationBox(1,3) = 0;
+        rotationBox(2,3) = 0;
+        // Translation vector
+        rotationBox(0,3) = 0;
+        rotationBox(1,3) = 0;
+        rotationBox(2,3) = 0;
+
+        // The rest of the 4x4 matrix
+        rotationBox(3,0) = 0;
+        rotationBox(3,1) = 0;
+        rotationBox(3,2) = 0;
+        rotationBox(3,3) = 1;
+
+        pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
+        // Draw the rotated object
+        pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
+        viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
+      }
+
+
+
+
+      // 
 
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr origin_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
       origin_cloud->push_back(origin);
