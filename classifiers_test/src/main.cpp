@@ -168,6 +168,9 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "classifiers_test");
 
   ros::NodeHandle n;
+
+  ros::service::waitForService("/ml_classifiers/create_classifier");
+
   if (!createClassifier(n, "testc","ml_classifiers/SVMClassifier"))
       return 1;
   
