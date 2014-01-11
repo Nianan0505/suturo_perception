@@ -1,37 +1,21 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(suturo_perception_ros_utils)
-
-# WORKAROUND - import pcl here as well 
-find_package(PCL 1.6 REQUIRED COMPONENTS)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
+project(suturo_perception_match_cuboid)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-  sensor_msgs
-  pcl
   pcl_ros
-  cv_bridge
-  image_transport
-  suturo_perception_utils
+  roscpp
 )
-# WORKAROUND - import pcl here as well 
-find_package(PCL 1.6 REQUIRED COMPONENTS)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+find_package(PCL 1.6 REQUIRED COMPONENTS)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -86,7 +70,7 @@ find_package(OpenCV REQUIRED)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ###################################
@@ -99,10 +83,9 @@ find_package(OpenCV REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES suturo_perception_ros_utils
-  CATKIN_DEPENDS roscpp std_msgs sensor_msgs suturo_perception_utils
-  DEPENDS opencv
+#  INCLUDE_DIRS include
+#  LIBRARIES suturo_perception_match_cuboid
+#  CATKIN_DEPENDS pcl_ros roscpp
 #  DEPENDS system_lib
 )
 
@@ -112,88 +95,27 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include)
+# include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-add_library(suturo_perception_ros_utils
-  src/publisher_helper.cpp
-)
-
-add_library(suturo_perception_ros_utils_basic_io_pcd
-  src/basic_io_pcd.cpp
-)
+# add_library(suturo_perception_match_cuboid
+#   src/${PROJECT_NAME}/suturo_perception_match_cuboid.cpp
+# )
 
 ## Declare a cpp executable
-add_executable(remove_nans 
-  src/remove_nans.cpp
-  src/basic_io_pcd.cpp)
-
-add_executable(smooth_surface 
-  src/smooth_surface.cpp
-  src/basic_io_pcd.cpp)
-
-add_executable(compute_bounding_box 
-  src/compute_bounding_box.cpp
-  src/basic_io_pcd.cpp)
-
-add_executable(compute_convex_hull 
-  src/compute_convex_hull.cpp
-  src/basic_io_pcd.cpp)
-
-add_executable(get_min_max_3d 
-  src/get_min_max_3d.cpp
-  src/basic_io_pcd.cpp)
-
-add_executable(downsample_cloud
-  src/downsample_cloud.cpp
-  src/basic_io_pcd.cpp)
-
-add_executable(segment_plane_and_show
-  src/segment_plane_and_show.cpp
-  src/basic_io_pcd.cpp)
+add_executable(match_cuboid src/match_cuboid.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(suturo_perception_utils_node suturo_perception_utils_generate_messages_cpp)
+# add_dependencies(suturo_perception_match_cuboid_node suturo_perception_match_cuboid_generate_messages_cpp)
 
-# Specify libraries to link a library or executable target against
-target_link_libraries(suturo_perception_ros_utils
+## Specify libraries to link a library or executable target against
+target_link_libraries(match_cuboid
   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(suturo_perception_ros_utils_basic_io_pcd
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(remove_nans
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(smooth_surface
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(compute_bounding_box
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(compute_convex_hull
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(get_min_max_3d
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(downsample_cloud
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(segment_plane_and_show
-  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
 )
 
 #############
@@ -211,7 +133,7 @@ target_link_libraries(segment_plane_and_show
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS suturo_perception_utils suturo_perception_utils_node
+# install(TARGETS suturo_perception_match_cuboid suturo_perception_match_cuboid_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -236,26 +158,10 @@ target_link_libraries(segment_plane_and_show
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_suturo_perception_utils.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_suturo_perception_match_cuboid.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-catkin_add_gtest(${PROJECT_NAME}-test 
-  test/test.cpp
-)
-if(TARGET ${PROJECT_NAME}-test)
-	# target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} suturo_perception_shape_detection)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
-	# find_package(PCL 1.6 REQUIRED COMPONENTS)
-	# include_directories(${PCL_INCLUDE_DIRS})
-	# link_directories(${PCL_LIBRARY_DIRS})
-	# add_definitions(${PCL_DEFINITIONS})
-	# Link against catkin libs for ROS etc.
-
-	# In contrast to the tests in suturo_perception_lib, i need this declaration ..
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-endif()
