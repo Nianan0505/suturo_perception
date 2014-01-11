@@ -181,6 +181,16 @@ main (int argc, char** argv)
   float rot_yaw   = 0;
   Eigen::Affine3f t;
 
+  // Compute the necessary rotation to align a face of the object with the camera's
+  // imaginary image plane
+  Eigen::Vector3f camera_normal;
+  camera_normal(0)=0;
+  camera_normal(1)=0;
+  camera_normal(2)=1;
+  Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+
+
+
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr rotated_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   // Rotate with Affine3f and euler angles
@@ -188,7 +198,7 @@ main (int argc, char** argv)
   pcl::getTransformation (rot_x, rot_y, rot_z, rot_roll, rot_pitch, rot_yaw, t);
   pcl::transformPointCloud (*original_cloud, *rotated_cloud, t);   
   */
-  pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
+  // pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
 
   pcl::visualization::PCLVisualizer viewer;
   // Visualize original pointcloud
