@@ -29,7 +29,7 @@ main (int argc, char** argv)
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr final (new pcl::PointCloud<pcl::PointXYZRGB>);
+  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr final (new pcl::PointCloud<pcl::PointXYZRGB>);
 
   if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (input_filename, *original_cloud) == -1) //* load the file
   {
@@ -77,7 +77,8 @@ main (int argc, char** argv)
   seg.setDistanceThreshold (0.005);
 
   seg.setInputCloud (input_cloud);
-  seg.segment (*inliers, *coefficients);
+  // seg.segment (*inliers, *coefficients);
+  seg.segment (*inliers, *vecPlaneCoefficients.at(planeIdx));
 
   // Create the filtering object
   pcl::ExtractIndices<pcl::PointXYZRGB> extract;
@@ -85,7 +86,7 @@ main (int argc, char** argv)
   extract.setInputCloud (input_cloud);
   extract.setIndices (inliers);
   extract.setNegative (false);
-  extract.filter (*final);
+  extract.filter (*vecPlanePoints.at(planeIdx));
 
   // Create the filtering object
   extract.setNegative (true);
@@ -113,7 +114,6 @@ main (int argc, char** argv)
   color_sequence.push_back(green);
   color_sequence.push_back(red);
   color_sequence.push_back(blue);
-  int color_idx = 0;
 
   pcl::visualization::PCLVisualizer viewer;
 
@@ -123,18 +123,27 @@ main (int argc, char** argv)
   viewer.addCoordinateSystem(1.0,v1);
   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(original_cloud);
   viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, rgb, "sample cloud1", v1);
-  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample_cloud1");
+  // viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample_cloud1");
   // viewer.addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (input_cloud, cloud_normals1, 10, 0.05, "normals1", v1);
 
   // Visualize the found inliers
   int v2(1);
   viewer.createViewPort(0.5, 0.0, 1.0, 1.0, v2);
   viewer.addCoordinateSystem(1.0,v2);
-  // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_f(final);
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> single_color (final, color_sequence.at(color_idx).at(0), color_sequence.at(color_idx).at(1), color_sequence.at(color_idx).at(2));
-  viewer.addPointCloud<pcl::PointXYZRGB> (final, single_color, "sample cloud2", v2);
-  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample_cloud2");
-  viewer.addPlane (*coefficients, "plane", v2);
+  // For each segmented plane
+  for (int i = 0; i < vecPlanePoints.size(); i++) {
+    // Select a color from the color_sequence vector for the discovered plane
+    int color_idx = i % 3;
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> single_color (vecPlanePoints.at(i), color_sequence.at(color_idx).at(0), color_sequence.at(color_idx).at(1), color_sequence.at(color_idx).at(2));
+
+    std::stringstream cloud_name("plane_cloud_");
+    cloud_name << i;
+    viewer.addPointCloud<pcl::PointXYZRGB> (vecPlanePoints.at(0), single_color, cloud_name.str(), v2);
+    viewer.addPlane (*vecPlaneCoefficients.at(0), "plane", v2);
+  }
   viewer.spin();
+
+
+  // viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample_cloud2");
   return (0);
 }
