@@ -1,5 +1,6 @@
 /*
  * roslaunch ml_classifiers classifier_server.launch
+ * rosservice call /classifier_server/set_logger_level 'ros.ml_classifiers' 'DEBUG'
  */
 #include "ros/ros.h"
 #include <cstdlib>
@@ -8,9 +9,9 @@
 #include "classifiers_test/AddClassData.h"
 #include "classifiers_test/TrainClassifier.h"
 
-bool createClassifier(std::string identifier, std::string type)
+
+bool createClassifier(ros::NodeHandle n, std::string identifier, std::string type)
 {
-  ros::NodeHandle n;
   ros::ServiceClient create_classifier = n.serviceClient<classifiers_test::CreateClassifier>("/ml_classifiers/create_classifier", true);
   classifiers_test::CreateClassifier cc_srv;
   cc_srv.request.identifier = identifier;
@@ -18,18 +19,19 @@ bool createClassifier(std::string identifier, std::string type)
   if (create_classifier.call(cc_srv))
   {
     ROS_INFO("call to create_classifier successful!");
-    return true;
   }
   else
   {
     ROS_ERROR("Failed to call service create_classifier");
     return false;
   }
+
+  ROS_INFO(cc_srv.response.success?"create: true":"create: false");
+  return true;
 }
 
-bool addClassDataPoint(std::string identifier, classifiers_test::ClassDataPoint dp)
+bool addClassDataPoint(ros::NodeHandle n, std::string identifier, classifiers_test::ClassDataPoint dp)
 {
-  ros::NodeHandle n;
   ros::ServiceClient add_class_data = n.serviceClient<classifiers_test::AddClassData>("/ml_classifiers/add_class_data", true);
   classifiers_test::AddClassData acd_srv;
   acd_srv.request.identifier = identifier;
@@ -46,11 +48,11 @@ bool addClassDataPoint(std::string identifier, classifiers_test::ClassDataPoint 
   }
 }
 
-bool addClassDataPoints(std::string identifier, std::vector<classifiers_test::ClassDataPoint> dpv)
+bool addClassDataPoints(ros::NodeHandle n, std::string identifier, std::vector<classifiers_test::ClassDataPoint> dpv)
 {
   for (std::vector<classifiers_test::ClassDataPoint>::iterator it = dpv.begin(); it < dpv.end(); it++)
   {
-    if (!addClassDataPoint(identifier, *it))
+    if (!addClassDataPoint(n, identifier, *it))
     {
       return false;
     }
@@ -58,9 +60,8 @@ bool addClassDataPoints(std::string identifier, std::vector<classifiers_test::Cl
   return true;
 }
 
-bool trainClassifier(std::string identifier)
+bool trainClassifier(ros::NodeHandle n, std::string identifier)
 {
-  ros::NodeHandle n;
   ros::ServiceClient train_classifier = n.serviceClient<classifiers_test::TrainClassifier>("/ml_classifiers/train_classifier", true);
   classifiers_test::TrainClassifier t_srv;
   t_srv.request.identifier = identifier;
@@ -92,11 +93,11 @@ std::vector<classifiers_test::ClassDataPoint> rawToClassDataPoint(int data_dimen
 int main(int argc, char **argv)
 {
   float train_data[train_size][data_dimension] = {
-    {0.1,0.2},
-    {0.3,0.1},
-    {3.1,3.2},
-    {3.3,4.1},
-    {5.1,5.2}
+    {0.01,0.02},
+    {0.03,0.01},
+    {0.31,0.32},
+    {0.33,0.41},
+    {0.51,0.52}
   };
   std::string train_data_targets[train_size] = {"1","1","2","2","3"};
 
@@ -111,25 +112,27 @@ int main(int argc, char **argv)
 
   for (int i = 0; i < train_size; i++)
   {
-    classifiers_test::ClassDataPoint dp;
+    classifiers_test::ClassDataPoint *dp = new classifiers_test::ClassDataPoint();
     for (int j = 0; j < data_dimension; j++)
     {
-      dp.point.insert(dp.point.end(), train_data[i][j]);
+      dp->point.insert(dp->point.end(), train_data[i][j]);
+      printf("%f ", train_data[i][j]);
     }
-    dp.target_class = train_data_targets[i];
-    train_points.insert(train_points.end(), dp);
+    printf("\n");
+    dp->target_class = train_data_targets[i];
+    train_points.insert(train_points.end(), *dp);
   }
 
   ros::init(argc, argv, "classifiers_test");
 
   ros::NodeHandle n;
-  if (!createClassifier("test", "ml_classifiers/SVMClassifier"))
+  if (!createClassifier(n, "test", "ml_classifiers/SVMClassifier"))
       return 1;
   
-  if (!addClassDataPoints("test", train_points))
+  if (!addClassDataPoints(n, "test", train_points))
     return 1;
 
-  if (!trainClassifier("test"))
+  if (!trainClassifier(n, "test"))
     return 1;
   
   return 0;
