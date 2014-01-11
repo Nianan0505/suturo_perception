@@ -12,7 +12,7 @@
 
 bool createClassifier(ros::NodeHandle n, std::string identifier, std::string type)
 {
-  ros::ServiceClient create_classifier = n.serviceClient<classifiers_test::CreateClassifier>("/ml_classifiers/create_classifier", true);
+  ros::ServiceClient create_classifier = n.serviceClient<classifiers_test::CreateClassifier>("ml_classifiers/create_classifier", true);
   classifiers_test::CreateClassifier cc_srv;
   cc_srv.request.identifier = identifier;
   cc_srv.request.class_type = type;
@@ -30,6 +30,7 @@ bool createClassifier(ros::NodeHandle n, std::string identifier, std::string typ
   return true;
 }
 
+/*
 bool addClassDataPoint(ros::NodeHandle n, std::string identifier, classifiers_test::ClassDataPoint dp)
 {
   ros::ServiceClient add_class_data = n.serviceClient<classifiers_test::AddClassData>("/ml_classifiers/add_class_data", true);
@@ -47,15 +48,42 @@ bool addClassDataPoint(ros::NodeHandle n, std::string identifier, classifiers_te
     return false;
   }
 }
+*/
 
 bool addClassDataPoints(ros::NodeHandle n, std::string identifier, std::vector<classifiers_test::ClassDataPoint> dpv)
 {
+  /*
   for (std::vector<classifiers_test::ClassDataPoint>::iterator it = dpv.begin(); it < dpv.end(); it++)
   {
     if (!addClassDataPoint(n, identifier, *it))
     {
       return false;
     }
+  }
+  */
+  ros::ServiceClient add_class_data = n.serviceClient<classifiers_test::AddClassData>("/ml_classifiers/add_class_data", true);
+  classifiers_test::AddClassData acd_srv;
+  acd_srv.request.identifier = identifier;
+  for (std::vector<classifiers_test::ClassDataPoint>::iterator it = dpv.begin(); it < dpv.end(); it++)
+  {
+    printf("%s: ",it->target_class.c_str());
+    for (int i = 0; i < it->point.size(); i++)
+    {
+      printf("%f ", it->point[i]);
+    }
+    printf("\n");
+  }
+
+  acd_srv.request.data = dpv;
+  if (add_class_data.call(acd_srv))
+  {
+    ROS_INFO("call to add_class_data successful!");
+    return true;
+  }
+  else
+  {
+    ROS_ERROR("Failed to call service add_class_data");
+    return false;
   }
   return true;
 }
@@ -93,11 +121,11 @@ std::vector<classifiers_test::ClassDataPoint> rawToClassDataPoint(int data_dimen
 int main(int argc, char **argv)
 {
   float train_data[train_size][data_dimension] = {
-    {0.01,0.02},
-    {0.03,0.01},
-    {0.31,0.32},
-    {0.33,0.41},
-    {0.51,0.52}
+    {0.1,0.2},
+    {0.3,0.1},
+    {3.1,3.2},
+    {3.3,4.1},
+    {5.1,5.2}
   };
   std::string train_data_targets[train_size] = {"1","1","2","2","3"};
 
@@ -107,8 +135,8 @@ int main(int argc, char **argv)
     {2.9,3.6}
   };
 
-  std::vector<classifiers_test::ClassDataPoint> train_points(train_size);
-  std::vector<classifiers_test::ClassDataPoint> test_points(test_size);
+  std::vector<classifiers_test::ClassDataPoint> train_points;
+  std::vector<classifiers_test::ClassDataPoint> test_points;
 
   for (int i = 0; i < train_size; i++)
   {
@@ -126,13 +154,13 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "classifiers_test");
 
   ros::NodeHandle n;
-  if (!createClassifier(n, "test", "ml_classifiers/SVMClassifier"))
+  if (!createClassifier(n, "testc","ml_classifiers/SVMClassifier"))
       return 1;
   
-  if (!addClassDataPoints(n, "test", train_points))
+  if (!addClassDataPoints(n, "testc", train_points))
     return 1;
 
-  if (!trainClassifier(n, "test"))
+  if (!trainClassifier(n, "testc"))
     return 1;
   
   return 0;
