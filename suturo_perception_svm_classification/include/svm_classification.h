@@ -7,6 +7,7 @@
 #include "suturo_perception_utils.h"
 #include "capability.h"
 #include "perceived_object.h"
+#include "suturo_perception_ml_classifiers_msgs/ClassDataPoint.h"
 
 
 namespace suturo_perception_svm_classification
@@ -16,11 +17,17 @@ namespace suturo_perception_svm_classification
     public:
       SVMClassification(suturo_perception_lib::PerceivedObject &obj);
 
+      bool createClassifier(std::string identifier);
+      bool addData(std::string identifier, std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> dpv);
+      bool trainClassifier(std::string identifier);
+      std::vector<std::string> classifyData(std::string identifier, std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> dpv);
+
       // capability method
       void execute();
 
     private:
       suturo_perception_utils::Logger logger;
+      ros::NodeHandle n;
   };
 }
 #endif 
