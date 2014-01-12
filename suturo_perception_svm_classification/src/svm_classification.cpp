@@ -10,11 +10,17 @@ using namespace suturo_perception_svm_classification;
 SVMClassification::SVMClassification(suturo_perception_lib::PerceivedObject &obj) : Capability(obj)
 {
   logger = suturo_perception_utils::Logger("svm_classification");
+  service_wait_timeout = ros::Duration(10, 0);
 }
 
 bool 
 SVMClassification::createClassifier(std::string identifier)
 {
+  if (!ros::service::waitForService("/ml_classifiers/create_classifier", service_wait_timeout))
+  {
+    logger.logError("timeout when waiting for service /ml_classifiers/create_classifier");
+    return false;
+  }
   ros::ServiceClient create_classifier = n.serviceClient<suturo_perception_ml_classifiers_msgs::CreateClassifier>("ml_classifiers/create_classifier", true);
   suturo_perception_ml_classifiers_msgs::CreateClassifier cc_srv;
   cc_srv.request.identifier = identifier;
@@ -37,6 +43,11 @@ SVMClassification::createClassifier(std::string identifier)
 bool 
 SVMClassification::addData(std::string identifier, std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> dpv)
 {
+  if (!ros::service::waitForService("/ml_classifiers/add_class_data", service_wait_timeout))
+  {
+    logger.logError("timeout when waiting for service /ml_classifiers/add_class_data");
+    return false;
+  }
   ros::ServiceClient add_class_data = n.serviceClient<suturo_perception_ml_classifiers_msgs::AddClassData>("/ml_classifiers/add_class_data", true);
   suturo_perception_ml_classifiers_msgs::AddClassData acd_srv;
   acd_srv.request.identifier = identifier;
@@ -58,6 +69,11 @@ SVMClassification::addData(std::string identifier, std::vector<suturo_perception
 bool 
 SVMClassification::trainClassifier(std::string identifier)
 {
+  if (!ros::service::waitForService("/ml_classifiers/train_classifier", service_wait_timeout))
+  {
+    logger.logError("timeout when waiting for service /ml_classifiers/train_classifier");
+    return false;
+  }
   ros::ServiceClient train_classifier = n.serviceClient<suturo_perception_ml_classifiers_msgs::TrainClassifier>("/ml_classifiers/train_classifier", true);
   suturo_perception_ml_classifiers_msgs::TrainClassifier t_srv;
   t_srv.request.identifier = identifier;
@@ -76,6 +92,12 @@ SVMClassification::trainClassifier(std::string identifier)
 std::vector<std::string> 
 SVMClassification::classifyData(std::string identifier, std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> dpv)
 {
+  std::vector<std::string> empty_ret;
+  if (!ros::service::waitForService("/ml_classifiers/classify_data", service_wait_timeout))
+  {
+    logger.logError("timeout when waiting for service /ml_classifiers/classify_data");
+    return empty_ret;
+  }
   ros::ServiceClient classify_data = n.serviceClient<suturo_perception_ml_classifiers_msgs::ClassifyData>("/ml_classifiers/classify_data", true);
   suturo_perception_ml_classifiers_msgs::ClassifyData cd_srv;
   cd_srv.request.identifier = identifier;
@@ -89,8 +111,7 @@ SVMClassification::classifyData(std::string identifier, std::vector<suturo_perce
   else
   {
     logger.logError("Failed to call service classify_data");
-    std::vector<std::string> ret;
-    return ret;
+    return empty_ret;
   }
   
 }

@@ -28,6 +28,7 @@ namespace suturo_perception_svm_classification
     private:
       suturo_perception_utils::Logger logger;
       ros::NodeHandle n;
+      ros::Duration service_wait_timeout;
   };
 }
 #endif 
