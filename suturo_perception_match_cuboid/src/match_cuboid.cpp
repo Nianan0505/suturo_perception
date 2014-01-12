@@ -15,6 +15,7 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/project_inliers.h>
+#include <pcl/surface/convex_hull.h>
 
 int
 main (int argc, char** argv)
@@ -236,86 +237,6 @@ main (int argc, char** argv)
       dest.z = vecPlaneCoefficients.at(i)->values.at(2);
 
 
-      //
-      // ROTATE THE OBJECT AROUND THE FIRST RECEIVED NORMAL
-      //
-      //
-      if(i == 0)
-      {
-        // M
-        Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
-
-        // Compute the necessary rotation to align a face of the object with the camera's
-        // imaginary image plane
-        // N
-        Eigen::Vector3f camera_normal;
-        camera_normal(0)=0;
-        camera_normal(1)=0;
-        camera_normal(2)=1;
-        // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
-        float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
-
-        Eigen::Vector3f axis;
-        axis = plane_normal.cross(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
-        float c = costheta;
-        float s = sqrt(1-c*c);
-        float CO = 1-c;
-
-
-        Eigen::Matrix< float, 4, 4 > rotationBox;
-        float x = axis(0);
-        float y = axis(1);
-        float z = axis(2);
-        // Rotate 90° DEG = PI/2 RAD around X
-        
-        // rotationBox(0,0) = x*x*CO+c;
-        // rotationBox(1,0) = y*x*CO+z*s;
-        // rotationBox(2,0) = z*x*CO-y*s;
-
-        // rotationBox(0,1) = x*y*CO-z*s;
-        // rotationBox(1,1) = y*y*CO+c;
-        // rotationBox(2,1) = z*y*CO+x*s;
-
-        // rotationBox(0,2) = x*z*CO+y*s;
-        // rotationBox(1,2) = y*z*CO-x*s;
-        // rotationBox(2,2) = z*z*CO+c;
-
-        rotationBox(0,0) = 1;
-        rotationBox(1,0) = 0;
-        rotationBox(2,0) = 0;
-
-        rotationBox(0,1) = 0;
-        rotationBox(1,1) = cos(M_PI);
-        rotationBox(2,1) = sin(M_PI);
-
-        rotationBox(0,2) = 0;
-        rotationBox(1,2) = -sin(M_PI);
-        rotationBox(2,2) = cos(M_PI);
-
-        // Translation vector
-        rotationBox(0,3) = 0;
-        rotationBox(1,3) = 0;
-        rotationBox(2,3) = 0;
-        // Translation vector
-        rotationBox(0,3) = 0;
-        rotationBox(1,3) = 0;
-        rotationBox(2,3) = 0;
-
-        // The rest of the 4x4 matrix
-        rotationBox(3,0) = 0;
-        rotationBox(3,1) = 0;
-        rotationBox(3,2) = 0;
-        rotationBox(3,3) = 1;
-
-        pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
-        // Draw the rotated object
-        pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
-        viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
-      }
-
-
-
-
       // 
 
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr origin_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -339,7 +260,149 @@ main (int argc, char** argv)
     }
 
   }
-  // Create a plane that originates in the kinect camera frame
+
+  //
+  // ROTATE THE OBJECT to align it with the x-y and the x-z plane
+  // TODO: dynamic
+  //
+  {
+
+    // Calculate the volume of each cluster
+    // Create a convex hull around the cluster and calculate the total volume
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+
+    pcl::ConvexHull<pcl::PointXYZRGB> hull;
+    hull.setInputCloud(vecPlanePoints.at(0));
+    hull.setDimension(2);
+    hull.reconstruct (*hull_points);
+
+    // Centroid calulcation
+    Eigen::Vector4f centroid;
+    pcl::compute3DCentroid (*hull_points, centroid);  
+
+    pcl::PointXYZRGB dest;
+    dest.x = vecPlaneCoefficients.at(0)->values.at(0);
+    dest.y = vecPlaneCoefficients.at(0)->values.at(1);
+    dest.z = vecPlaneCoefficients.at(0)->values.at(2);
+    // M
+    Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
+
+    // Compute the necessary rotation to align a face of the object with the camera's
+    // imaginary image plane
+    // N
+    Eigen::Vector3f camera_normal;
+    camera_normal(0)=0;
+    camera_normal(1)=0;
+    camera_normal(2)=1;
+    // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+    float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+
+    Eigen::Vector3f axis;
+    axis = plane_normal.cross(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+    float c = costheta;
+    float s = sqrt(1-c*c);
+    float CO = 1-c;
+
+
+    Eigen::Matrix< float, 4, 4 > rotationBox;
+    float x = axis(0);
+    float y = axis(1);
+    float z = axis(2);
+    // Rotate 90° DEG = PI/2 RAD around X
+
+    rotationBox(0,0) = x*x*CO+c;
+    rotationBox(1,0) = y*x*CO+z*s;
+    rotationBox(2,0) = z*x*CO-y*s;
+
+    rotationBox(0,1) = x*y*CO-z*s;
+    rotationBox(1,1) = y*y*CO+c;
+    rotationBox(2,1) = z*y*CO+x*s;
+
+    rotationBox(0,2) = x*z*CO+y*s;
+    rotationBox(1,2) = y*z*CO-x*s;
+    rotationBox(2,2) = z*z*CO+c;
+
+    // Translation vector
+    rotationBox(0,3) = 0;
+    rotationBox(1,3) = 0;
+    rotationBox(2,3) = 0;
+
+    // The rest of the 4x4 matrix
+    rotationBox(3,0) = 0;
+    rotationBox(3,1) = 0;
+    rotationBox(3,2) = 0;
+    rotationBox(3,3) = 1;
+
+    pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
+    // Draw the rotated object
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
+    viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
+  }
+
+  // // Rotate cuboid to align top with x-z plane
+  // {
+  //   pcl::PointXYZRGB dest;
+  //   dest.x = vecPlaneCoefficients.at(1)->values.at(0);
+  //   dest.y = vecPlaneCoefficients.at(1)->values.at(1);
+  //   dest.z = vecPlaneCoefficients.at(1)->values.at(2);
+  //   // M
+  //   Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
+
+  //   // Compute the necessary rotation to align a face of the object with the camera's
+  //   // imaginary image plane
+  //   // N
+  //   Eigen::Vector3f camera_normal;
+  //   camera_normal(0)=0; // x
+  //   camera_normal(1)=1; // y
+  //   camera_normal(2)=0; // z
+  //   // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+  //   float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+
+  //   Eigen::Vector3f axis;
+  //   axis = plane_normal.cross(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+  //   float c = costheta;
+  //   float s = sqrt(1-c*c);
+  //   float CO = 1-c;
+
+
+  //   Eigen::Matrix< float, 4, 4 > rotationBox;
+  //   float x = axis(0);
+  //   float y = axis(1);
+  //   float z = axis(2);
+  //   // Rotate 90° DEG = PI/2 RAD around X
+
+  //   rotationBox(0,0) = x*x*CO+c;
+  //   rotationBox(1,0) = y*x*CO+z*s;
+  //   rotationBox(2,0) = z*x*CO-y*s;
+
+  //   rotationBox(0,1) = x*y*CO-z*s;
+  //   rotationBox(1,1) = y*y*CO+c;
+  //   rotationBox(2,1) = z*y*CO+x*s;
+
+  //   rotationBox(0,2) = x*z*CO+y*s;
+  //   rotationBox(1,2) = y*z*CO-x*s;
+  //   rotationBox(2,2) = z*z*CO+c;
+
+  //   // Translation vector
+  //   rotationBox(0,3) = 0;
+  //   rotationBox(1,3) = 0;
+  //   rotationBox(2,3) = 0;
+
+  //   // The rest of the 4x4 matrix
+  //   rotationBox(3,0) = 0;
+  //   rotationBox(3,1) = 0;
+  //   rotationBox(3,2) = 0;
+  //   rotationBox(3,3) = 1;
+
+  //   pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
+  //   // Draw the rotated object
+  //   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
+  //   viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
+  // }
+
+  // 
+  // Create a plane x-y plane that originates in the kinect camera frame
+  // 
   pcl::ModelCoefficients::Ptr kinect_plane_coefficients (new pcl::ModelCoefficients);
   // Let the Normal of the plane point along the z-Axis
   kinect_plane_coefficients->values.push_back(0); // x
