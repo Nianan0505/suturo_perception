@@ -267,12 +267,11 @@ main (int argc, char** argv)
   //
   {
 
-    // Calculate the volume of each cluster
-    // Create a convex hull around the cluster and calculate the total volume
+    // Create a convex hull to get the centroid of the object
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
 
     pcl::ConvexHull<pcl::PointXYZRGB> hull;
-    hull.setInputCloud(vecPlanePoints.at(0));
+    hull.setInputCloud(original_cloud);
     hull.setDimension(2);
     hull.reconstruct (*hull_points);
 
@@ -284,6 +283,37 @@ main (int argc, char** argv)
     dest.x = vecPlaneCoefficients.at(0)->values.at(0);
     dest.y = vecPlaneCoefficients.at(0)->values.at(1);
     dest.z = vecPlaneCoefficients.at(0)->values.at(2);
+
+
+    Eigen::Matrix< float, 4, 4 > translateBox;
+    // Rotate 90° DEG = PI/2 RAD around X
+
+    translateBox(0,0) = 1;
+    translateBox(1,0) = 0;
+    translateBox(2,0) = 0;
+
+    translateBox(0,1) = 0;
+    translateBox(1,1) = 1;
+    translateBox(2,1) = 0;
+
+    translateBox(0,2) = 0;
+    translateBox(1,2) = 0;
+    translateBox(2,2) = 1;
+
+    // Translation vector
+    translateBox(0,3) = -centroid(0);
+    translateBox(1,3) = -centroid(1);
+    translateBox(2,3) = -centroid(2);
+
+    // The rest of the 4x4 matrix
+    translateBox(3,0) = 0;
+    translateBox(3,1) = 0;
+    translateBox(3,2) = 0;
+    translateBox(3,3) = 1;
+
+    pcl::transformPointCloud (*original_cloud, *rotated_cloud, translateBox);   
+
+
     // M
     Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
 
@@ -333,7 +363,8 @@ main (int argc, char** argv)
     rotationBox(3,2) = 0;
     rotationBox(3,3) = 1;
 
-    pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
+    // pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
+    pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
     // Draw the rotated object
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
     viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
