@@ -45,7 +45,7 @@ void PublisherHelper::publish_pointcloud(ros::Publisher &publisher, pcl::PointCl
   }
   else
   {
-    ROS_ERROR("[perception_ros_utils] publish_pointcloud : Input cloud is NULL");
+    ROS_ERROR("[perception_ros_utils] publish_pointcloud : Input cloud is NULL"); // use ROS_ERROR here because method is static
   }
 }
 
@@ -53,7 +53,7 @@ bool PublisherHelper::publish_pointcloud(std::string topic, pcl::PointCloud<pcl:
 {
   if( !isAdvertised(topic))
   {
-    ROS_ERROR("publish_pointcloud : Given topic is not advertised");
+    logger.logError("publish_pointcloud : Given topic is not advertised");
     return false;
   }
 
@@ -67,7 +67,7 @@ bool PublisherHelper::publish_pointcloud(std::string topic, pcl::PointCloud<pcl:
   }
   else
   {
-    ROS_ERROR("publish_pointcloud : Input cloud is NULL");
+    logger.logError("publish_pointcloud : Input cloud is NULL");
     return false;
   }
 }
@@ -82,7 +82,7 @@ bool PublisherHelper::publish_cv_mat(std::string topic, cv::Mat &img, ros::Time 
 {
   if( !isAdvertised(topic))
   {
-    ROS_ERROR("publish_cv_mat : Given topic is not advertised");
+    logger.logError("publish_cv_mat : Given topic is not advertised");
     return false;
   }
 
