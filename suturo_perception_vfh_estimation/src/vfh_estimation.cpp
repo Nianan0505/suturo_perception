@@ -57,4 +57,6 @@ VFHEstimation::estimateCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
 void
 VFHEstimation::execute()
 {
+  pcl::VFHSignature308 sig = estimateCloud(perceivedObject.get_pointCloud());
+  perceivedObject.set_c_vfhs(sig);
 }

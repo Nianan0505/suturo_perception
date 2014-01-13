@@ -21,6 +21,7 @@ suturo_perception_color_analysis
 suturo_perception_shape_detection
 suturo_perception_ros_utils 
 suturo_perception_utils 
+suturo_perception_vfh_estimation
 pcl
 pcl_ros
 )

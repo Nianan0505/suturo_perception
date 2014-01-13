@@ -160,10 +160,12 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     // Initialize Capabilities
     ColorAnalysis ca(perceivedObjects[i]);
     suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
+    suturo_perception_vfh_estimation::VFHEstimation vfhe(perceivedObjects[i]);
 
     // post work to threadpool
     ioService.post(boost::bind(&ColorAnalysis::execute, ca));
     ioService.post(boost::bind(&suturo_perception_shape_detection::RandomSampleConsensus::execute, sd));
+    ioService.post(boost::bind(&suturo_perception_vfh_estimation::VFHEstimation::execute, vfhe));
 
     // Is 2d recognition enabled?
     if(!recognitionDir.empty())
