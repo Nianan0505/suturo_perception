@@ -7,6 +7,7 @@ project(suturo_perception_match_cuboid)
 find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   roscpp
+  suturo_perception_lib
 )
 
 ## System dependencies are found with CMake's conventions
