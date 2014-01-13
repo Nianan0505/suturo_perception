@@ -27,6 +27,10 @@ int main (int argc, char** argv)
   if(ros::param::get("/suturo_perception/color_topic", colorTopic)) ROS_INFO("Using parameters from Parameter Server");
   else { colorTopic = "/camera/rgb/image_color"; ROS_INFO("Using default parameters");}
 
+  ROS_INFO("PointCloud topic is: %s", pointTopic.c_str());
+  ROS_INFO("FrameID          is: %s", frameId.c_str());
+  ROS_INFO("ColorTopic topic is: %s", colorTopic.c_str());
+
   SuturoPerceptionROSNode spr(nh, pointTopic, colorTopic, frameId, recognitionDir);
 
   ROS_INFO("                    _____ ");
