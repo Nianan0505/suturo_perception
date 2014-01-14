@@ -15,6 +15,7 @@ VFHEstimation::VFHEstimation(PerceivedObject &obj) : Capability(obj)
 pcl::VFHSignature308 
 VFHEstimation::estimateCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
 {
+  printf("vfhestimation got got cloud with size = %d\n", cloud->size());
   pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
   // Create the normal estimation class, and pass the input dataset to it
   pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
