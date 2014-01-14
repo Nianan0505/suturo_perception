@@ -81,6 +81,46 @@ void translatePointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, float 
     pcl::transformPointCloud (*cloud_in, *cloud_out, translationMatrix);   
 }
 
+pcl::PointXYZ getPointXYZFromVector3f(Eigen::Vector3f &vec)
+{
+  return pcl::PointXYZ( vec[0], vec[1],vec[2]);
+}
+
+pcl::PointXYZ getPointXYZFromVector4f(Eigen::Vector4f &vec)
+{
+  return pcl::PointXYZ( vec[0], vec[1],vec[2]);
+}
+
+pcl::PointXYZ getPointXYZFromModelCoefficients(pcl::ModelCoefficients::Ptr mc)
+{
+  return pcl::PointXYZ( mc->values.at(0), mc->values.at(1) , mc->values.at(2) );
+}
+
+Eigen::Vector3f getVector3fFromModelCoefficients(pcl::ModelCoefficients::Ptr mc)
+{
+  Eigen::Vector3f ret(
+      mc->values.at(0),
+      mc->values.at(1),
+      mc->values.at(2)
+      );
+  return ret;
+}
+
+
+// Make a translation of the given Vector by subtracting
+// vec1 and vec2 and use this as translation parameters
+Eigen::Vector3f moveVectorBySubtraction(Eigen::Vector3f input, Eigen::Vector3f vec1, Eigen::Vector3f vec2)
+{
+  Eigen::Translation3f tNorm = Eigen::Translation3f(
+      vec1[0] - vec2[0],
+      vec1[1] - vec2[1],
+      vec1[2] - vec2[2]
+      );
+  Eigen::Vector3f newDest;
+  newDest = tNorm * input;
+  return newDest;
+}
+
 int
 main (int argc, char** argv)
 {
@@ -126,6 +166,7 @@ main (int argc, char** argv)
   std::vector<pcl::ModelCoefficients::Ptr> vecPlaneCoefficients;
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> vecPlanePoints;
   std::vector<Eigen::Vector4f> vecPlaneCentroids;
+  std::vector<Eigen::Vector3f> vecPlaneNormOrigin;
   // Running index for the plane vectors
   int planeIdx = 0;
 
@@ -332,7 +373,12 @@ main (int argc, char** argv)
       std::stringstream plane_name("norm_plane_");
       plane_name << i;
       viewer.addLine(origin_cloud_projected->points.at(0),dest, color_sequence.at(color_idx).at(0), color_sequence.at(color_idx).at(1), color_sequence.at(color_idx).at(2), plane_name.str(),v2);
-
+      Eigen::Vector3f norm_origin(
+origin_cloud_projected->points.at(0).x,
+origin_cloud_projected->points.at(0).y,
+origin_cloud_projected->points.at(0).z
+          );
+      vecPlaneNormOrigin.push_back(norm_origin);
       /*
       // Get the diameter of the plane
       pcl::PointXYZRGB min_pt, max_pt;
@@ -344,6 +390,42 @@ main (int argc, char** argv)
     }
 
   }
+  // Build a coordinate system for biggest plane
+  // Step 1) Visualize the coordinate system
+  //
+  // Transform the destination of the norm vector, to let it point in a 90° Angle from the
+  // centroid to its destination
+  Eigen::Vector3f newDest = moveVectorBySubtraction( getVector3fFromModelCoefficients(vecPlaneCoefficients.at(0)),
+       // The Centroid of the plane cloud
+       Eigen::Vector3f(vecPlaneCentroids.at(0)[0], vecPlaneCentroids.at(0)[1], vecPlaneCentroids.at(0)[2]),
+       // And the center of the norm origin
+       vecPlaneNormOrigin.at(0)
+      );
+  // Translate the norm vector of the second plane to the centroid of the first plane
+  viewer.addLine(
+      getPointXYZFromVector4f(vecPlaneCentroids.at(0)),
+      getPointXYZFromVector3f(newDest),
+        0, 255, 0, "f1",v2);
+
+  Eigen::Vector3f secondDest = moveVectorBySubtraction( getVector3fFromModelCoefficients(vecPlaneCoefficients.at(1)),
+       // The Centroid of the plane cloud
+       Eigen::Vector3f(vecPlaneCentroids.at(0)[0], vecPlaneCentroids.at(0)[1], vecPlaneCentroids.at(0)[2]),
+       // And the center of the norm origin
+       vecPlaneNormOrigin.at(1)
+      );
+  // Translate the norm vector of the second plane to the centroid of the first plane
+  viewer.addLine(
+      getPointXYZFromVector4f(vecPlaneCentroids.at(0)),
+      getPointXYZFromVector3f(secondDest),
+        255, 0, 0, "f2",v2);
+
+  // Create the third axis by using the cross product
+  Eigen::Vector3f thirdDest = newDest.cross(secondDest);
+  viewer.addLine(
+      getPointXYZFromVector4f(vecPlaneCentroids.at(0)),
+      getPointXYZFromVector3f(thirdDest),
+        0, 0, 255, "f3",v2);
+
 
   //
   // ROTATE THE OBJECT to align it with the x-y and the x-z plane
@@ -352,7 +434,20 @@ main (int argc, char** argv)
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr rotated_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   // Align the front face with the cameras front plane
   {
-    std::cout << "Angle between Normal 0 and x-y Normal ";
+    for (int i = 0; i < vecPlaneCoefficients.size(); i++) {
+      std::cout << "Angle between Normal " << i << " and x-y Normal ";
+      Eigen::Vector3f n1(
+          vecPlaneCoefficients.at(i)->values.at(0),
+          vecPlaneCoefficients.at(i)->values.at(1),
+          vecPlaneCoefficients.at(i)->values.at(2)
+          );
+
+      Eigen::Vector3f n2( 0,0,1);
+      float dotproduct = n1.dot(n2);
+      std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
+      std::cout << std::endl;
+    }
+    // std::cout << "Angle between Normal 0 and x-y Normal ";
     Eigen::Vector3f n1(
         vecPlaneCoefficients.at(0)->values.at(0),
         vecPlaneCoefficients.at(0)->values.at(1),
@@ -363,56 +458,17 @@ main (int argc, char** argv)
     Eigen::Vector3f n2( 0,0,1);
 
     float dotproduct = n1.dot(n2);
-    std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
-    std::cout << std::endl;
+    // std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
+    // std::cout << std::endl;
 
     pcl::PointXYZRGB dest;
     dest.x = vecPlaneCoefficients.at(0)->values.at(0);
     dest.y = vecPlaneCoefficients.at(0)->values.at(1);
     dest.z = vecPlaneCoefficients.at(0)->values.at(2);
-
-    /*
-    // M
-    Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
-
-    // Compute the necessary rotation to align a face of the object with the camera's
-    // imaginary image plane
-    // N
-    Eigen::Vector3f camera_normal;
-    camera_normal(0)=0;
-    camera_normal(1)=0;
-    camera_normal(2)=1;
-    // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
-    float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
-
-    Eigen::Vector3f axis;
-    axis = plane_normal.cross(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
-    float c = costheta;
-    float s = sqrt(1-c*c);
-    float CO = 1-c;
-
-
-    float x = axis(0);
-    float y = axis(1);
-    float z = axis(2);
-    */
-    // Rotate 90° DEG = PI/2 RAD around X
-    
     // Translate the first plane's origin to the camera origin
     translatePointCloud(original_cloud, -vecPlaneCentroids.at(0)[0],  -vecPlaneCentroids.at(0)[1], -vecPlaneCentroids.at(0)[2], rotated_cloud);
 
     Eigen::Matrix< float, 4, 4 > rotationBox;
-    // rotationBox(0,0) = x*x*CO+c;
-    // rotationBox(1,0) = y*x*CO+z*s;
-    // rotationBox(2,0) = z*x*CO-y*s;
-
-    // rotationBox(0,1) = x*y*CO-z*s;
-    // rotationBox(1,1) = y*y*CO+c;
-    // rotationBox(2,1) = z*y*CO+x*s;
-
-    // rotationBox(0,2) = x*z*CO+y*s;
-    // rotationBox(1,2) = y*z*CO-x*s;
-    // rotationBox(2,2) = z*z*CO+c;
     
     rotationBox(0,0) = 1;
     rotationBox(1,0) = 0;
@@ -442,52 +498,24 @@ main (int argc, char** argv)
     // Draw the rotated object
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
     viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
+    // Rotate around x-Axis
+    Eigen::AngleAxis<float> aa(acos(dotproduct), Eigen::Vector3f(1,0,0));
+    Eigen::Vector3f normal_of_second_plane(
+          vecPlaneCoefficients.at(1)->values.at(0),
+          vecPlaneCoefficients.at(1)->values.at(1),
+          vecPlaneCoefficients.at(1)->values.at(2)
+          );
+    Eigen::Vector3f rotated_normal_of_second_plane;
+    rotated_normal_of_second_plane = aa * normal_of_second_plane;
+    // Display the rotated normal
+    pcl::PointXYZ origin(0,0,0);
+    viewer.addLine(origin, getPointXYZFromVector3f(rotated_normal_of_second_plane) , 255, 0, 0, "normal1",v2);
+
+    // Rotate 
 
     // Compute the bounding box for the rotated object
     pcl::PointXYZRGB min_pt, max_pt;
     pcl::getMinMax3D(*rotated_cloud, min_pt, max_pt);
-    // viewer.addCube(min_pt.x, max_pt.x, min_pt.y, max_pt.y, min_pt.z, max_pt.z, 127, 127, 127, "bounding_box", v2 );
-
-    /*
-    // Transform the bounding box back to the original position
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr bounding_box(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_bounding_box(new pcl::PointCloud<pcl::PointXYZRGB>);
-    bounding_box->push_back(min_pt);
-    bounding_box->push_back(max_pt);
-
-    Eigen::Matrix< float, 4, 4 > rotateBoundingBox;
-    rotateBoundingBox(0,0) = 1;
-    rotateBoundingBox(1,0) = 0;
-    rotateBoundingBox(2,0) = 0;
-
-    rotateBoundingBox(0,1) = 0;
-    rotateBoundingBox(1,1) = cos(-acos(dotproduct)); // safety first .. ;)
-    rotateBoundingBox(2,1) = sin(-acos(dotproduct));
-
-    rotateBoundingBox(0,2) = 0;
-    rotateBoundingBox(1,2) = -sin(-acos(dotproduct));
-    rotateBoundingBox(2,2) = cos(-acos(dotproduct));
-
-    // Translation vector
-    rotateBoundingBox(0,3) = 0;
-    rotateBoundingBox(1,3) = 0;
-    rotateBoundingBox(2,3) = 0;
-
-    // The rest of the 4x4 matrix
-    rotateBoundingBox(3,0) = 0;
-    rotateBoundingBox(3,1) = 0;
-    rotateBoundingBox(3,2) = 0;
-    rotateBoundingBox(3,3) = 1;
-
-    pcl::transformPointCloud (*bounding_box, *transformed_bounding_box, rotateBoundingBox);   
-    float min_x = transformed_bounding_box->points.at(0).x;
-    float max_x = transformed_bounding_box->points.at(1).x;
-    float min_y = transformed_bounding_box->points.at(0).y;
-    float max_y = transformed_bounding_box->points.at(1).y;
-    float min_z = transformed_bounding_box->points.at(0).z;
-    float max_z = transformed_bounding_box->points.at(1).z;
-*/
-    // viewer.addCube(min_x, max_x, min_y, max_y, min_z, max_z, 255, 255, 0, "transformed_bounding_box", v2 );
     
     // Compute the bounding box edge points
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr manual_bounding_box(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -626,3 +654,86 @@ main (int argc, char** argv)
   //   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
   //   viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
   // }
+  //
+    /*
+    // M
+    Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
+
+    // Compute the necessary rotation to align a face of the object with the camera's
+    // imaginary image plane
+    // N
+    Eigen::Vector3f camera_normal;
+    camera_normal(0)=0;
+    camera_normal(1)=0;
+    camera_normal(2)=1;
+    // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+    float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+
+    Eigen::Vector3f axis;
+    axis = plane_normal.cross(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+    float c = costheta;
+    float s = sqrt(1-c*c);
+    float CO = 1-c;
+
+
+    float x = axis(0);
+    float y = axis(1);
+    float z = axis(2);
+    */
+    // Rotate 90° DEG = PI/2 RAD around X
+    
+
+    // rotationBox(0,0) = x*x*CO+c;
+    // rotationBox(1,0) = y*x*CO+z*s;
+    // rotationBox(2,0) = z*x*CO-y*s;
+
+    // rotationBox(0,1) = x*y*CO-z*s;
+    // rotationBox(1,1) = y*y*CO+c;
+    // rotationBox(2,1) = z*y*CO+x*s;
+
+    // rotationBox(0,2) = x*z*CO+y*s;
+    // rotationBox(1,2) = y*z*CO-x*s;
+    // rotationBox(2,2) = z*z*CO+c;
+    //
+    // viewer.addCube(min_pt.x, max_pt.x, min_pt.y, max_pt.y, min_pt.z, max_pt.z, 127, 127, 127, "bounding_box", v2 );
+
+    /*
+    // Transform the bounding box back to the original position
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr bounding_box(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_bounding_box(new pcl::PointCloud<pcl::PointXYZRGB>);
+    bounding_box->push_back(min_pt);
+    bounding_box->push_back(max_pt);
+
+    Eigen::Matrix< float, 4, 4 > rotateBoundingBox;
+    rotateBoundingBox(0,0) = 1;
+    rotateBoundingBox(1,0) = 0;
+    rotateBoundingBox(2,0) = 0;
+
+    rotateBoundingBox(0,1) = 0;
+    rotateBoundingBox(1,1) = cos(-acos(dotproduct)); // safety first .. ;)
+    rotateBoundingBox(2,1) = sin(-acos(dotproduct));
+
+    rotateBoundingBox(0,2) = 0;
+    rotateBoundingBox(1,2) = -sin(-acos(dotproduct));
+    rotateBoundingBox(2,2) = cos(-acos(dotproduct));
+
+    // Translation vector
+    rotateBoundingBox(0,3) = 0;
+    rotateBoundingBox(1,3) = 0;
+    rotateBoundingBox(2,3) = 0;
+
+    // The rest of the 4x4 matrix
+    rotateBoundingBox(3,0) = 0;
+    rotateBoundingBox(3,1) = 0;
+    rotateBoundingBox(3,2) = 0;
+    rotateBoundingBox(3,3) = 1;
+
+    pcl::transformPointCloud (*bounding_box, *transformed_bounding_box, rotateBoundingBox);   
+    float min_x = transformed_bounding_box->points.at(0).x;
+    float max_x = transformed_bounding_box->points.at(1).x;
+    float min_y = transformed_bounding_box->points.at(0).y;
+    float max_y = transformed_bounding_box->points.at(1).y;
+    float min_z = transformed_bounding_box->points.at(0).z;
+    float max_z = transformed_bounding_box->points.at(1).z;
+*/
+    // viewer.addCube(min_x, max_x, min_y, max_y, min_z, max_z, 255, 255, 0, "transformed_bounding_box", v2 );
