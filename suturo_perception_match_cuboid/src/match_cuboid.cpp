@@ -53,6 +53,34 @@ void computeCuboidCornersWithMinMax3D(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clo
   corner_points->push_back(pt8);
 }
 
+// Compute the centroid of a given cloud with a ConvexHull
+void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid)
+{
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+
+    pcl::ConvexHull<pcl::PointXYZRGB> hull;
+    hull.setInputCloud(cloud_in);
+    hull.reconstruct (*hull_points);
+
+    // Centroid calulcation
+    pcl::compute3DCentroid (*hull_points, centroid);  
+}
+
+// Translate a pointcloud by x,y and z
+void translatePointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, float x, float y, float z, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out)
+{
+    // Use the identity matrix as a start, since we don't do any rotations
+    Eigen::Matrix< float, 4, 4 > translationMatrix =  Eigen::Matrix< float, 4, 4 >::Identity();;
+    
+    // Translation vector
+    translationMatrix(0,3) = x;
+    translationMatrix(1,3) = y;
+    translationMatrix(2,3) = z;
+
+    pcl::transformPointCloud (*cloud_in, *cloud_out, translationMatrix);   
+}
+
 int
 main (int argc, char** argv)
 {
@@ -97,6 +125,7 @@ main (int argc, char** argv)
   // and store their points and coefficients
   std::vector<pcl::ModelCoefficients::Ptr> vecPlaneCoefficients;
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> vecPlanePoints;
+  std::vector<Eigen::Vector4f> vecPlaneCentroids;
   // Running index for the plane vectors
   int planeIdx = 0;
 
@@ -138,6 +167,12 @@ main (int argc, char** argv)
     extract.setNegative (true);
     extract.filter (*input_cloud);
     // cloud_filtered.swap (cloud_f);
+    
+    // Calculate the centroid of each object
+    Eigen::Vector4f centroid;
+    computeCentroid(vecPlanePoints.at(planeIdx), centroid);
+    vecPlaneCentroids.push_back(centroid);
+    std::cout << "Centroid: " << centroid(0) << " " << centroid(1) << " " <<  centroid(2) << std::endl;
     planeIdx ++ ;
   }
   
@@ -224,7 +259,6 @@ main (int argc, char** argv)
   // Eigen::Affine3f t;
 
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr rotated_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   // Rotate with Affine3f and euler angles
   /*
@@ -315,6 +349,7 @@ main (int argc, char** argv)
   // ROTATE THE OBJECT to align it with the x-y and the x-z plane
   // TODO: dynamic
   //
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr rotated_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   // Align the front face with the cameras front plane
   {
     std::cout << "Angle between Normal 0 and x-y Normal ";
@@ -336,6 +371,7 @@ main (int argc, char** argv)
     dest.y = vecPlaneCoefficients.at(0)->values.at(1);
     dest.z = vecPlaneCoefficients.at(0)->values.at(2);
 
+    /*
     // M
     Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
 
@@ -356,12 +392,16 @@ main (int argc, char** argv)
     float CO = 1-c;
 
 
-    Eigen::Matrix< float, 4, 4 > rotationBox;
     float x = axis(0);
     float y = axis(1);
     float z = axis(2);
+    */
     // Rotate 90° DEG = PI/2 RAD around X
+    
+    // Translate the first plane's origin to the camera origin
+    translatePointCloud(original_cloud, -vecPlaneCentroids.at(0)[0],  -vecPlaneCentroids.at(0)[1], -vecPlaneCentroids.at(0)[2], rotated_cloud);
 
+    Eigen::Matrix< float, 4, 4 > rotationBox;
     // rotationBox(0,0) = x*x*CO+c;
     // rotationBox(1,0) = y*x*CO+z*s;
     // rotationBox(2,0) = z*x*CO-y*s;
@@ -398,7 +438,7 @@ main (int argc, char** argv)
     rotationBox(3,3) = 1;
 
     // pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
-    pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
+    // pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
     // Draw the rotated object
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
     viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
