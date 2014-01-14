@@ -46,6 +46,8 @@ public:
     suturo_perception_msgs::GetClusters::Response &res);
   void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level);
 
+  void fallback_receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud);
+
 private:
   // Declare the names of the used Topics
   static const std::string TABLE_PLANE_TOPIC;
@@ -56,6 +58,9 @@ private:
   static const std::string HISTOGRAM_PREFIX_TOPIC;
 
   bool processing; // processing flag
+  bool callback_called; // cloud and image received, callback is running
+  bool fallback_enabled; // flag, if fallback to just cloud data is enabled
+  ros::Subscriber sub_cloud; // fallback subscriber
   ObjectMatcher object_matcher_;
   suturo_perception_lib::SuturoPerception sp;
   std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
