@@ -30,9 +30,9 @@ include_directories(
 )
 
 ## Declare a cpp library
-#add_library(suturo_perception_lib
-# lib/suturo_perception.cpp
-#
+add_library(suturo_perception_cloud_fitter
+ src/mesh_loader.cpp
+ )
 
 ## Declare a cpp executable
 # add_executable(perception_node src/perception_node.cpp)
