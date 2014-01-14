@@ -438,7 +438,7 @@ main (int argc, char** argv)
     rotationBox(3,3) = 1;
 
     // pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
-    // pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
+    pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
     // Draw the rotated object
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
     viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
