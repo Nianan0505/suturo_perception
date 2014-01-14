@@ -427,6 +427,7 @@ origin_cloud_projected->points.at(0).z
         0, 0, 255, "f3",v2);
 
 
+
   //
   // ROTATE THE OBJECT to align it with the x-y and the x-z plane
   // TODO: dynamic
