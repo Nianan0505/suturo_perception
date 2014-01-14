@@ -61,37 +61,57 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   object_matcher_.setVerboseLevel(0); // TODO use constant
   object_matcher_.setMinGoodMatches(7);
 
-   numThreads = 8;
+  numThreads = 8;
+  callback_called = false;
+  fallback_enabled = false;
 }
 
 /*
  * Receive callback for the /camera/depth_registered/points subscription
  */
-void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, 
+                                                      const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
   // process only one cloud
-  
+  callback_called = true;
   if(processing)
   {
     logger.logInfo("Receiving cloud");
     logger.logInfo("processing...");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*inputCloud,*cloud_in);
-    cv_bridge::CvImagePtr cv_ptr;
-    cv_ptr = cv_bridge::toCvCopy(inputImage, enc::BGR8);
+    if(!fallback_enabled)
+    {
+      cv_bridge::CvImagePtr cv_ptr;
+      cv_ptr = cv_bridge::toCvCopy(inputImage, enc::BGR8);
 
-    // Make a deep copy of the passed cv::Mat and set a new
-    // boost pointer to it.
-    boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
+      // Make a deep copy of the passed cv::Mat and set a new
+      // boost pointer to it.
+      boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
+      sp.setOriginalRGBImage(img);
+    }
     
     std::stringstream ss;
     ss << "Received a new point cloud: size = " << cloud_in->points.size();
     logger.logInfo((boost::format("Received a new point cloud: size = %s") % cloud_in->points.size()).str());
-    sp.setOriginalRGBImage(img);
     sp.setOriginalCloud(cloud_in);
     sp.processCloudWithProjections(cloud_in);
     processing = false;
     logger.logInfo("Cloud processed. Lock buffer and return the results");      
+  }
+  callback_called = false;
+}
+
+/*
+ * Fallback, if only pointcloud data is available.
+ */
+void SuturoPerceptionROSNode::fallback_receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+{
+  if(processing)
+  {
+    ROS_INFO("Received a pointcloud message");
+    sensor_msgs::ImageConstPtr nullPtr; // boost::shared_ptr NullPtr
+    receive_image_and_cloud(nullPtr, inputCloud);
   }
 }
 
@@ -107,7 +127,6 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 {
   boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
 
-  // ros::Subscriber sub;
   processing = true;
 
   // signal failed call, if request string does not match
@@ -116,7 +135,6 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     return false;
   }
 
-  // TODO Make this configurable!!
   message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, colorTopic, 1);
   message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub(nh, pointTopic, 1);
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::PointCloud2> MySyncPolicy;
@@ -130,7 +148,22 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
   while(processing)
   {
-    if(boost::posix_time::second_clock::local_time() >= cancelTime) processing = false;
+    if(boost::posix_time::second_clock::local_time() >= cancelTime && !callback_called)
+    {
+      processing = false;
+      // register normal callback just for the cloud topic and retry, if no color data is available
+      if(!fallback_enabled)
+      {
+        processing = true;
+        logger.logWarn("No color image received. Falling back to point clouds only.");
+        image_sub.unsubscribe();
+        pc_sub.unsubscribe();
+        sub_cloud = nh.subscribe(pointTopic, 1, 
+          &SuturoPerceptionROSNode::fallback_receive_cloud, this);
+        fallback_enabled = true;
+        cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
+      }
+    } 
     ros::spinOnce();
     r.sleep();
   }
@@ -172,7 +205,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     ioService.post(boost::bind(&suturo_perception_vfh_estimation::VFHEstimation::execute, vfhe));
 
     // Is 2d recognition enabled?
-    if(!recognitionDir.empty())
+    if(!recognitionDir.empty() && !fallback_enabled)
     {
       // perceivedObjects[i].c_recognition_label_2d="";
       suturo_perception_2d_capabilities::LabelAnnotator2D la(perceivedObjects[i], sp.getOriginalRGBImage(), object_matcher_);
@@ -185,13 +218,15 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     }
 
     // Publish the ROI-cropped images
-    suturo_perception_2d_capabilities::ROIPublisher 
-      rp(perceivedObjects.at(i), ph,sp.getOriginalRGBImage(),frameId);
-    std::stringstream ss;
-    ss << i;
-    rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
-    rp.execute();
- 
+    if(!fallback_enabled)
+    {
+      suturo_perception_2d_capabilities::ROIPublisher 
+        rp(perceivedObjects.at(i), ph,sp.getOriginalRGBImage(),frameId);
+      std::stringstream ss;
+      ss << i;
+      rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
+      rp.execute();
+    }
   }
   //boost::this_thread::sleep(boost::posix_time::microseconds(1000));
   // wait for thread completion.
