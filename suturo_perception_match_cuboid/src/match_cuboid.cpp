@@ -468,7 +468,58 @@ origin_cloud_projected->points.at(0).z
     dest.z = vecPlaneCoefficients.at(0)->values.at(2);
     // Translate the first plane's origin to the camera origin
     translatePointCloud(original_cloud, -vecPlaneCentroids.at(0)[0],  -vecPlaneCentroids.at(0)[1], -vecPlaneCentroids.at(0)[2], rotated_cloud);
+    // M
+    Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
 
+    // Compute the necessary rotation to align a face of the object with the camera's
+    // imaginary image plane
+    // N
+    Eigen::Vector3f camera_normal;
+    camera_normal(0)=0;
+    camera_normal(1)=0;
+    camera_normal(2)=1;
+    // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+    float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
+
+    Eigen::Vector3f axis;
+    Eigen::Vector3f firstAxis = plane_normal.cross(camera_normal);
+    // axis = plane_normal.cross(camera_normal) / (plane_normal.cross(camera_normal)).normalize();
+    firstAxis.normalize();
+    axis=firstAxis;
+    float c = costheta;
+    float s = sqrt(1-c*c);
+    float CO = 1-c;
+
+
+    float x = axis(0);
+    float y = axis(1);
+    float z = axis(2);
+    
+    Eigen::Matrix< float, 4, 4 > rotationBox;
+    rotationBox(0,0) = x*x*CO+c;
+    rotationBox(1,0) = y*x*CO+z*s;
+    rotationBox(2,0) = z*x*CO-y*s;
+
+    rotationBox(0,1) = x*y*CO-z*s;
+    rotationBox(1,1) = y*y*CO+c;
+    rotationBox(2,1) = z*y*CO+x*s;
+
+    rotationBox(0,2) = x*z*CO+y*s;
+    rotationBox(1,2) = y*z*CO-x*s;
+    rotationBox(2,2) = z*z*CO+c;
+   // Translation vector
+    rotationBox(0,3) = 0;
+    rotationBox(1,3) = 0;
+    rotationBox(2,3) = 0;
+
+    // The rest of the 4x4 matrix
+    rotationBox(3,0) = 0;
+    rotationBox(3,1) = 0;
+    rotationBox(3,2) = 0;
+    rotationBox(3,3) = 1;
+
+    /*
+    // Use normal rotation
     Eigen::Matrix< float, 4, 4 > rotationBox;
     
     rotationBox(0,0) = 1;
@@ -493,13 +544,16 @@ origin_cloud_projected->points.at(0).z
     rotationBox(3,1) = 0;
     rotationBox(3,2) = 0;
     rotationBox(3,3) = 1;
+    */
 
     // pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
     pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
     // Draw the rotated object
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
     viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
-    // Rotate around x-Axis
+
+
+    // Rotate around normal around x-Axis
     Eigen::AngleAxis<float> aa(acos(dotproduct), Eigen::Vector3f(1,0,0));
     Eigen::Vector3f normal_of_second_plane(
           vecPlaneCoefficients.at(1)->values.at(0),
