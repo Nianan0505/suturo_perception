@@ -121,6 +121,64 @@ Eigen::Vector3f moveVectorBySubtraction(Eigen::Vector3f input, Eigen::Vector3f v
   return newDest;
 }
 
+// Rotate the Vector 'normal_to_rotate' into 'base_normal'
+// Returns a rotation matrix which can be used for the transformation
+Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
+    Eigen::Vector3f base_normal,
+    Eigen::Vector3f normal_to_rotate)
+{
+    // M
+    // Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
+
+    // Compute the necessary rotation to align a face of the object with the camera's
+    // imaginary image plane
+    // N
+    // Eigen::Vector3f camera_normal;
+    // camera_normal(0)=0;
+    // camera_normal(1)=0;
+    // camera_normal(2)=1;
+    // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+    float costheta = normal_to_rotate.dot(base_normal) / (normal_to_rotate.norm() * base_normal.norm() );
+
+    Eigen::Vector3f axis;
+    Eigen::Vector3f firstAxis = normal_to_rotate.cross(base_normal);
+    // axis = plane_normal.cross(camera_normal) / (plane_normal.cross(camera_normal)).normalize();
+    firstAxis.normalize();
+    axis=firstAxis;
+    float c = costheta;
+    float s = sqrt(1-c*c);
+    float CO = 1-c;
+
+
+    float x = axis(0);
+    float y = axis(1);
+    float z = axis(2);
+    
+    Eigen::Matrix< float, 4, 4 > rotationBox;
+    rotationBox(0,0) = x*x*CO+c;
+    rotationBox(1,0) = y*x*CO+z*s;
+    rotationBox(2,0) = z*x*CO-y*s;
+
+    rotationBox(0,1) = x*y*CO-z*s;
+    rotationBox(1,1) = y*y*CO+c;
+    rotationBox(2,1) = z*y*CO+x*s;
+
+    rotationBox(0,2) = x*z*CO+y*s;
+    rotationBox(1,2) = y*z*CO-x*s;
+    rotationBox(2,2) = z*z*CO+c;
+   // Translation vector
+    rotationBox(0,3) = 0;
+    rotationBox(1,3) = 0;
+    rotationBox(2,3) = 0;
+
+    // The rest of the 4x4 matrix
+    rotationBox(3,0) = 0;
+    rotationBox(3,1) = 0;
+    rotationBox(3,2) = 0;
+    rotationBox(3,3) = 1;
+
+    return rotationBox;
+}
 int
 main (int argc, char** argv)
 {
@@ -457,10 +515,7 @@ origin_cloud_projected->points.at(0).z
 
 
     Eigen::Vector3f n2( 0,0,1);
-
     float dotproduct = n1.dot(n2);
-    // std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
-    // std::cout << std::endl;
 
     pcl::PointXYZRGB dest;
     dest.x = vecPlaneCoefficients.at(0)->values.at(0);
@@ -468,6 +523,9 @@ origin_cloud_projected->points.at(0).z
     dest.z = vecPlaneCoefficients.at(0)->values.at(2);
     // Translate the first plane's origin to the camera origin
     translatePointCloud(original_cloud, -vecPlaneCentroids.at(0)[0],  -vecPlaneCentroids.at(0)[1], -vecPlaneCentroids.at(0)[2], rotated_cloud);
+
+
+    // rotateAroundCrossProductOfNormals(Eigen::Vector3f base_normal, Eigen::Vector3f normale_to_rotate);
     // M
     Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
 
@@ -479,11 +537,17 @@ origin_cloud_projected->points.at(0).z
     camera_normal(1)=0;
     camera_normal(2)=1;
     // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+    //
+    
+    
+    Eigen::Matrix< float, 4, 4 > rotationBox = 
+      rotateAroundCrossProductOfNormals(camera_normal, plane_normal);
+    
+    /* 
     float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
 
     Eigen::Vector3f axis;
     Eigen::Vector3f firstAxis = plane_normal.cross(camera_normal);
-    // axis = plane_normal.cross(camera_normal) / (plane_normal.cross(camera_normal)).normalize();
     firstAxis.normalize();
     axis=firstAxis;
     float c = costheta;
@@ -517,7 +581,7 @@ origin_cloud_projected->points.at(0).z
     rotationBox(3,1) = 0;
     rotationBox(3,2) = 0;
     rotationBox(3,3) = 1;
-
+*/
     /*
     // Use normal rotation
     Eigen::Matrix< float, 4, 4 > rotationBox;
