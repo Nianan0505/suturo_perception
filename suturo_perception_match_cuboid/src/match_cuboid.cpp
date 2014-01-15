@@ -554,6 +554,15 @@ origin_cloud_projected->points.at(0).z
     camera_normal(0)=0;
     camera_normal(1)=0;
     camera_normal(2)=1;
+
+    float dotproduct3 = camera_normal.dot(plane_normal);
+    if(acos(dotproduct3)> M_PI/2)
+    {
+      std::cout << "NORM IS ABOVE 90 DEG! TURN IN THE OTHER DIRECTION" << std::endl;
+      camera_normal = -camera_normal;
+      // rotated_normal_of_second_plane = - rotated_normal_of_second_plane;
+    }
+
     
     Eigen::Matrix< float, 4, 4 > rotationBox = 
       rotateAroundCrossProductOfNormals(camera_normal, plane_normal);
