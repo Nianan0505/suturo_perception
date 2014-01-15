@@ -123,6 +123,7 @@ Eigen::Vector3f moveVectorBySubtraction(Eigen::Vector3f input, Eigen::Vector3f v
 
 // Rotate the Vector 'normal_to_rotate' into 'base_normal'
 // Returns a rotation matrix which can be used for the transformation
+// The matrix also includes an empty translation vector
 Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
     Eigen::Vector3f base_normal,
     Eigen::Vector3f normal_to_rotate)
@@ -178,6 +179,24 @@ Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
     rotationBox(3,3) = 1;
 
     return rotationBox;
+}
+
+Eigen::Matrix< float, 3, 3 > removeTranslationVectorFromMatrix(Eigen::Matrix<float,4,4> m)
+{
+  Eigen::Matrix< float, 3, 3 > result;
+  result.setZero();
+  result(0,0) = m(0,0);
+  result(1,0) = m(1,0);
+  result(2,0) = m(2,0);
+
+  result(0,1) = m(0,1);
+  result(1,1) = m(1,1);
+  result(2,1) = m(2,1);
+
+  result(0,2) = m(0,2);
+  result(1,2) = m(1,2);
+  result(2,2) = m(2,2);
+  return result;
 }
 int
 main (int argc, char** argv)
@@ -525,7 +544,6 @@ origin_cloud_projected->points.at(0).z
     translatePointCloud(original_cloud, -vecPlaneCentroids.at(0)[0],  -vecPlaneCentroids.at(0)[1], -vecPlaneCentroids.at(0)[2], rotated_cloud);
 
 
-    // rotateAroundCrossProductOfNormals(Eigen::Vector3f base_normal, Eigen::Vector3f normale_to_rotate);
     // M
     Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
 
@@ -536,87 +554,13 @@ origin_cloud_projected->points.at(0).z
     camera_normal(0)=0;
     camera_normal(1)=0;
     camera_normal(2)=1;
-    // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
-    //
-    
     
     Eigen::Matrix< float, 4, 4 > rotationBox = 
       rotateAroundCrossProductOfNormals(camera_normal, plane_normal);
     
-    /* 
-    float costheta = plane_normal.dot(camera_normal) / (plane_normal.norm() * camera_normal.norm() );
-
-    Eigen::Vector3f axis;
-    Eigen::Vector3f firstAxis = plane_normal.cross(camera_normal);
-    firstAxis.normalize();
-    axis=firstAxis;
-    float c = costheta;
-    float s = sqrt(1-c*c);
-    float CO = 1-c;
-
-
-    float x = axis(0);
-    float y = axis(1);
-    float z = axis(2);
-    
-    Eigen::Matrix< float, 4, 4 > rotationBox;
-    rotationBox(0,0) = x*x*CO+c;
-    rotationBox(1,0) = y*x*CO+z*s;
-    rotationBox(2,0) = z*x*CO-y*s;
-
-    rotationBox(0,1) = x*y*CO-z*s;
-    rotationBox(1,1) = y*y*CO+c;
-    rotationBox(2,1) = z*y*CO+x*s;
-
-    rotationBox(0,2) = x*z*CO+y*s;
-    rotationBox(1,2) = y*z*CO-x*s;
-    rotationBox(2,2) = z*z*CO+c;
-   // Translation vector
-    rotationBox(0,3) = 0;
-    rotationBox(1,3) = 0;
-    rotationBox(2,3) = 0;
-
-    // The rest of the 4x4 matrix
-    rotationBox(3,0) = 0;
-    rotationBox(3,1) = 0;
-    rotationBox(3,2) = 0;
-    rotationBox(3,3) = 1;
-*/
-    /*
-    // Use normal rotation
-    Eigen::Matrix< float, 4, 4 > rotationBox;
-    
-    rotationBox(0,0) = 1;
-    rotationBox(1,0) = 0;
-    rotationBox(2,0) = 0;
-
-    rotationBox(0,1) = 0;
-    rotationBox(1,1) = cos(acos(dotproduct)); // safety first .. ;)
-    rotationBox(2,1) = sin(acos(dotproduct));
-
-    rotationBox(0,2) = 0;
-    rotationBox(1,2) = -sin(acos(dotproduct));
-    rotationBox(2,2) = cos(acos(dotproduct));
-
-    // Translation vector
-    rotationBox(0,3) = 0;
-    rotationBox(1,3) = 0;
-    rotationBox(2,3) = 0;
-
-    // The rest of the 4x4 matrix
-    rotationBox(3,0) = 0;
-    rotationBox(3,1) = 0;
-    rotationBox(3,2) = 0;
-    rotationBox(3,3) = 1;
-    */
-
     // pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
     pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
-    // Draw the rotated object
-    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
-    viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
-
-
+    /*
     // Rotate around normal around x-Axis
     Eigen::AngleAxis<float> aa(acos(dotproduct), Eigen::Vector3f(1,0,0));
     Eigen::Vector3f normal_of_second_plane(
@@ -629,8 +573,24 @@ origin_cloud_projected->points.at(0).z
     // Display the rotated normal
     pcl::PointXYZ origin(0,0,0);
     viewer.addLine(origin, getPointXYZFromVector3f(rotated_normal_of_second_plane) , 255, 0, 0, "normal1",v2);
+    */
+    // Rotate the normal of the second plane with the first rotation matrix
+    Eigen::Vector3f normal_of_second_plane(
+          vecPlaneCoefficients.at(1)->values.at(0),
+          vecPlaneCoefficients.at(1)->values.at(1),
+          vecPlaneCoefficients.at(1)->values.at(2)
+          );
 
-    // Rotate 
+    Eigen::Vector3f rotated_normal_of_second_plane;
+    rotated_normal_of_second_plane = 
+      removeTranslationVectorFromMatrix(rotationBox) * normal_of_second_plane;
+
+    pcl::PointXYZ origin(0,0,0);
+    viewer.addLine(origin, getPointXYZFromVector3f(rotated_normal_of_second_plane) , 255, 0, 0, "normal1",v2);
+
+    // Draw the rotated object
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_r(rotated_cloud);
+    viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
 
     // Compute the bounding box for the rotated object
     pcl::PointXYZRGB min_pt, max_pt;
@@ -640,6 +600,7 @@ origin_cloud_projected->points.at(0).z
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr manual_bounding_box(new pcl::PointCloud<pcl::PointXYZRGB>);
     computeCuboidCornersWithMinMax3D(rotated_cloud,manual_bounding_box);
 
+    // Draw the bounding box edge points
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_pts (manual_bounding_box, 255,0,0);
     viewer.addPointCloud<pcl::PointXYZRGB> (manual_bounding_box, red_pts, "bb", v2);
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bb");
@@ -856,3 +817,32 @@ origin_cloud_projected->points.at(0).z
     float max_z = transformed_bounding_box->points.at(1).z;
 */
     // viewer.addCube(min_x, max_x, min_y, max_y, min_z, max_z, 255, 255, 0, "transformed_bounding_box", v2 );
+    //
+    /*
+    // Use normal rotation
+    Eigen::Matrix< float, 4, 4 > rotationBox;
+    
+    rotationBox(0,0) = 1;
+    rotationBox(1,0) = 0;
+    rotationBox(2,0) = 0;
+
+    rotationBox(0,1) = 0;
+    rotationBox(1,1) = cos(acos(dotproduct)); // safety first .. ;)
+    rotationBox(2,1) = sin(acos(dotproduct));
+
+    rotationBox(0,2) = 0;
+    rotationBox(1,2) = -sin(acos(dotproduct));
+    rotationBox(2,2) = cos(acos(dotproduct));
+
+    // Translation vector
+    rotationBox(0,3) = 0;
+    rotationBox(1,3) = 0;
+    rotationBox(2,3) = 0;
+
+    // The rest of the 4x4 matrix
+    rotationBox(3,0) = 0;
+    rotationBox(3,1) = 0;
+    rotationBox(3,2) = 0;
+    rotationBox(3,3) = 1;
+    */
+
