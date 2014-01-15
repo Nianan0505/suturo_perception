@@ -158,26 +158,8 @@ Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
     // axis = plane_normal.cross(camera_normal) / (plane_normal.cross(camera_normal)).normalize();
     firstAxis.normalize();
     axis=firstAxis;
-    // Rotation angle is above 90°, rotate in the opposite direction to
-    // cut the way. We can do this since the box doesn't need to
-    // align perfectly uniquely
-    float angle = ((acos(costheta) * 180) / M_PI);
-    std::cout << "rotate COSTHETA: " << acos(costheta) << " RAD, " << ((acos(costheta) * 180) / M_PI) << " DEG" << std::endl;
-
-    float c=0;
-    if(angle > 90)
-    {
-      if(angle > 180)
-        std::cout << "ROTATION ANGLE OVER 180" << std::endl;
-      std::cout << "NORMALIZE" << std::endl;
-      c = -cos(acos(costheta)-M_PI);
-    }
-    else
-    {
-      c = costheta;
-    }
-
-    std::cout << "rotate COSTHETA after normalization: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
+    float c = costheta;
+    std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
     float s = sqrt(1-c*c);
     // float s = sin(acos(costheta));
     float CO = 1-c;
@@ -603,6 +585,12 @@ origin_cloud_projected->points.at(0).z
     float dotproduct2 = xz_plane.dot(rotated_normal_of_second_plane);
     std::cout << ": " << acos(dotproduct2) << " RAD, " << ((acos(dotproduct2) * 180) / M_PI) << " DEG";
     std::cout << std::endl;
+
+    if(acos(dotproduct2)> M_PI/2)
+    {
+      std::cout << "NORM IS ABOVE 90 DEG! TURN IN THE OTHER DIRECTION" << std::endl;
+      rotated_normal_of_second_plane = - rotated_normal_of_second_plane;
+    }
 
     
     float angle_between_xz_and_second_normal = ((acos(dotproduct2) * 180) / M_PI);
