@@ -246,6 +246,10 @@ Eigen::Matrix< float, 3, 3 > removeTranslationVectorFromMatrix(Eigen::Matrix<flo
 int
 main (int argc, char** argv)
 {
+
+  // Second rotation performed?
+  bool second_rotation_performed = false;
+
   // vector of filename indices
   std::vector<int> filenames;
   filenames = pcl::console::parse_file_extension_argument (argc, argv, ".pcd");
@@ -657,10 +661,12 @@ origin_cloud_projected->points.at(0).z
         rotateAroundCrossProductOfNormals(xz_plane, rotated_normal_of_second_plane);
 
       pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, secondRotation);   
+      second_rotation_performed = true;
     }
     else
     {
       secondRotation = Eigen::Matrix< float, 4, 4 >::Identity();
+      second_rotation_performed = false;
       std::cout << "No second rotation, since the angle is too small: "<< angle_between_xz_and_second_normal << "DEG" << std::endl;
     }
 
@@ -691,20 +697,22 @@ origin_cloud_projected->points.at(0).z
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr bounding_box_on_object(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> white_pts (bounding_box_on_object, 255,255,255);
 
-
     // Inverse the last rotation
     pcl::transformPointCloud (*manual_bounding_box, *bounding_box_on_object, secondRotation.transpose());   
 
-    // Translate back to the first centroid
-    Eigen::Vector4f offset_between_centroids =
-      vecPlaneCentroids.at(1) - vecPlaneCentroids.at(0);
-    Eigen::Vector3f rotated_offset =
-      removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
-    translatePointCloud(bounding_box_on_object, 
-        rotated_offset[0], // Translation is now NOT negative
-        rotated_offset[1],
-        rotated_offset[2],
-        bounding_box_on_object);
+    // Translate back to the first centroid, if this was done
+    if(second_rotation_performed)
+    {
+      Eigen::Vector4f offset_between_centroids =
+        vecPlaneCentroids.at(1) - vecPlaneCentroids.at(0);
+      Eigen::Vector3f rotated_offset =
+        removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
+      translatePointCloud(bounding_box_on_object, 
+          rotated_offset[0], // Translation is now NOT negative
+          rotated_offset[1],
+          rotated_offset[2],
+          bounding_box_on_object);
+    }
     // Translated to first centroid
     
     
