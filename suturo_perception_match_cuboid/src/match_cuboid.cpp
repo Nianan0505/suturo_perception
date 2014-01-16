@@ -22,6 +22,37 @@
 #define MIN_ANGLE 5 // the minimum angle offset between to norm vectors
                     // if this threshold is not reached, no rotation will be made on this axis
 
+// The corners MUST be in the order which is defined in computeCuboidCornersWithMinMax3D!
+// Otherwise this method will not work
+// The viewport is the related to your open viewports in the PCLVisualizer instance
+// If you have only one viewport, you can pass 0 there or leave it empty
+void drawBoundingBoxLines(pcl::visualization::PCLVisualizer &visualizer, pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points, int viewport=0)
+{
+  if( corner_points->points.size() != 8)
+  {
+    std::cerr << "The corner pointcloud should contain 8 elements. Actual size: " << corner_points->points.size() << std::endl;
+    return;
+  }
+  // Front face after the transformation
+  visualizer.addLine(corner_points->points.at(0), corner_points->points.at(2), "bb_line_1",viewport);
+  visualizer.addLine(corner_points->points.at(0), corner_points->points.at(3), "bb_line_2",viewport);
+  visualizer.addLine(corner_points->points.at(6), corner_points->points.at(2), "bb_line_3",viewport);
+  visualizer.addLine(corner_points->points.at(6), corner_points->points.at(3), "bb_line_4",viewport);
+
+  // Back face after the transformation
+  visualizer.addLine(corner_points->points.at(4), corner_points->points.at(7), "bb_line_5",viewport);
+  visualizer.addLine(corner_points->points.at(4), corner_points->points.at(5), "bb_line_6",viewport);
+  visualizer.addLine(corner_points->points.at(1), corner_points->points.at(7), "bb_line_7",viewport);
+  visualizer.addLine(corner_points->points.at(1), corner_points->points.at(5), "bb_line_8",viewport);
+
+  // Connect both faces with each other
+  visualizer.addLine(corner_points->points.at(0), corner_points->points.at(4), "bb_line_9",viewport);
+  visualizer.addLine(corner_points->points.at(2), corner_points->points.at(7), "bb_line_10",viewport);
+  visualizer.addLine(corner_points->points.at(3), corner_points->points.at(5), "bb_line_11",viewport);
+  visualizer.addLine(corner_points->points.at(6), corner_points->points.at(1), "bb_line_12",viewport);
+
+}
+
 void computeCuboidCornersWithMinMax3D(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points)
 {
   pcl::PointXYZRGB min_pt, max_pt;
@@ -377,11 +408,11 @@ main (int argc, char** argv)
 
   // Visualize the found inliers
   int v2(1);
-  viewer.createViewPort(0.2, 0.0, 0.8, 1.0, v2);
+  viewer.createViewPort(0.2, 0.0, 0.6, 1.0, v2);
   viewer.addCoordinateSystem(1.0,v2);
 
   int v3(2);
-  viewer.createViewPort(0.8, 0.0, 1.0, 1.0, v3);
+  viewer.createViewPort(0.6, 0.0, 1.0, 1.0, v3);
   viewer.addCoordinateSystem(0.5,v3);
 
   // For each segmented plane
@@ -603,6 +634,7 @@ origin_cloud_projected->points.at(0).z
 
     
     float angle_between_xz_and_second_normal = ((acos(dotproduct2) * 180) / M_PI);
+    Eigen::Matrix< float, 4, 4 > secondRotation;
     if(angle_between_xz_and_second_normal > MIN_ANGLE &&
         angle_between_xz_and_second_normal < 180-MIN_ANGLE)
     {
@@ -612,20 +644,23 @@ origin_cloud_projected->points.at(0).z
           vecPlaneCentroids.at(1) - vecPlaneCentroids.at(0);
       Eigen::Vector3f rotated_offset =
         removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
-    
+   
+      
       translatePointCloud(rotated_cloud, 
           - rotated_offset[0],
           - rotated_offset[1],
           - rotated_offset[2],
           rotated_cloud);
+          
 
-      Eigen::Matrix< float, 4, 4 > secondRotation = 
+      secondRotation = 
         rotateAroundCrossProductOfNormals(xz_plane, rotated_normal_of_second_plane);
 
       pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, secondRotation);   
     }
     else
     {
+      secondRotation = Eigen::Matrix< float, 4, 4 >::Identity();
       std::cout << "No second rotation, since the angle is too small: "<< angle_between_xz_and_second_normal << "DEG" << std::endl;
     }
 
@@ -651,6 +686,40 @@ origin_cloud_projected->points.at(0).z
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_pts (manual_bounding_box, 255,0,0);
     viewer.addPointCloud<pcl::PointXYZRGB> (manual_bounding_box, red_pts, "bb", v3);
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bb");
+
+    // Now reverse all the transformations to get the bounding box around the actual object
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr bounding_box_on_object(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> white_pts (bounding_box_on_object, 255,255,255);
+
+
+    // Inverse the last rotation
+    pcl::transformPointCloud (*manual_bounding_box, *bounding_box_on_object, secondRotation.transpose());   
+
+    // Translate back to the first centroid
+    Eigen::Vector4f offset_between_centroids =
+      vecPlaneCentroids.at(1) - vecPlaneCentroids.at(0);
+    Eigen::Vector3f rotated_offset =
+      removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
+    translatePointCloud(bounding_box_on_object, 
+        rotated_offset[0], // Translation is now NOT negative
+        rotated_offset[1],
+        rotated_offset[2],
+        bounding_box_on_object);
+    // Translated to first centroid
+    
+    
+    // Inverse the second rotation
+    pcl::transformPointCloud (*bounding_box_on_object, *bounding_box_on_object, rotationBox.transpose());   
+
+    // And translate back to the original position
+    translatePointCloud(bounding_box_on_object, vecPlaneCentroids.at(0)[0],  vecPlaneCentroids.at(0)[1], vecPlaneCentroids.at(0)[2], bounding_box_on_object);
+
+    viewer.addPointCloud<pcl::PointXYZRGB> (bounding_box_on_object, white_pts, "bb_real", v3);
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bb_real");
+    drawBoundingBoxLines(viewer, bounding_box_on_object, v3);
+    // And finally, render the original cloud
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_v3(original_cloud);
+    viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, rgb_v3, "original_cloud", v3);
   }
 
 
