@@ -20,6 +20,7 @@
 #include <pcl/registration/distances.h>
 #include <point_cloud_operations.h>
 #include "boost/date_time/posix_time/posix_time.hpp"
+#include <suturo_perception_match_cuboid/detected_plane.h>
 
 // This rectangle will be defined by its three edge lengths
 struct Cuboid
