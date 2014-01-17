@@ -372,6 +372,10 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_hue_histogram = *it->get_c_hue_histogram();
     msgObj->c_hue_histogram_quality = it->get_c_hue_histogram_quality();
     msgObj->recognition_label_2d = it->get_c_recognition_label_2d();
+    for (int i = 0; i < 308; i++) 
+    {
+      msgObj->c_vfh_estimation.push_back(it->get_c_vfhs().histogram[i]);
+    }
 
     // these are not set for now
     msgObj->recognition_label_3d = "";
