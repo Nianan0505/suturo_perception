@@ -345,11 +345,7 @@ main (int argc, char** argv)
   {
     DetectedPlane dp;
     detected_planes.push_back(dp); // TODO boost pointer
-    // vecPlanePoints.push_back(pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>() ));
-    // vecPlaneCoefficients.push_back(pcl::ModelCoefficients::Ptr (new pcl::ModelCoefficients));
 
-    // pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-    // pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
     // Create the segmentation object
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
     // Optional
@@ -361,7 +357,6 @@ main (int argc, char** argv)
     seg.setDistanceThreshold (0.005); // Tolerance is 0.5 cm
 
     seg.setInputCloud (input_cloud);
-    // seg.segment (*inliers, *vecPlaneCoefficients.at(planeIdx));
     seg.segment (*detected_planes.at(planeIdx).getInliers(),
         *detected_planes.at(planeIdx).getCoefficients());
 
@@ -381,9 +376,7 @@ main (int argc, char** argv)
     Eigen::Vector4f centroid;
     computeCentroid(detected_planes.at(planeIdx).getPoints(), centroid);
     detected_planes.at(planeIdx).setCentroid(centroid);
-    // vecPlaneCentroids.push_back(centroid);
 
-    // std::cout << "Centroid: " << centroid(0) << " " << centroid(1) << " " <<  centroid(2) << std::endl;
     planeIdx ++ ;
   }
   
@@ -394,24 +387,10 @@ main (int argc, char** argv)
       if(i==j) continue;
       std::cout << "Angle between Normal " << i << " and Normal " << j;
 
-      // Eigen::Vector3f v1(
-      //     vecPlaneCoefficients.at(i)->values.at(0),
-      //     vecPlaneCoefficients.at(i)->values.at(1),
-      //     vecPlaneCoefficients.at(i)->values.at(2)
-      // );
+      float angle = detected_planes.at(i).angleBetween(
+          detected_planes.at(j).getCoefficientsAsVector3f());
 
-
-      // Eigen::Vector3f v2(
-      //     vecPlaneCoefficients.at(j)->values.at(0),
-      //     vecPlaneCoefficients.at(j)->values.at(1),
-      //     vecPlaneCoefficients.at(j)->values.at(2)
-      // );
-
-      // float dotproduct = v1.dot(v2);
-      float dotproduct = detected_planes.at(i).angleBetween(
-          detected_planes.at(i).getCoefficientsAsVector3f());
-
-      std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
+      std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG";
       std::cout << std::endl;
 
     }
