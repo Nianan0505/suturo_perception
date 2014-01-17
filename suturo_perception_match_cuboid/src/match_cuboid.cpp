@@ -241,9 +241,7 @@ Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
     float c = costheta;
     std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
     float s = sqrt(1-c*c);
-    // float s = sin(acos(costheta));
     float CO = 1-c;
-
 
     float x = axis(0);
     float y = axis(1);
@@ -329,13 +327,6 @@ main (int argc, char** argv)
   // Copy the original cloud to input cloud, which can be modified later during plane extraction
   pcl::copyPointCloud<pcl::PointXYZRGB, pcl::PointXYZRGB>(*original_cloud, *input_cloud);
 
-  // Fit planes with RANSAC
-  // and store their points and coefficients
-  // std::vector<pcl::ModelCoefficients::Ptr> vecPlaneCoefficients;
-  // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> vecPlanePoints;
-  // std::vector<Eigen::Vector4f> vecPlaneCentroids;
-  // std::vector<Eigen::Vector3f> vecPlaneNormOrigin;
-
   std::vector<DetectedPlane> detected_planes;
   // Running index for the plane vectors
   int planeIdx = 0;
@@ -419,15 +410,6 @@ main (int argc, char** argv)
   color_sequence.push_back(red);
   color_sequence.push_back(blue);
   
-
-
-  // Rotate with Affine3f and euler angles
-  /*
-  pcl::getTransformation (rot_x, rot_y, rot_z, rot_roll, rot_pitch, rot_yaw, t);
-  pcl::transformPointCloud (*original_cloud, *rotated_cloud, t);   
-  */
-  // pcl::transformPointCloud (*original_cloud, *rotated_cloud, rotationBox);   
-
   pcl::visualization::PCLVisualizer viewer;
   // Visualize original pointcloud
   int v1(0);
@@ -435,8 +417,6 @@ main (int argc, char** argv)
   viewer.addCoordinateSystem(1.0,v1);
   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(original_cloud);
   viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, rgb, "sample cloud1", v1);
-  // viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample_cloud1");
-  // viewer.addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal> (input_cloud, cloud_normals1, 10, 0.05, "normals1", v1);
 
   // Visualize the found inliers
   int v2(1);
@@ -477,8 +457,6 @@ main (int argc, char** argv)
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
         5, centroid_name.str());
 
-    
-
     // Display the plane normal with the camera origin as the origin
     {
       pcl::PointXYZRGB origin;
@@ -516,15 +494,6 @@ origin_cloud_projected->points.at(0).y,
 origin_cloud_projected->points.at(0).z
           );
       detected_planes.at(i).setNormOrigin(norm_origin);
-      // vecPlaneNormOrigin.push_back(norm_origin);
-      /*
-      // Get the diameter of the plane
-      pcl::PointXYZRGB min_pt, max_pt;
-      pcl::getMinMax3D(*vecPlanePoints.at(i), min_pt, max_pt);
-      std::stringstream line_name("line_plane_");
-      line_name << i;
-      viewer.addLine(min_pt,max_pt,line_name.str(), v2);
-      */
     }
 
   }
@@ -578,36 +547,22 @@ origin_cloud_projected->points.at(0).z
     for (int i = 0; i < detected_planes.size(); i++) 
     {
       std::cout << "Angle between Normal " << i << " and x-y Normal ";
-      // Eigen::Vector3f n1(
-      //     vecPlaneCoefficients.at(i)->values.at(0),
-      //     vecPlaneCoefficients.at(i)->values.at(1),
-      //     vecPlaneCoefficients.at(i)->values.at(2)
-      //     );
 
       Eigen::Vector3f n2( 0,0,1);
       float angle = detected_planes.at(i).angleBetween(n2);
-      // float dotproduct = n1.dot(n2);
-      // std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
       std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG";
       std::cout << std::endl;
     }
     std::cout << "Angle between Normal 0 and x-y Normal ";
-    // Eigen::Vector3f n1(
-    //     vecPlaneCoefficients.at(0)->values.at(0),
-    //     vecPlaneCoefficients.at(0)->values.at(1),
-    //     vecPlaneCoefficients.at(0)->values.at(2)
-    //     );
-
 
     Eigen::Vector3f n2( 0,0,1);
-    // float dotproduct = n1.dot(n2);
     float angle = detected_planes.at(0).angleBetween(n2);
 
     pcl::PointXYZRGB dest;
     dest.x = detected_planes.at(0).getCoefficients()->values.at(0);
     dest.y = detected_planes.at(0).getCoefficients()->values.at(1);
     dest.z = detected_planes.at(0).getCoefficients()->values.at(2);
-    // dest = detected_planes.at(0).getCoefficientsAsPointXYZRGB();
+
     // Translate the first plane's origin to the camera origin
     translatePointCloud(original_cloud,
         -detected_planes.at(0).getCentroid()[0],
@@ -648,11 +603,6 @@ origin_cloud_projected->points.at(0).z
     // Rotate the normal of the second plane with the first rotation matrix
     Eigen::Vector3f normal_of_second_plane =
       detected_planes.at(1).getCoefficientsAsVector3f();
-    // Eigen::Vector3f normal_of_second_plane(
-    //       vecPlaneCoefficients.at(1)->values.at(0),
-    //       vecPlaneCoefficients.at(1)->values.at(1),
-    //       vecPlaneCoefficients.at(1)->values.at(2)
-    //       );
 
     Eigen::Vector3f rotated_normal_of_second_plane;
     rotated_normal_of_second_plane = 
@@ -797,7 +747,5 @@ origin_cloud_projected->points.at(0).z
   viewer.addPlane (*kinect_plane_coefficients, "kinect_plane", v2);
   viewer.spin();
 
-
-  // viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample_cloud2");
   return (0);
 }
