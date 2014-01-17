@@ -24,4 +24,15 @@ DetectedPlane::DetectedPlane()
   inliers_ = pcl::PointIndices::Ptr(new pcl::PointIndices);
 
 }
+Eigen::Vector3f DetectedPlane::getCentroidAsVector3f()
+{
+  return Eigen::Vector3f(centroid_[0], centroid_[1], centroid_[2]);
+}
 
+Eigen::Vector3f DetectedPlane::getCoefficientsAsPointXYZRGB()
+{
+    pcl::PointXYZRGB dest;
+    dest.x = coefficients_->values.at(0);
+    dest.y = coefficients_->values.at(1);
+    dest.z = coefficients_->values.at(2);
+}

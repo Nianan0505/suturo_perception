@@ -45,6 +45,9 @@ class DetectedPlane
     pcl::PointIndices::Ptr getInliers(){ return inliers_; }
 
     Eigen::Vector3f getCoefficientsAsVector3f();
+    Eigen::Vector3f getCoefficientsAsPointXYZRGB();
+    Eigen::Vector3f getCentroidAsVector3f();
+    Eigen::Vector3f getCentroidAsPointXYZ(); // TODO implement and use!
 
   private:
     // Every plane in 3d can be described with 4 variables

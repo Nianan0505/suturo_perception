@@ -42,12 +42,12 @@ void printDuration(boost::posix_time::ptime s, boost::posix_time::ptime e, std::
     std::cout << ((boost::format("Time for %s: %s ms") % text % diff).str()) << std::endl;
 }
 
-pcl::PointXYZ getPointXYZFromVector3f(Eigen::Vector3f &vec)
+pcl::PointXYZ getPointXYZFromVector3f(Eigen::Vector3f vec)
 {
   return pcl::PointXYZ( vec[0], vec[1],vec[2]);
 }
 
-pcl::PointXYZ getPointXYZFromVector4f(Eigen::Vector4f &vec)
+pcl::PointXYZ getPointXYZFromVector4f(Eigen::Vector4f vec)
 {
   return pcl::PointXYZ( vec[0], vec[1],vec[2]);
 }
@@ -329,35 +329,27 @@ main (int argc, char** argv)
   // Copy the original cloud to input cloud, which can be modified later during plane extraction
   pcl::copyPointCloud<pcl::PointXYZRGB, pcl::PointXYZRGB>(*original_cloud, *input_cloud);
 
-  // Estimate normals on the original file
-  /*
-  pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
-  ne.setInputCloud (input_cloud);
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
-  ne.setSearchMethod (tree);
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals1 (new pcl::PointCloud<pcl::Normal>);
-  ne.setRadiusSearch (0.05);
-  ne.compute (*cloud_normals1);
-  */
-
-
   // Fit planes with RANSAC
   // and store their points and coefficients
-  std::vector<pcl::ModelCoefficients::Ptr> vecPlaneCoefficients;
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> vecPlanePoints;
-  std::vector<Eigen::Vector4f> vecPlaneCentroids;
-  std::vector<Eigen::Vector3f> vecPlaneNormOrigin;
+  // std::vector<pcl::ModelCoefficients::Ptr> vecPlaneCoefficients;
+  // std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> vecPlanePoints;
+  // std::vector<Eigen::Vector4f> vecPlaneCentroids;
+  // std::vector<Eigen::Vector3f> vecPlaneNormOrigin;
+
+  std::vector<DetectedPlane> detected_planes;
   // Running index for the plane vectors
   int planeIdx = 0;
 
   // For each Extraction
   for (int i = 0; i < 2; i++) // Hack, extract two planes
   {
-    vecPlanePoints.push_back(pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>() ));
-    vecPlaneCoefficients.push_back(pcl::ModelCoefficients::Ptr (new pcl::ModelCoefficients));
+    DetectedPlane dp;
+    detected_planes.push_back(dp); // TODO boost pointer
+    // vecPlanePoints.push_back(pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>() ));
+    // vecPlaneCoefficients.push_back(pcl::ModelCoefficients::Ptr (new pcl::ModelCoefficients));
 
-    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-    pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+    // pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+    // pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
     // Create the segmentation object
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
     // Optional
@@ -369,55 +361,56 @@ main (int argc, char** argv)
     seg.setDistanceThreshold (0.005); // Tolerance is 0.5 cm
 
     seg.setInputCloud (input_cloud);
-    // seg.segment (*inliers, *coefficients);
-    seg.segment (*inliers, *vecPlaneCoefficients.at(planeIdx));
-    // std::cout << "ModelCoefficients: ";
-    // for (int i = 0; i < vecPlaneCoefficients.at(planeIdx)->values.size(); i++) {
-    //   std::cout << vecPlaneCoefficients.at(planeIdx)->values.at(i) << ", ";
-    // }
-    // std::cout << std::endl;
+    // seg.segment (*inliers, *vecPlaneCoefficients.at(planeIdx));
+    seg.segment (*detected_planes.at(planeIdx).getInliers(),
+        *detected_planes.at(planeIdx).getCoefficients());
+
     // Create the filtering object
     pcl::ExtractIndices<pcl::PointXYZRGB> extract;
     // Extract the inliers
     extract.setInputCloud (input_cloud);
-    extract.setIndices (inliers);
+    extract.setIndices (detected_planes.at(planeIdx).getInliers());
     extract.setNegative (false);
-    extract.filter (*vecPlanePoints.at(planeIdx));
+    extract.filter (*detected_planes.at(planeIdx).getPoints());
 
     // Create the filtering object
     extract.setNegative (true);
     extract.filter (*input_cloud);
-    // cloud_filtered.swap (cloud_f);
 
     // Calculate the centroid of each object
     Eigen::Vector4f centroid;
-    computeCentroid(vecPlanePoints.at(planeIdx), centroid);
-    vecPlaneCentroids.push_back(centroid);
+    computeCentroid(detected_planes.at(planeIdx).getPoints(), centroid);
+    detected_planes.at(planeIdx).setCentroid(centroid);
+    // vecPlaneCentroids.push_back(centroid);
 
     // std::cout << "Centroid: " << centroid(0) << " " << centroid(1) << " " <<  centroid(2) << std::endl;
     planeIdx ++ ;
   }
   
-  for (int i = 0; i < vecPlanePoints.size(); i++)
+  for (int i = 0; i < detected_planes.size(); i++)
   {
-    for (int j = 0; j < vecPlanePoints.size(); j++)
+    for (int j = 0; j < detected_planes.size(); j++)
     {
       if(i==j) continue;
       std::cout << "Angle between Normal " << i << " and Normal " << j;
-      Eigen::Vector3f v1(
-          vecPlaneCoefficients.at(i)->values.at(0),
-          vecPlaneCoefficients.at(i)->values.at(1),
-          vecPlaneCoefficients.at(i)->values.at(2)
-      );
+
+      // Eigen::Vector3f v1(
+      //     vecPlaneCoefficients.at(i)->values.at(0),
+      //     vecPlaneCoefficients.at(i)->values.at(1),
+      //     vecPlaneCoefficients.at(i)->values.at(2)
+      // );
 
 
-      Eigen::Vector3f v2(
-          vecPlaneCoefficients.at(j)->values.at(0),
-          vecPlaneCoefficients.at(j)->values.at(1),
-          vecPlaneCoefficients.at(j)->values.at(2)
-      );
+      // Eigen::Vector3f v2(
+      //     vecPlaneCoefficients.at(j)->values.at(0),
+      //     vecPlaneCoefficients.at(j)->values.at(1),
+      //     vecPlaneCoefficients.at(j)->values.at(2)
+      // );
 
-      float dotproduct = v1.dot(v2);
+      // float dotproduct = v1.dot(v2);
+      float dotproduct = detected_planes.at(i).angleBetween(
+          detected_planes.at(i).getCoefficientsAsVector3f());
+
       std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
       std::cout << std::endl;
 
@@ -476,24 +469,24 @@ main (int argc, char** argv)
   viewer.addCoordinateSystem(0.5,v3);
 
   // For each segmented plane
-  for (int i = 0; i < vecPlanePoints.size(); i++) 
+  for (int i = 0; i < detected_planes.size(); i++) 
   {
     // Select a color from the color_sequence vector for the discovered plane
     int color_idx = i % 3;
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> single_color (vecPlanePoints.at(i), color_sequence.at(color_idx).at(0), color_sequence.at(color_idx).at(1), color_sequence.at(color_idx).at(2));
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> single_color (detected_planes.at(i).getPoints(), color_sequence.at(color_idx).at(0), color_sequence.at(color_idx).at(1), color_sequence.at(color_idx).at(2));
 
     std::stringstream cloud_name("plane_cloud_");
     cloud_name << i;
     std::stringstream plane_name("model_plane_");
     plane_name << i;
-    viewer.addPointCloud<pcl::PointXYZRGB> (vecPlanePoints.at(i), single_color, cloud_name.str(), v2);
-    viewer.addPlane (*vecPlaneCoefficients.at(i), plane_name.str(), v2);
+    viewer.addPointCloud<pcl::PointXYZRGB> (detected_planes.at(i).getPoints(), single_color, cloud_name.str(), v2);
+    viewer.addPlane (*detected_planes.at(i).getCoefficients(), plane_name.str(), v2);
 
     // Display the centroid of the planes
     pcl::PointXYZRGB c;
-    c.x = vecPlaneCentroids.at(i)(0);
-    c.y = vecPlaneCentroids.at(i)(1);
-    c.z = vecPlaneCentroids.at(i)(2);
+    c.x = detected_planes.at(i).getCentroid()(0);
+    c.y = detected_planes.at(i).getCentroid()(1);
+    c.z = detected_planes.at(i).getCentroid()(2);
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr centroid_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     centroid_cloud->push_back(c);
@@ -516,12 +509,9 @@ main (int argc, char** argv)
 
       // Get the normal from the plane
       pcl::PointXYZRGB dest;
-      dest.x = vecPlaneCoefficients.at(i)->values.at(0);
-      dest.y = vecPlaneCoefficients.at(i)->values.at(1);
-      dest.z = vecPlaneCoefficients.at(i)->values.at(2);
-
-
-      // 
+      dest.x = detected_planes.at(i).getCoefficients()->values.at(0);
+      dest.y = detected_planes.at(i).getCoefficients()->values.at(1);
+      dest.z = detected_planes.at(i).getCoefficients()->values.at(2);
 
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr origin_cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
       origin_cloud->push_back(origin);
@@ -530,7 +520,7 @@ main (int argc, char** argv)
       pcl::ProjectInliers<pcl::PointXYZRGB> proj;
       proj.setModelType (pcl::SACMODEL_PLANE);
       proj.setInputCloud (origin_cloud);
-      proj.setModelCoefficients (vecPlaneCoefficients.at(i));
+      proj.setModelCoefficients (detected_planes.at(i).getCoefficients());
       proj.filter (*origin_cloud_projected);
       if(origin_cloud_projected->points.size()!=1)
       {
@@ -546,7 +536,8 @@ origin_cloud_projected->points.at(0).x,
 origin_cloud_projected->points.at(0).y,
 origin_cloud_projected->points.at(0).z
           );
-      vecPlaneNormOrigin.push_back(norm_origin);
+      detected_planes.at(i).setNormOrigin(norm_origin);
+      // vecPlaneNormOrigin.push_back(norm_origin);
       /*
       // Get the diameter of the plane
       pcl::PointXYZRGB min_pt, max_pt;
@@ -563,34 +554,36 @@ origin_cloud_projected->points.at(0).z
   //
   // Transform the destination of the norm vector, to let it point in a 90° Angle from the
   // centroid to its destination
-  Eigen::Vector3f newDest = moveVectorBySubtraction( getVector3fFromModelCoefficients(vecPlaneCoefficients.at(0)),
+  Eigen::Vector3f newDest = moveVectorBySubtraction( 
+       detected_planes.at(0).getCoefficientsAsVector3f(),
        // The Centroid of the plane cloud
-       Eigen::Vector3f(vecPlaneCentroids.at(0)[0], vecPlaneCentroids.at(0)[1], vecPlaneCentroids.at(0)[2]),
+       detected_planes.at(0).getCentroidAsVector3f(),
        // And the center of the norm origin
-       vecPlaneNormOrigin.at(0)
+       detected_planes.at(0).getNormOrigin()
       );
   // Translate the norm vector of the second plane to the centroid of the first plane
   viewer.addLine(
-      getPointXYZFromVector4f(vecPlaneCentroids.at(0)),
+      getPointXYZFromVector4f(detected_planes.at(0).getCentroid()),
       getPointXYZFromVector3f(newDest),
         0, 255, 0, "f1",v2);
 
-  Eigen::Vector3f secondDest = moveVectorBySubtraction( getVector3fFromModelCoefficients(vecPlaneCoefficients.at(1)),
+  Eigen::Vector3f secondDest = moveVectorBySubtraction( 
+       detected_planes.at(1).getCoefficientsAsVector3f(),
        // The Centroid of the plane cloud
-       Eigen::Vector3f(vecPlaneCentroids.at(0)[0], vecPlaneCentroids.at(0)[1], vecPlaneCentroids.at(0)[2]),
+       detected_planes.at(0).getCentroidAsVector3f(),
        // And the center of the norm origin
-       vecPlaneNormOrigin.at(1)
+       detected_planes.at(1).getNormOrigin()
       );
   // Translate the norm vector of the second plane to the centroid of the first plane
   viewer.addLine(
-      getPointXYZFromVector4f(vecPlaneCentroids.at(0)),
+      getPointXYZFromVector4f(detected_planes.at(0).getCentroid()),
       getPointXYZFromVector3f(secondDest),
         255, 0, 0, "f2",v2);
 
   // Create the third axis by using the cross product
   Eigen::Vector3f thirdDest = newDest.cross(secondDest);
   viewer.addLine(
-      getPointXYZFromVector4f(vecPlaneCentroids.at(0)),
+      getPointXYZFromVector4f(detected_planes.at(0).getCentroid()),
       getPointXYZFromVector3f(thirdDest),
         0, 0, 255, "f3",v2);
 
@@ -603,36 +596,45 @@ origin_cloud_projected->points.at(0).z
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr rotated_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   // Align the front face with the cameras front plane
   {
-    for (int i = 0; i < vecPlaneCoefficients.size(); i++) {
+    for (int i = 0; i < detected_planes.size(); i++) 
+    {
       std::cout << "Angle between Normal " << i << " and x-y Normal ";
-      Eigen::Vector3f n1(
-          vecPlaneCoefficients.at(i)->values.at(0),
-          vecPlaneCoefficients.at(i)->values.at(1),
-          vecPlaneCoefficients.at(i)->values.at(2)
-          );
+      // Eigen::Vector3f n1(
+      //     vecPlaneCoefficients.at(i)->values.at(0),
+      //     vecPlaneCoefficients.at(i)->values.at(1),
+      //     vecPlaneCoefficients.at(i)->values.at(2)
+      //     );
 
       Eigen::Vector3f n2( 0,0,1);
-      float dotproduct = n1.dot(n2);
-      std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
+      float angle = detected_planes.at(i).angleBetween(n2);
+      // float dotproduct = n1.dot(n2);
+      // std::cout << ": " << acos(dotproduct) << " RAD, " << ((acos(dotproduct) * 180) / M_PI) << " DEG";
+      std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG";
       std::cout << std::endl;
     }
-    // std::cout << "Angle between Normal 0 and x-y Normal ";
-    Eigen::Vector3f n1(
-        vecPlaneCoefficients.at(0)->values.at(0),
-        vecPlaneCoefficients.at(0)->values.at(1),
-        vecPlaneCoefficients.at(0)->values.at(2)
-        );
+    std::cout << "Angle between Normal 0 and x-y Normal ";
+    // Eigen::Vector3f n1(
+    //     vecPlaneCoefficients.at(0)->values.at(0),
+    //     vecPlaneCoefficients.at(0)->values.at(1),
+    //     vecPlaneCoefficients.at(0)->values.at(2)
+    //     );
 
 
     Eigen::Vector3f n2( 0,0,1);
-    float dotproduct = n1.dot(n2);
+    // float dotproduct = n1.dot(n2);
+    float angle = detected_planes.at(0).angleBetween(n2);
 
     pcl::PointXYZRGB dest;
-    dest.x = vecPlaneCoefficients.at(0)->values.at(0);
-    dest.y = vecPlaneCoefficients.at(0)->values.at(1);
-    dest.z = vecPlaneCoefficients.at(0)->values.at(2);
+    dest.x = detected_planes.at(0).getCoefficients()->values.at(0);
+    dest.y = detected_planes.at(0).getCoefficients()->values.at(1);
+    dest.z = detected_planes.at(0).getCoefficients()->values.at(2);
+    // dest = detected_planes.at(0).getCoefficientsAsPointXYZRGB();
     // Translate the first plane's origin to the camera origin
-    translatePointCloud(original_cloud, -vecPlaneCentroids.at(0)[0],  -vecPlaneCentroids.at(0)[1], -vecPlaneCentroids.at(0)[2], rotated_cloud);
+    translatePointCloud(original_cloud,
+        -detected_planes.at(0).getCentroid()[0],
+        -detected_planes.at(0).getCentroid()[1],
+        -detected_planes.at(0).getCentroid()[2],
+        rotated_cloud);
 
 
     // M
@@ -665,11 +667,13 @@ origin_cloud_projected->points.at(0).z
     viewer.addPointCloud<pcl::PointXYZRGB> (rotated_cloud, rgb_r, "rotated_cloud", v2);
 
     // Rotate the normal of the second plane with the first rotation matrix
-    Eigen::Vector3f normal_of_second_plane(
-          vecPlaneCoefficients.at(1)->values.at(0),
-          vecPlaneCoefficients.at(1)->values.at(1),
-          vecPlaneCoefficients.at(1)->values.at(2)
-          );
+    Eigen::Vector3f normal_of_second_plane =
+      detected_planes.at(1).getCoefficientsAsVector3f();
+    // Eigen::Vector3f normal_of_second_plane(
+    //       vecPlaneCoefficients.at(1)->values.at(0),
+    //       vecPlaneCoefficients.at(1)->values.at(1),
+    //       vecPlaneCoefficients.at(1)->values.at(2)
+    //       );
 
     Eigen::Vector3f rotated_normal_of_second_plane;
     rotated_normal_of_second_plane = 
@@ -701,7 +705,7 @@ origin_cloud_projected->points.at(0).z
     
       // Rotate the original centroid
       Eigen::Vector4f offset_between_centroids =
-          vecPlaneCentroids.at(1) - vecPlaneCentroids.at(0);
+          detected_planes.at(1).getCentroid() - detected_planes.at(0).getCentroid();
       Eigen::Vector3f rotated_offset =
         removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
    
@@ -760,7 +764,7 @@ origin_cloud_projected->points.at(0).z
     if(second_rotation_performed)
     {
       Eigen::Vector4f offset_between_centroids =
-        vecPlaneCentroids.at(1) - vecPlaneCentroids.at(0);
+        detected_planes.at(1).getCentroid() - detected_planes.at(0).getCentroid();
       Eigen::Vector3f rotated_offset =
         removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
       translatePointCloud(bounding_box_on_object, 
@@ -776,7 +780,11 @@ origin_cloud_projected->points.at(0).z
     pcl::transformPointCloud (*bounding_box_on_object, *bounding_box_on_object, rotationBox.transpose());   
 
     // And translate back to the original position
-    translatePointCloud(bounding_box_on_object, vecPlaneCentroids.at(0)[0],  vecPlaneCentroids.at(0)[1], vecPlaneCentroids.at(0)[2], bounding_box_on_object);
+    translatePointCloud(bounding_box_on_object, 
+        detected_planes.at(0).getCentroid()[0],  
+        detected_planes.at(0).getCentroid()[1], 
+        detected_planes.at(0).getCentroid()[2], 
+        bounding_box_on_object);
 
     viewer.addPointCloud<pcl::PointXYZRGB> (bounding_box_on_object, white_pts, "bb_real", v3);
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bb_real");
