@@ -101,7 +101,7 @@ TEST(svm_classification_test, classification_2_test)
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
 
   std::stringstream boxpath;
-  boxpath << "aldi_kaffee_near.pcd";
+  boxpath << "pringles_laying.pcd";
 
   if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (boxpath.str().c_str(), *cloud) == -1) //* load the file
   {
@@ -111,23 +111,23 @@ TEST(svm_classification_test, classification_2_test)
     FAIL() << error_msg.str().c_str();
   }
 
-  printf("loaded pointcloud aldi_kaffee_near.pcd\n");
+  printf("loaded pointcloud pringles_laying.pcd\n");
 
-  pcl::VFHSignature308 aldi_kaffee_near_sig = vfhe.estimateCloud(cloud);
+  pcl::VFHSignature308 pringles_laying_sig = vfhe.estimateCloud(cloud);
 
   printf("estimated vfh of cloud\n");
 
   std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> train_points;
 
-  suturo_perception_ml_classifiers_msgs::ClassDataPoint *aldi_kaffee_near = new suturo_perception_ml_classifiers_msgs::ClassDataPoint();
+  suturo_perception_ml_classifiers_msgs::ClassDataPoint *pringles_laying = new suturo_perception_ml_classifiers_msgs::ClassDataPoint();
   for (int i = 0; i < 308; i++)
   {
-    printf("%f ", aldi_kaffee_near_sig.histogram[i]);
-    aldi_kaffee_near->point.insert(aldi_kaffee_near->point.end(), aldi_kaffee_near_sig.histogram[i]);
+    printf("%f ", pringles_laying_sig.histogram[i]);
+    pringles_laying->point.insert(pringles_laying->point.end(), pringles_laying_sig.histogram[i]);
   }
   printf("\n");
-  aldi_kaffee_near->target_class = "aldi_kaffee_near";
-  train_points.insert(train_points.end(), *aldi_kaffee_near);
+  pringles_laying->target_class = "pringles_laying";
+  train_points.insert(train_points.end(), *pringles_laying);
 
   if (!svmc.createClassifier("testvfh"))
     ASSERT_TRUE(false);
@@ -135,8 +135,8 @@ TEST(svm_classification_test, classification_2_test)
   if (!svmc.addData("testvfh", train_points))
     ASSERT_TRUE(false);
 
-  //if (!svmc.trainClassifier("testvfh"))
-  //  ASSERT_TRUE(false);
+  if (!svmc.trainClassifier("testvfh"))
+    ASSERT_TRUE(false);
 
   //std::vector<std::string> classification = svmc.classifyData("testvfh", test_points);
 
