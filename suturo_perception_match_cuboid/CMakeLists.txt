@@ -110,6 +110,7 @@ include_directories(
 add_executable(match_cuboid 
   src/match_cuboid.cpp
   src/detected_plane.cpp
+  src/cuboid_matcher.cpp
   )
 
 ## Add cmake target dependencies of the executable/library
