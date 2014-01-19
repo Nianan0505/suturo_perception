@@ -83,17 +83,35 @@ class CuboidMatcher
     Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
         Eigen::Vector3f base_normal,
         Eigen::Vector3f normal_to_rotate, bool store_transformation);
+
+    Eigen::Matrix< float, 3, 3 > removeTranslationVectorFromMatrix(Eigen::Matrix<float,4,4> m);
+    void updateTransformedNormals(Eigen::Matrix<float,4,4> transformation);
+    // Cut off the forth component
+    Eigen::Vector3f getVector3fFromVector4f(Eigen::Vector4f vec);
+
+    void computeCuboidCornersWithMinMax3D(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points);
+
+    Cuboid computeCuboidFromBorderPoints(
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points);
+
     bool debug;
     // Try to find planes on the given pointcloud
     void segmentPlanes();
 
     bool save_intermediate_results_;
+
     // The input cloud.
-    // This pointcloud will be modified during execution!
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_;
 
     // TODO use this
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> intermediate_clouds_;
+
+    // A vector of all normal vectors from every detected plane
+    // During the execution, the object will be rotated and therefore
+    // the orientation of the normal vectors should
+    // change too
+    // The transformed normal vectors will be saved in this attribute.
+    std::vector<Eigen::Vector3f> transformed_normals_;
 
     std::vector<DetectedPlane> detected_planes_;
     // A list with all used transformation

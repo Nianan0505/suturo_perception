@@ -5,10 +5,15 @@
 class Cuboid
 {
   public:
+    Cuboid()
+    {
+      corner_points = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
+    }
     float length1;
     float length2;
     float length3;
     Eigen::Vector3f center;
     float volume;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points;
 };
 #endif
