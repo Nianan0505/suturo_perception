@@ -24,6 +24,7 @@
 #include <point_cloud_operations.h>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <suturo_perception_match_cuboid/detected_plane.h>
+#include <suturo_perception_match_cuboid/cuboid.h>
 
 // This class implements the main functionality of the Cuboid
 // Matching process.
@@ -41,11 +42,15 @@ class CuboidMatcher
     // Return a pointer to the detected plane list
     std::vector<DetectedPlane> *getDetectedPlanes();
     void setInputCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
+
     // Set this to true to save every transformed pointcloud
     // which will be generated during the fitting process
     // This is helpful, if you want to visualize the intermediate
     // results to understand the algorithm
     void setSaveIntermediateResults(bool b);
+
+    // Print statistics, like angle between different normals etc.
+    void setDebug(bool b);
 
     // This method method checks the angle
     // between v1 and v2.
@@ -57,14 +62,39 @@ class CuboidMatcher
     // will be returned
     static Eigen::Vector3f reduceNormAngle(Eigen::Vector3f v1, Eigen::Vector3f v2);
 
+    // Return the amount of executed transformations to fit the cuboid
+    int transformationCount();
+
+    // Execute the algorithm
+    // @param c A reference to a cuboid instance, where the fitted cuboid informations
+    //          are stored.
+    //
+    // @return false, if the algorithm could not fit a cuboid to the pointcloud
+    // this can happen, if the object hasnt atleast 2 planar surfaces which can
+    // be segmented by RANSAC.
+    // true, if the algorithm has succeded.
+    //
+    bool execute(Cuboid &c);
+
+    // TODO: Move to private, when migration is done
+    static void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid);
+
   private:
+    bool debug;
+    // Try to find planes on the given pointcloud
+    void segmentPlanes();
+
     bool save_intermediate_results_;
     // The input cloud.
     // This pointcloud will be modified during execution!
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_;
+
+    // TODO use this
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> intermediate_clouds_;
+
     std::vector<DetectedPlane> detected_planes_;
     // A list with all used transformation
     // matrices 
-    std::vector<Eigen::Matrix< float, 4, 4 > > transformations;
+    std::vector<Eigen::Matrix< float, 4, 4 > > transformations_;
 };
 #endif

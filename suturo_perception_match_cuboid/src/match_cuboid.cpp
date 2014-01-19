@@ -22,16 +22,7 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <suturo_perception_match_cuboid/detected_plane.h>
 #include <suturo_perception_match_cuboid/cuboid_matcher.h>
-
-// This rectangle will be defined by its three edge lengths
-struct Cuboid
-{
-  float length1;
-  float length2;
-  float length3;
-  Eigen::Vector3f center;
-  float volume;
-};
+#include <suturo_perception_match_cuboid/cuboid.h>
 
 #define MIN_ANGLE 5 // the minimum angle offset between to norm vectors
                     // if this threshold is not reached, no rotation will be made on this axis
@@ -78,19 +69,6 @@ Eigen::Vector3f getVector3fFromVector4f(Eigen::Vector4f vec)
       );
   return ret;
 }
-// Compute the centroid of a given cloud with a ConvexHull
-void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid)
-{
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
-
-    pcl::ConvexHull<pcl::PointXYZRGB> hull;
-    hull.setInputCloud(cloud_in);
-    hull.reconstruct (*hull_points);
-
-    // Centroid calulcation
-    pcl::compute3DCentroid (*hull_points, centroid);  
-}
 
 // The corners MUST be in the order which is defined in computeCuboidCornersWithMinMax3D!
 // Otherwise this method will not work
@@ -127,7 +105,7 @@ void drawBoundingBoxLines(pcl::visualization::PCLVisualizer &visualizer, pcl::Po
 
   // Draw the centroid of the object
   Eigen::Vector4f centroid;
-  computeCentroid(corner_points, centroid);
+  CuboidMatcher::computeCentroid(corner_points, centroid);
   visualizer.addSphere(getPointXYZFromVector4f(centroid), 0.01, "centroid_bb", viewport);
 
 }
@@ -145,7 +123,7 @@ Cuboid computeCuboidFromBorderPoints(pcl::PointCloud<pcl::PointXYZRGB>::Ptr corn
 
   c.volume = c.length1 * c.length2 * c.length3;
   Eigen::Vector4f centroid;
-  computeCentroid(corner_points, centroid);
+  CuboidMatcher::computeCentroid(corner_points, centroid);
   c.center = getVector3fFromVector4f(centroid);
   return c;
 }
@@ -366,7 +344,7 @@ main (int argc, char** argv)
 
     // Calculate the centroid of each object
     Eigen::Vector4f centroid;
-    computeCentroid(detected_planes.at(planeIdx).getPoints(), centroid);
+    CuboidMatcher::computeCentroid(detected_planes.at(planeIdx).getPoints(), centroid);
     detected_planes.at(planeIdx).setCentroid(centroid);
 
     planeIdx ++ ;
@@ -642,11 +620,11 @@ origin_cloud_projected->points.at(0).z
         removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
    
       
-      translatePointCloud(rotated_cloud, 
-          - rotated_offset[0],
-          - rotated_offset[1],
-          - rotated_offset[2],
-          rotated_cloud);
+      // translatePointCloud(rotated_cloud, 
+      //     - rotated_offset[0],
+      //     - rotated_offset[1],
+      //     - rotated_offset[2],
+      //     rotated_cloud);
           
 
       secondRotation = 
@@ -699,11 +677,11 @@ origin_cloud_projected->points.at(0).z
         detected_planes.at(1).getCentroid() - detected_planes.at(0).getCentroid();
       Eigen::Vector3f rotated_offset =
         removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
-      translatePointCloud(bounding_box_on_object, 
-          rotated_offset[0], // Translation is now NOT negative
-          rotated_offset[1],
-          rotated_offset[2],
-          bounding_box_on_object);
+      // translatePointCloud(bounding_box_on_object, 
+      //     rotated_offset[0], // Translation is now NOT negative
+      //     rotated_offset[1],
+      //     rotated_offset[2],
+      //     bounding_box_on_object);
     }
     // Translated to first centroid
     
