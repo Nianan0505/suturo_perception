@@ -80,6 +80,9 @@ class CuboidMatcher
     static void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid);
 
   private:
+    Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
+        Eigen::Vector3f base_normal,
+        Eigen::Vector3f normal_to_rotate, bool store_transformation);
     bool debug;
     // Try to find planes on the given pointcloud
     void segmentPlanes();

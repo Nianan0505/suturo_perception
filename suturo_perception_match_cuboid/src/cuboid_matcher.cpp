@@ -119,7 +119,71 @@ void CuboidMatcher::computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
   pcl::compute3DCentroid (*hull_points, centroid);  
 }
 
-void CuboidMatcher::execute()
+// Rotate the Vector 'normal_to_rotate' into 'base_normal'
+// Returns a rotation matrix which can be used for the transformation
+// The matrix also includes an empty translation vector
+// By passing store_transformation=true, the transformation
+// will be saved in the class attribute 'transformations'
+Eigen::Matrix< float, 4, 4 > CuboidMatcher::rotateAroundCrossProductOfNormals(
+    Eigen::Vector3f base_normal,
+    Eigen::Vector3f normal_to_rotate, bool store_transformation=true)
+{
+    // M
+    // Eigen::Vector3f plane_normal(dest.x, dest.y, dest.z);
+
+    // Compute the necessary rotation to align a face of the object with the camera's
+    // imaginary image plane
+    // N
+    // Eigen::Vector3f camera_normal;
+    // camera_normal(0)=0;
+    // camera_normal(1)=0;
+    // camera_normal(2)=1;
+    // Eigen::Vector3f camera_normal_normalized = camera_normal.normalized();
+    float costheta = normal_to_rotate.dot(base_normal) / (normal_to_rotate.norm() * base_normal.norm() );
+
+    Eigen::Vector3f axis;
+    Eigen::Vector3f firstAxis = normal_to_rotate.cross(base_normal);
+    // axis = plane_normal.cross(camera_normal) / (plane_normal.cross(camera_normal)).normalize();
+    firstAxis.normalize();
+    axis=firstAxis;
+    float c = costheta;
+    std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
+    float s = sqrt(1-c*c);
+    float CO = 1-c;
+
+    float x = axis(0);
+    float y = axis(1);
+    float z = axis(2);
+    
+    Eigen::Matrix< float, 4, 4 > rotationBox;
+    rotationBox(0,0) = x*x*CO+c;
+    rotationBox(1,0) = y*x*CO+z*s;
+    rotationBox(2,0) = z*x*CO-y*s;
+
+    rotationBox(0,1) = x*y*CO-z*s;
+    rotationBox(1,1) = y*y*CO+c;
+    rotationBox(2,1) = z*y*CO+x*s;
+
+    rotationBox(0,2) = x*z*CO+y*s;
+    rotationBox(1,2) = y*z*CO-x*s;
+    rotationBox(2,2) = z*z*CO+c;
+   // Translation vector
+    rotationBox(0,3) = 0;
+    rotationBox(1,3) = 0;
+    rotationBox(2,3) = 0;
+
+    // The rest of the 4x4 matrix
+    rotationBox(3,0) = 0;
+    rotationBox(3,1) = 0;
+    rotationBox(3,2) = 0;
+    rotationBox(3,3) = 1;
+
+    transformations_.push_back(rotationBox);
+
+    return rotationBox;
+}
+
+bool CuboidMatcher::execute(Cuboid &c)
 {
   segmentPlanes();
   // rotate until two axis are aligned
