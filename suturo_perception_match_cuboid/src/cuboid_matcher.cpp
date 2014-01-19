@@ -19,7 +19,7 @@ void CuboidMatcher::setSaveIntermediateResults(bool b)
   save_intermediate_results_ = b;
 }
 
-Eigen::Vector3f reduceNormAngle(Eigen::Vector3f v1, Eigen::Vector3f v2)
+Eigen::Vector3f CuboidMatcher::reduceNormAngle(Eigen::Vector3f v1, Eigen::Vector3f v2)
 {
   float dotproduct = v1.dot(v2);
   if(acos(dotproduct)> M_PI/2)

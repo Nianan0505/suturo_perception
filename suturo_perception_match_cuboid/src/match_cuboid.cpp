@@ -21,6 +21,7 @@
 #include <point_cloud_operations.h>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <suturo_perception_match_cuboid/detected_plane.h>
+#include <suturo_perception_match_cuboid/cuboid_matcher.h>
 
 // This rectangle will be defined by its three edge lengths
 struct Cuboid
@@ -582,13 +583,15 @@ origin_cloud_projected->points.at(0).z
     camera_normal(1)=0;
     camera_normal(2)=1;
 
-    float dotproduct3 = camera_normal.dot(plane_normal);
-    if(acos(dotproduct3)> M_PI/2)
-    {
-      std::cout << "NORM IS ABOVE 90 DEG! TURN IN THE OTHER DIRECTION" << std::endl;
-      camera_normal = -camera_normal;
-      // rotated_normal_of_second_plane = - rotated_normal_of_second_plane;
-    }
+    camera_normal = CuboidMatcher::reduceNormAngle(plane_normal, camera_normal);
+
+    // float dotproduct3 = camera_normal.dot(plane_normal);
+    // if(acos(dotproduct3)> M_PI/2)
+    // {
+    //   std::cout << "NORM IS ABOVE 90 DEG! TURN IN THE OTHER DIRECTION" << std::endl;
+    //   camera_normal = -camera_normal;
+    //   // rotated_normal_of_second_plane = - rotated_normal_of_second_plane;
+    // }
 
     
     Eigen::Matrix< float, 4, 4 > rotationBox = 
