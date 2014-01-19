@@ -14,6 +14,7 @@ message_generation
 cv_bridge
 image_transport
 roscpp
+roslib
 std_msgs
 suturo_perception_2d_capabilities
 suturo_perception_2d_object_recognition_lib
@@ -22,6 +23,7 @@ suturo_perception_shape_detection
 suturo_perception_ros_utils 
 suturo_perception_utils 
 suturo_perception_vfh_estimation
+suturo_perception_svm_classification
 pcl
 pcl_ros
 )
@@ -125,7 +127,7 @@ link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 #)
 
 catkin_package(
-  CATKIN_DEPENDS cv_bridge image_transport roscpp std_msgs
+  CATKIN_DEPENDS cv_bridge image_transport roscpp roslib std_msgs
   DEPENDS opencv
 )
 ###########

@@ -9,6 +9,7 @@ message("PONTCLOUD PATH: "${POINTCLOUD_PATH_2})
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   suturo_perception_utils
   suturo_perception_lib
   suturo_perception_ml_classifiers_msgs
@@ -84,7 +85,7 @@ link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_svm_classification
-  CATKIN_DEPENDS roscpp suturo_perception_lib suturo_perception_utils suturo_perception_ml_classifiers_msgs suturo_perception_vfh_estimation
+  CATKIN_DEPENDS roscpp roslib suturo_perception_lib suturo_perception_utils suturo_perception_ml_classifiers_msgs suturo_perception_vfh_estimation
   #  DEPENDS opencv
 )
 

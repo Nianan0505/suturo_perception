@@ -31,10 +31,12 @@
 #include <sensor_msgs/Image.h>
 #include "suturo_perception_2d_capabilities/label_annotator_2d.h"
 #include "vfh_estimation.h"
+#include "svm_classification.h"
 
 using namespace suturo_perception_ros_utils;
 using namespace suturo_perception_utils;
 using namespace suturo_perception_color_analysis;
+using namespace suturo_perception_svm_classification;
 
 class SuturoPerceptionROSNode
 {
@@ -60,6 +62,7 @@ private:
   suturo_perception_lib::SuturoPerception sp;
   std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   ros::NodeHandle nh;
+  SVMClassification svm_classification;
   boost::signals2::mutex mutex;
   // ID counter for the perceived objects
   int objectID;

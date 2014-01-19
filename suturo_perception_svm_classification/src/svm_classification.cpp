@@ -7,7 +7,7 @@
 
 using namespace suturo_perception_svm_classification;
 
-SVMClassification::SVMClassification(suturo_perception_lib::PerceivedObject &obj) : Capability(obj)
+SVMClassification::SVMClassification() 
 {
   logger = suturo_perception_utils::Logger("svm_classification");
   service_wait_timeout = ros::Duration(10, 0);
@@ -116,8 +116,10 @@ SVMClassification::classifyData(std::string identifier, std::vector<suturo_perce
   
 }
 
-void
-SVMClassification::execute()
+bool
+trainVFHData()
 {
-
+  std::string package_path = ros::package::getPath("vfh_prototype");
+  ROS_INFO("package_path = %s\n", package_path.c_str());
 }
+

@@ -30,6 +30,10 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   is_edible_service_finish = nh.serviceClient<suturo_perception_msgs::PrologFinish>("json_prolog/finish");
   objectID = 0;
 
+  // VFH + SVM stuff
+  ROS_INFO("Loading VFH training data for SVM...");
+  svm_classification.trainVFHData();
+
   // Init the topic for the plane segmentation result
 	ph.advertise<sensor_msgs::PointCloud2>(TABLE_PLANE_TOPIC);
 

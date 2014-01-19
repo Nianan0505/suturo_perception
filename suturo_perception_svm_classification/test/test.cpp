@@ -60,8 +60,7 @@ TEST(svm_classification_test, classification_1_test)
   char **argv = NULL;
   ros::init(argc, argv, "classifiers_test");
 
-  suturo_perception_lib::PerceivedObject obj;
-  suturo_perception_svm_classification::SVMClassification svmc(obj);
+  suturo_perception_svm_classification::SVMClassification svmc;
 
   if (!svmc.createClassifier("testc"))
     ASSERT_TRUE(false);
@@ -93,9 +92,9 @@ TEST(svm_classification_test, classification_2_test)
   char **argv = NULL;
   ros::init(argc, argv, "classifiers_test");
 
-  suturo_perception_lib::PerceivedObject obj;
-  suturo_perception_svm_classification::SVMClassification svmc(obj);
+  suturo_perception_svm_classification::SVMClassification svmc;
 
+  suturo_perception_lib::PerceivedObject obj;
   suturo_perception_vfh_estimation::VFHEstimation vfhe(obj);
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
