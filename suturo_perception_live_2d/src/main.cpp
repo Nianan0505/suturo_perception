@@ -73,7 +73,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 
       if(res.object_recognized){
 				if(!res.label.empty()){
-					cout << "Recognized an object with the label " << res.label << endl;
+          // GMC = Good Match Count
+					cout << "Recognized an object with the label " << res.label << " GMC: " << res.good_match_count << endl;
 				}
 				else
 				{
@@ -158,7 +159,8 @@ int main(int argc, char **argv)
   om.setMinGoodMatches(min_good_matches);
 	om.readTrainImagesFromDatabase(database_file);
   om.drawBoundingBoxWithCrossings(false);
-	om.setVerboseLevel(0);
+  om.setVerboseLevel(VERBOSE_NORMAL);
+  // om.setVerboseLevel(VERBOSE_MINIMAL);
 
 	ros::NodeHandle nh;
 	//Create an ImageTransport instance, initializing it with our NodeHandle.
