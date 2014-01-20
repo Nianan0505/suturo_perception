@@ -46,6 +46,10 @@ int main(int argc, char **argv)
                   clusterSrv.response.perceivedObjs[i].c_color_average_r,
                   clusterSrv.response.perceivedObjs[i].c_color_average_g,
                   clusterSrv.response.perceivedObjs[i].c_color_average_b);
+        ROS_INFO("Average HSV color of perceived object is: h: %i  s: %f  v: %f", 
+                  clusterSrv.response.perceivedObjs[i].c_color_average_h,
+                  clusterSrv.response.perceivedObjs[i].c_color_average_s,
+                  clusterSrv.response.perceivedObjs[i].c_color_average_v);
         ROS_INFO("2D recognition label of perceived object is: %s", clusterSrv.response.perceivedObjs[i].recognition_label_2d.c_str());
         ROS_INFO("ROI of object: (origin, width, height): ( %f x %f ) , %i , %i ",
           clusterSrv.response.perceivedObjs[i].c_roi_origin.x,
