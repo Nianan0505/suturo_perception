@@ -132,6 +132,7 @@ SVMClassification::trainVFHData()
     return false;
   }
 
+  createClassifier("generalVFH");
   for (boost::filesystem::directory_iterator it (package_path); it != boost::filesystem::directory_iterator (); ++it)
   {
     if (boost::filesystem::is_directory (it->status ()))
@@ -152,6 +153,9 @@ SVMClassification::trainVFHData()
       ROS_INFO("unexpected file %s", ss.str().c_str());
     }
   }
+  ROS_INFO("training classifier generalVFH");
+  trainClassifier("generalVFH");
+  ROS_INFO("done");
 }
 
 bool
@@ -170,6 +174,7 @@ SVMClassification::loadVFHData(std::string directory)
     return false;
   }
 
+  std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> train_points;
   for (boost::filesystem::directory_iterator it (directory); it != boost::filesystem::directory_iterator (); ++it)
   {
     if (boost::filesystem::is_directory (it->status ()))
@@ -177,6 +182,7 @@ SVMClassification::loadVFHData(std::string directory)
       std::stringstream ss;
       ss << it->path ();
       ROS_INFO("Loading directory %s", ss.str().c_str());
+      std::vector<std::string> dir_split = split(ss.str(), '/');
       for (boost::filesystem::directory_iterator it2 (it->path()); it2 != boost::filesystem::directory_iterator (); ++it2)
       {
         if (boost::filesystem::is_regular_file (it2->status ()))
@@ -195,7 +201,19 @@ SVMClassification::loadVFHData(std::string directory)
           {
             cdp.point.push_back(point.points[0].histogram[i]);
           }
-          //cdp.identifier = 
+          std::stringstream idss;
+
+          std::vector<std::string> f_parts = split(f, '/');
+          idss << f_parts.at(f_parts.size()-3);
+          //boost::replace_all(f_parts.at(f_parts.size()-1), "_seg_cloud.pcd_vfh", "");
+          //idss << f_parts.at(f_parts.size()-1);
+
+          //cdp.target_class = idss.str();
+
+          cdp.target_class = dir_split.at(dir_split.size()-1);
+          ROS_INFO("generated identifier: %s", cdp.target_class.c_str());
+          train_points.push_back(cdp);
+
           // DEBUG stuff:
           /*
           std::stringstream ss3;
@@ -216,8 +234,29 @@ SVMClassification::loadVFHData(std::string directory)
     }
   }
 
+  addData("generalVFH", train_points);
+
   return true;
 }
 
+// taken from: http://stackoverflow.com/questions/236129/how-to-split-a-string-in-c
+std::vector<std::string> &
+SVMClassification::split(const std::string &s, char delim, std::vector<std::string> &elems) 
+{
+  std::stringstream ss(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) 
+  {
+    elems.push_back(item);
+  }
+  return elems;
+}
 
+std::vector<std::string> 
+SVMClassification::split(const std::string &s, char delim) 
+{
+  std::vector<std::string> elems;
+  split(s, delim, elems);
+  return elems;
+}
 

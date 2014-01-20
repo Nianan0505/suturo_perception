@@ -33,6 +33,8 @@ namespace suturo_perception_svm_classification
       ros::Duration service_wait_timeout;
 
       bool loadVFHData(std::string directory);
+      std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
+      std::vector<std::string> split(const std::string &s, char delim);
   };
 }
 #endif 
