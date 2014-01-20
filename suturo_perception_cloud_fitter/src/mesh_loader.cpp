@@ -36,7 +36,7 @@
 
 #include <iostream>
 
- namespace household_objects_database {
+namespace suturo_perception_cloud_fitter {
 
 const char *elem_names[] = { /* list of the kinds of elements in the user's object */
  	"vertex", "face"
@@ -63,7 +63,6 @@ inline void PLYModelLoader::endian_swap(void* p)
 	((*x>>8) & 0x0000FF00) |
 	(*x<<24);
 }
-
 
 int PLYModelLoader::readFromFile(const string& filename, std::vector<double> &vertices, 
 	std::vector<int> &triangles)

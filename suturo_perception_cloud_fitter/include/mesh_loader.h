@@ -41,24 +41,24 @@
 
 #include <ply.h>
 
- using namespace std;
+using namespace std;
 
- namespace household_objects_database {
+namespace suturo_perception_cloud_fitter {
 
-  typedef struct Vertex {
-    float x,y,z;
-    float nx,ny,nz;
-  void *other_props;       /* other properties */
-  } Vertex;
+typedef struct Vertex {
+  float x,y,z;
+  float nx,ny,nz;
+void *other_props;       /* other properties */
+} Vertex;
 
-  typedef struct Face {
-  unsigned char nverts;    /* number of vertex indices in list */
-  int *verts;              /* vertex index list */
-  void *other_props;       /* other properties */
-  } Face;
+typedef struct Face {
+unsigned char nverts;    /* number of vertex indices in list */
+int *verts;              /* vertex index list */
+void *other_props;       /* other properties */
+} Face;
 
-  class PLYModelLoader
-  {
+class PLYModelLoader
+{
   public:
 
 	/**
@@ -70,7 +70,7 @@
   int readFromFile(const string& filename, std::vector<double> &vertices, 
     std::vector<int> &triangles);
 
-private:
+  private:
 
 	void endian_swap(void* p);
 
