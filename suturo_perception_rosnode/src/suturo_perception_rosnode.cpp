@@ -58,7 +58,7 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   if(!recognitionDir.empty())
     object_matcher_.readTrainImagesFromDatabase(recognitionDir);
 
-  object_matcher_.setVerboseLevel(0); // TODO use constant
+  object_matcher_.setVerboseLevel(VERBOSE_MINIMAL);
   object_matcher_.setMinGoodMatches(7);
 
   numThreads = 8;
@@ -173,6 +173,35 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
   perceived_cluster_images = sp.getPerceivedClusterImages();
+
+  // If the image dimension is bigger then
+  // the dimension of the pointcloud, we have to adjust the ROI of every
+  // perceived object
+  if(sp.getOriginalRGBImage()->cols != sp.getOriginalCloud()->width
+      && sp.getOriginalRGBImage()->rows != sp.getOriginalCloud()->height)
+  {
+    // std::cout << "Image dimensions differ from PC dimensions: ";
+    // std::cout << "Image " <<  sp.getOriginalRGBImage()->cols << "x" << sp.getOriginalRGBImage()->rows;
+    // std::cout << "vs. Cloud " <<  sp.getOriginalCloud()->width << "x" << sp.getOriginalCloud()->height << std::endl;
+
+    // Adjust the ROI if the image is at 1280x1024 and the pointcloud is at 640x480
+    if(sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 1024)
+    {
+       for (int i = 0; i < perceivedObjects.size(); i++) {
+          ROI roi = perceivedObjects.at(i).get_c_roi();
+          roi.origin.x*=2;
+          roi.origin.y*=2;
+          roi.width*=2;
+          roi.height*=2;
+          perceivedObjects.at(i).set_c_roi(roi);
+       }
+    }
+    else
+    {
+      std::cerr << "UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS" << std::endl;
+    }
+
+    }
   
   // Execution pipeline
   // Each capability provides an enrichment for the
