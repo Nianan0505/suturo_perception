@@ -56,6 +56,7 @@ public:
     struct ExecutionResult
     {
     	bool object_recognized; // true if the object has been recognized
+      int good_match_count; // The amount of "good" matching keypoints
     	Mat match_image; // an Image produced by cv::drawMatches for debugging purposes
     	string label; // if an object has been recognized, this variable will
                     // hold the label of it, if it has been given in the training step
