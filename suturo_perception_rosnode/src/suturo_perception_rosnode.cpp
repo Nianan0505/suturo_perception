@@ -380,9 +380,11 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     {
       msgObj->c_vfh_estimation.push_back(it->get_c_vfhs().histogram[i]);
     }
+    msgObj->c_svm_result = svm_classification.classifyVFHSignature308(it->get_c_vfhs());
 
     // these are not set for now
     msgObj->recognition_label_3d = "";
+    
     result->push_back(*msgObj);
   }
   return result;

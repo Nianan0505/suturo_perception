@@ -26,6 +26,7 @@ namespace suturo_perception_svm_classification
 
       // vfh estimation related methods
       bool trainVFHData();
+      std::string classifyVFHSignature308(pcl::VFHSignature308 sig);
 
     private:
       suturo_perception_utils::Logger logger;

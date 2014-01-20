@@ -64,6 +64,7 @@ int main(int argc, char **argv)
           vfh_ss << " ";
         }
         ROS_INFO("VFH Estimation: %s ", vfh_ss.str().c_str());
+        ROS_INFO("SVM Result: %s ", clusterSrv.response.perceivedObjs[i].c_svm_result.c_str());
       }
       ROS_INFO_STREAM("------------------------------------------------------------");
     }

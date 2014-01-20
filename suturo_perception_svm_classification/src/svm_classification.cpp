@@ -27,7 +27,8 @@ SVMClassification::createClassifier(std::string identifier)
   ros::ServiceClient create_classifier = n.serviceClient<suturo_perception_ml_classifiers_msgs::CreateClassifier>("ml_classifiers/create_classifier", true);
   suturo_perception_ml_classifiers_msgs::CreateClassifier cc_srv;
   cc_srv.request.identifier = identifier;
-  cc_srv.request.class_type = "ml_classifiers/SVMClassifier";
+  //cc_srv.request.class_type = "ml_classifiers/SVMClassifier";
+  cc_srv.request.class_type = "ml_classifiers/NearestNeighborClassifier";
   if (create_classifier.call(cc_srv))
   {
     logger.logInfo("call to create_classifier successful!");
@@ -237,6 +238,20 @@ SVMClassification::loadVFHData(std::string directory)
   addData("generalVFH", train_points);
 
   return true;
+}
+
+std::string
+SVMClassification::classifyVFHSignature308(pcl::VFHSignature308 sig)
+{
+  suturo_perception_ml_classifiers_msgs::ClassDataPoint cdp;
+  for (int i = 0; i < 308; i++)
+  {
+    cdp.point.push_back(sig.histogram[i]);
+  }
+  std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> arr;
+  arr.push_back(cdp);
+  std::vector<std::string> res = classifyData("generalVFH", arr);
+  return res.at(0);
 }
 
 // taken from: http://stackoverflow.com/questions/236129/how-to-split-a-string-in-c
