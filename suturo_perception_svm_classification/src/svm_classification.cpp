@@ -5,6 +5,9 @@
 #include "suturo_perception_ml_classifiers_msgs/TrainClassifier.h"
 #include "suturo_perception_ml_classifiers_msgs/ClassifyData.h"
 
+#include <boost/filesystem.hpp>
+#include <pcl/io/pcd_io.h>
+
 using namespace suturo_perception_svm_classification;
 
 SVMClassification::SVMClassification() 
@@ -117,9 +120,104 @@ SVMClassification::classifyData(std::string identifier, std::vector<suturo_perce
 }
 
 bool
-trainVFHData()
+SVMClassification::trainVFHData()
 {
-  std::string package_path = ros::package::getPath("vfh_prototype");
-  ROS_INFO("package_path = %s\n", package_path.c_str());
+  std::string package_path = ros::package::getPath("suturo_perception_svm_classification");
+  ROS_INFO("svm classification path containing vfh training data = %s\n", package_path.c_str());
+  package_path.append("/vfh_data");
+
+  if (!boost::filesystem::exists (package_path) && !boost::filesystem::is_directory (package_path))
+  {
+    ROS_ERROR("can't find vfh training data path (doesn't exist or isn't a directory)");
+    return false;
+  }
+
+  for (boost::filesystem::directory_iterator it (package_path); it != boost::filesystem::directory_iterator (); ++it)
+  {
+    if (boost::filesystem::is_directory (it->status ()))
+    {
+      std::stringstream ss;
+      ss << it->path().string();
+      ROS_INFO("Loading directory %s", ss.str().c_str());
+      if (!loadVFHData(ss.str()))
+      {
+        ROS_ERROR("Failed to load directory %s", ss.str().c_str());
+        return false;
+      }
+    }
+    if (boost::filesystem::is_regular_file (it->status ()))
+    {
+      std::stringstream ss;
+      ss << it->path ();
+      ROS_INFO("unexpected file %s", ss.str().c_str());
+    }
+  }
 }
+
+bool
+SVMClassification::loadVFHData(std::string directory)
+{
+  boost::replace_all(directory, "\"", "");
+  if (!boost::filesystem::exists (boost::filesystem::status(directory)))
+  {
+    ROS_ERROR("can't find vfh training data path (doesn't exist) (sub) %s", directory.c_str());
+    return false;
+  }
+
+  if (!boost::filesystem::is_directory (directory))
+  {
+    ROS_ERROR("can't find vfh training data path (isn't a directory) (sub) %s", directory.c_str());
+    return false;
+  }
+
+  for (boost::filesystem::directory_iterator it (directory); it != boost::filesystem::directory_iterator (); ++it)
+  {
+    if (boost::filesystem::is_directory (it->status ()))
+    {
+      std::stringstream ss;
+      ss << it->path ();
+      ROS_INFO("Loading directory %s", ss.str().c_str());
+      for (boost::filesystem::directory_iterator it2 (it->path()); it2 != boost::filesystem::directory_iterator (); ++it2)
+      {
+        if (boost::filesystem::is_regular_file (it2->status ()))
+        {
+          std::stringstream ss2;
+          ss2 << it2->path ();
+          ROS_INFO("Loading file %s", ss2.str().c_str());
+          std::string f = ss2.str();
+          boost::replace_all(f, "\"", "");
+          
+          pcl::PointCloud<pcl::VFHSignature308> point;
+          pcl::io::loadPCDFile(f, point);
+
+          suturo_perception_ml_classifiers_msgs::ClassDataPoint cdp;
+          for (int i = 0; i < 308; i++)
+          {
+            cdp.point.push_back(point.points[0].histogram[i]);
+          }
+          //cdp.identifier = 
+          // DEBUG stuff:
+          /*
+          std::stringstream ss3;
+          for (int i = 0; i < 308; i++)
+          {
+            ss3 << point.points[0].histogram[i];
+          }
+          ROS_INFO("vfh descriptor: %s", ss3.str().c_str());
+          */
+        }
+      }
+    }
+    if (boost::filesystem::is_regular_file (it->status ()))
+    {
+      std::stringstream ss;
+      ss << it->path ();
+      ROS_INFO("unexpected file %s", ss.str().c_str());
+    }
+  }
+
+  return true;
+}
+
+
 
