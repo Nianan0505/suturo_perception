@@ -232,6 +232,19 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
     return result;
   }
 
+  /*
+   * To recognize an object, proceed with the following steps:
+   *  - Match all training images against the scene
+   *  - Store the Vector with the Correspondences between a training
+   *    image and the scene in a list
+   *  - Evaluate afterwards, which training images has the most correspondences with the scene
+   *  - Return this object as the best match
+   */
+
+  // true, if objectRecognized() was true on the training_image at index i
+  std::vector<bool> object_recognized;
+  std::vector<std::vector< DMatch > > good_matches_for_train_image;
+
   // Check these descriptors against all stored training images
   for(int i = 0; i < training_images_.size(); i++)
   {
@@ -249,6 +262,18 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
     bool return_value = false;
 
     // Mat for the computed homography, if the object has been found
+    Mat Hom;
+
+    if(objectRecognized(good_matches, ti.keypoints, keypoints_scene, Hom))
+    {
+      object_recognized.push_back(true);
+    }
+    else
+    {
+      object_recognized.push_back(false);
+    }
+    good_matches_for_train_image.push_back(good_matches);
+
     Mat H;
     if(objectRecognized(good_matches, ti.keypoints, keypoints_scene, H))
     {
@@ -290,6 +315,34 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
           cout << "Object recognized:[ ]"<<endl;
     }
   }
+
+  int max_match_id = 0;
+  int max_match_count = 0;
+  bool one_image_matched = false;
+
+  // TODO get the best result
+  for (int i = 0; i < training_images_.size(); i++) {
+      // Could the object at index i be recognized?
+      if( object_recognized.at(i) )
+      {
+        if( good_matches_for_train_image.at(i).size() >= max_match_count )
+        {
+          max_match_count = good_matches_for_train_image.at(i).size();
+          max_match_id = i;
+          one_image_matched = true;
+        }
+      }
+  }
+
+  // Return the results if atleast one image has matched the criteria
+  // Return the one with the most matches
+  /*
+  if(one_image_matched)
+  {
+
+  }
+  */
+
 
   // No match has been found? return false with an empty image
   // and show the scene without any matches
