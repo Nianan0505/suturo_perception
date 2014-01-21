@@ -282,6 +282,9 @@ SVMClassification::loadVFHData(std::string directory)
 std::string
 SVMClassification::classifyVFHSignature308(pcl::VFHSignature308 sig)
 {
+  std::string ret;
+
+  // general
   suturo_perception_ml_classifiers_msgs::ClassDataPoint cdp;
   for (int i = 0; i < 308; i++)
   {
@@ -290,7 +293,14 @@ SVMClassification::classifyVFHSignature308(pcl::VFHSignature308 sig)
   std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> arr;
   arr.push_back(cdp);
   std::vector<std::string> res = classifyData("general", arr);
-  return res.at(0);
+  ret = res.at(0);
+
+  // pose
+  std::vector<std::string> res2 = classifyData(res.at(0), arr);
+  ret.append("/");
+  ret.append(res2.at(0));
+
+  return ret;
 }
 
 // taken from: http://stackoverflow.com/questions/236129/how-to-split-a-string-in-c
