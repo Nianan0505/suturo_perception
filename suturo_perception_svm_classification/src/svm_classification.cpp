@@ -6,6 +6,7 @@
 #include "suturo_perception_ml_classifiers_msgs/ClassifyData.h"
 
 #include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
 #include <pcl/io/pcd_io.h>
 
 using namespace suturo_perception_svm_classification;
@@ -282,8 +283,6 @@ SVMClassification::loadVFHData(std::string directory)
 std::string
 SVMClassification::classifyVFHSignature308(pcl::VFHSignature308 sig)
 {
-  std::string ret;
-
   // general
   suturo_perception_ml_classifiers_msgs::ClassDataPoint cdp;
   for (int i = 0; i < 308; i++)
@@ -293,14 +292,32 @@ SVMClassification::classifyVFHSignature308(pcl::VFHSignature308 sig)
   std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> arr;
   arr.push_back(cdp);
   std::vector<std::string> res = classifyData("general", arr);
-  ret = res.at(0);
+  return res.at(0);
+}
 
+int
+SVMClassification::classifyPoseVFHSignature308(pcl::VFHSignature308 sig, std::string obj_type)
+{
   // pose
-  std::vector<std::string> res2 = classifyData(res.at(0), arr);
-  ret.append("/");
-  ret.append(res2.at(0));
+  suturo_perception_ml_classifiers_msgs::ClassDataPoint cdp;
+  for (int i = 0; i < 308; i++)
+  {
+    cdp.point.push_back(sig.histogram[i]);
+  }
+  std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> arr;
+  std::vector<std::string> res = classifyData(obj_type, arr);
+  std::string r = res.at(0);
 
-  return ret;
+  boost::regex rx("[\\w]+([\d]+)");
+  boost::match_results<std::string::const_iterator> rxres;
+  if (0 == boost::regex_match(r, rxres, rx))
+  {
+    return -1;
+  }
+
+  ROS_INFO("matched shit: %s", rxres[1].c_str());
+
+  return 0;
 }
 
 // taken from: http://stackoverflow.com/questions/236129/how-to-split-a-string-in-c

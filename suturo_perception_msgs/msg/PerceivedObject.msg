@@ -29,3 +29,4 @@ uint32 c_roi_height
 
 float32[] c_vfh_estimation
 string c_svm_result
+uint32 c_pose
