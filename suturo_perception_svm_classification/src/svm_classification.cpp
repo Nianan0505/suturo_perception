@@ -31,7 +31,7 @@ SVMClassification::createClassifier(std::string identifier)
   cc_srv.request.class_type = "ml_classifiers/NearestNeighborClassifier";
   if (create_classifier.call(cc_srv))
   {
-    logger.logInfo("call to create_classifier successful!");
+    //logger.logInfo("call to create_classifier successful!");
   }
   else
   {
@@ -39,7 +39,7 @@ SVMClassification::createClassifier(std::string identifier)
     return false;
   }
 
-  logger.logInfo(cc_srv.response.success?"create: true":"create: false");
+  //logger.logInfo(cc_srv.response.success?"create: true":"create: false");
   return true;
 
 }
@@ -59,7 +59,7 @@ SVMClassification::addData(std::string identifier, std::vector<suturo_perception
   acd_srv.request.data = dpv;
   if (add_class_data.call(acd_srv))
   {
-    logger.logInfo("call to add_class_data successful!");
+    //logger.logInfo("call to add_class_data successful!");
     return true;
   }
   else
@@ -83,7 +83,7 @@ SVMClassification::trainClassifier(std::string identifier)
   t_srv.request.identifier = identifier;
   if (train_classifier.call(t_srv))
   {
-    logger.logInfo("call to train_classifier successful!");
+    //logger.logInfo("call to train_classifier successful!");
     return true;
   }
   else
@@ -109,17 +109,31 @@ SVMClassification::classifyData(std::string identifier, std::vector<suturo_perce
   cd_srv.request.data = dpv;
   if (classify_data.call(cd_srv))
   {
-    logger.logInfo("call to classify_data successful!");
+    //logger.logInfo("call to classify_data successful!");
     return cd_srv.response.classifications;
   }
   else
   {
-    logger.logError("Failed to call service classify_data");
+    //logger.logError("Failed to call service classify_data");
     return empty_ret;
   }
   
 }
 
+/**
+ * there MUST be a directory called vfh_data containing directories and files with the following structure:
+ * in each numbered directory there must be the SAME number of files!
+ * an object MUST not be called "general"
+ * vfh_data/
+ *   objectname/
+ *     1/
+ *       00000_seg_cloud.pcd_vfh
+ *       00001_seg_cloud.pcd_vfh
+ *       ...
+ *     2/
+ *       ...
+ *     ...
+ */
 bool
 SVMClassification::trainVFHData()
 {
@@ -133,19 +147,29 @@ SVMClassification::trainVFHData()
     return false;
   }
 
-  createClassifier("generalVFH");
+  createClassifier("general");
+  // iterating objectname directories
   for (boost::filesystem::directory_iterator it (package_path); it != boost::filesystem::directory_iterator (); ++it)
   {
     if (boost::filesystem::is_directory (it->status ()))
     {
       std::stringstream ss;
       ss << it->path().string();
-      ROS_INFO("Loading directory %s", ss.str().c_str());
+      //ROS_INFO("Loading directory %s", ss.str().c_str());
+      std::string noquot = ss.str();
+      boost::replace_all(noquot, "\"", "");
+      std::vector<std::string> dir_split = split(noquot, '/');
+      std::string pose_classifier = dir_split.at(dir_split.size()-1);
+      //ROS_INFO("Creating pose classifier %s", pose_classifier.c_str());
+      createClassifier(pose_classifier.c_str());
       if (!loadVFHData(ss.str()))
       {
         ROS_ERROR("Failed to load directory %s", ss.str().c_str());
         return false;
       }
+      ROS_INFO("training classifier %s", pose_classifier.c_str());
+      trainClassifier(pose_classifier.c_str());
+      ROS_INFO("done");
     }
     if (boost::filesystem::is_regular_file (it->status ()))
     {
@@ -154,8 +178,8 @@ SVMClassification::trainVFHData()
       ROS_INFO("unexpected file %s", ss.str().c_str());
     }
   }
-  ROS_INFO("training classifier generalVFH");
-  trainClassifier("generalVFH");
+  ROS_INFO("training classifier general");
+  trainClassifier("general");
   ROS_INFO("done");
 }
 
@@ -175,45 +199,56 @@ SVMClassification::loadVFHData(std::string directory)
     return false;
   }
 
+  std::vector<std::string> dir_split_tmp = split(directory, '/');
+  std::string object_classifier = dir_split_tmp.at(dir_split_tmp.size()-1);
+
   std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> train_points;
+  std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> pose_train_points;
+  bool first_round = true;
+
+  // iterating over numbered directories each containing one turn table round
   for (boost::filesystem::directory_iterator it (directory); it != boost::filesystem::directory_iterator (); ++it)
   {
     if (boost::filesystem::is_directory (it->status ()))
     {
       std::stringstream ss;
       ss << it->path ();
-      ROS_INFO("Loading directory %s", ss.str().c_str());
-      std::vector<std::string> dir_split = split(ss.str(), '/');
+      //ROS_INFO("Loading directory %s", ss.str().c_str());
+      int entry_cnt = 0;
       for (boost::filesystem::directory_iterator it2 (it->path()); it2 != boost::filesystem::directory_iterator (); ++it2)
       {
         if (boost::filesystem::is_regular_file (it2->status ()))
         {
+          // load pcd file
           std::stringstream ss2;
           ss2 << it2->path ();
-          ROS_INFO("Loading file %s", ss2.str().c_str());
+          //ROS_INFO("Loading file %s", ss2.str().c_str());
           std::string f = ss2.str();
           boost::replace_all(f, "\"", "");
-          
           pcl::PointCloud<pcl::VFHSignature308> point;
           pcl::io::loadPCDFile(f, point);
 
+          // convert content
           suturo_perception_ml_classifiers_msgs::ClassDataPoint cdp;
+          suturo_perception_ml_classifiers_msgs::ClassDataPoint cdp2;
           for (int i = 0; i < 308; i++)
           {
             cdp.point.push_back(point.points[0].histogram[i]);
+            cdp2.point.push_back(point.points[0].histogram[i]);
           }
-          std::stringstream idss;
 
-          std::vector<std::string> f_parts = split(f, '/');
-          idss << f_parts.at(f_parts.size()-3);
-          //boost::replace_all(f_parts.at(f_parts.size()-1), "_seg_cloud.pcd_vfh", "");
-          //idss << f_parts.at(f_parts.size()-1);
-
-          //cdp.target_class = idss.str();
-
-          cdp.target_class = dir_split.at(dir_split.size()-2);
-          ROS_INFO("generated identifier: %s", cdp.target_class.c_str());
+          // add point for general matching
+          cdp.target_class = object_classifier;
+          //ROS_INFO("generated identifier: %s", cdp.target_class.c_str());
           train_points.push_back(cdp);
+
+          // add point for pose matching
+          std::stringstream target_class_ss;
+          target_class_ss << object_classifier << entry_cnt;
+          cdp2.target_class = target_class_ss.str();
+          //ROS_INFO("pose estimation target class: %s", cdp2.target_class.c_str());
+
+          pose_train_points.push_back(cdp2);
 
           // DEBUG stuff:
           /*
@@ -224,8 +259,10 @@ SVMClassification::loadVFHData(std::string directory)
           }
           ROS_INFO("vfh descriptor: %s", ss3.str().c_str());
           */
+          entry_cnt++;
         }
       }
+      first_round = false;
     }
     if (boost::filesystem::is_regular_file (it->status ()))
     {
@@ -235,7 +272,9 @@ SVMClassification::loadVFHData(std::string directory)
     }
   }
 
-  addData("generalVFH", train_points);
+  addData(object_classifier, pose_train_points);
+
+  addData("general", train_points);
 
   return true;
 }
@@ -250,7 +289,7 @@ SVMClassification::classifyVFHSignature308(pcl::VFHSignature308 sig)
   }
   std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> arr;
   arr.push_back(cdp);
-  std::vector<std::string> res = classifyData("generalVFH", arr);
+  std::vector<std::string> res = classifyData("general", arr);
   return res.at(0);
 }
 
