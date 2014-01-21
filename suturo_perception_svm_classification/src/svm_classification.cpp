@@ -211,7 +211,7 @@ SVMClassification::loadVFHData(std::string directory)
 
           //cdp.target_class = idss.str();
 
-          cdp.target_class = dir_split.at(dir_split.size()-1);
+          cdp.target_class = dir_split.at(dir_split.size()-2);
           ROS_INFO("generated identifier: %s", cdp.target_class.c_str());
           train_points.push_back(cdp);
 
