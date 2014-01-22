@@ -6,7 +6,6 @@
 #include "suturo_perception_ml_classifiers_msgs/ClassifyData.h"
 
 #include <boost/filesystem.hpp>
-#include <boost/regex.hpp>
 #include <pcl/io/pcd_io.h>
 
 using namespace suturo_perception_svm_classification;
@@ -115,7 +114,7 @@ SVMClassification::classifyData(std::string identifier, std::vector<suturo_perce
   }
   else
   {
-    //logger.logError("Failed to call service classify_data");
+    logger.logError("Failed to call service classify_data");
     return empty_ret;
   }
   
@@ -215,7 +214,7 @@ SVMClassification::loadVFHData(std::string directory)
       std::stringstream ss;
       ss << it->path ();
       //ROS_INFO("Loading directory %s", ss.str().c_str());
-      int entry_cnt = 0;
+      entry_cnt = 0;
       for (boost::filesystem::directory_iterator it2 (it->path()); it2 != boost::filesystem::directory_iterator (); ++it2)
       {
         if (boost::filesystem::is_regular_file (it2->status ()))
@@ -292,12 +291,18 @@ SVMClassification::classifyVFHSignature308(pcl::VFHSignature308 sig)
   std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> arr;
   arr.push_back(cdp);
   std::vector<std::string> res = classifyData("general", arr);
+  if (res.size()<1)
+  {
+    ROS_ERROR("pose classification failed!");
+    return "";
+  }
   return res.at(0);
 }
 
 int
 SVMClassification::classifyPoseVFHSignature308(pcl::VFHSignature308 sig, std::string obj_type)
 {
+  ROS_INFO("classifying pose for %s", obj_type.c_str());
   // pose
   suturo_perception_ml_classifiers_msgs::ClassDataPoint cdp;
   for (int i = 0; i < 308; i++)
@@ -305,19 +310,25 @@ SVMClassification::classifyPoseVFHSignature308(pcl::VFHSignature308 sig, std::st
     cdp.point.push_back(sig.histogram[i]);
   }
   std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> arr;
-  std::vector<std::string> res = classifyData(obj_type, arr);
-  std::string r = res.at(0);
-
-  boost::regex rx("[\\w]+([\d]+)");
-  boost::match_results<std::string::const_iterator> rxres;
-  if (0 == boost::regex_match(r, rxres, rx))
+  arr.push_back(cdp);
+  std::vector<std::string> res = classifyData(obj_type.c_str(), arr);
+  if (res.size()<1)
   {
+    ROS_ERROR("pose classification failed!");
     return -1;
   }
+  std::string r = res.at(0);
 
-  ROS_INFO("matched shit: %s", rxres[1].c_str());
+  boost::replace_all(r, obj_type, "");
+  ROS_INFO("matched shit: %s", r.c_str());
 
-  return 0;
+  int ret = atoi(r.c_str());
+  int turn_deg = 360 / entry_cnt;
+  if (turn_deg == 0)
+    turn_deg = 1;
+  ret *= 360 / entry_cnt;
+
+  return ret;
 }
 
 // taken from: http://stackoverflow.com/questions/236129/how-to-split-a-string-in-c

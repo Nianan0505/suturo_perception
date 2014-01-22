@@ -33,6 +33,7 @@ namespace suturo_perception_svm_classification
       suturo_perception_utils::Logger logger;
       ros::NodeHandle n;
       ros::Duration service_wait_timeout;
+      int entry_cnt;
 
       bool loadVFHData(std::string directory);
       std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
