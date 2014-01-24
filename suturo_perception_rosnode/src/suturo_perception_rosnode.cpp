@@ -80,6 +80,30 @@ void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageCo
     logger.logInfo("processing...");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*inputCloud,*cloud_in);
+
+		// Gazebo sends us unorganized pointclouds!
+		// Reorganize them to be able to compute the ROI of the objects
+		// This workaround is only tested for gazebo 1.9!
+		if(!cloud_in->isOrganized ())
+		{
+			logger.logInfo((boost::format("Received an unorganized PointCloud: %d x %d .Convert it to a organized one ...") % cloud_in->width % cloud_in->height ).str());
+
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr org_cloud (new pcl::PointCloud<pcl::PointXYZRGB>());
+			org_cloud->width = 640;
+			org_cloud->height = 480;
+			org_cloud->is_dense = false;
+			org_cloud->points.resize(640 * 480);
+
+			for (int i = 0; i < cloud_in->points.size(); i++) {
+					pcl::PointXYZRGB result;
+					result.x = 0;
+					result.y = 0;
+					result.z = 0;
+					org_cloud->points[i]=cloud_in->points[i];
+			}
+
+			cloud_in = org_cloud;
+		}
     if(!fallback_enabled)
     {
       cv_bridge::CvImagePtr cv_ptr;
