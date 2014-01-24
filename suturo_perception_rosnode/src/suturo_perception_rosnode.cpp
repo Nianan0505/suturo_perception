@@ -31,7 +31,7 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   objectID = 0;
 
   // VFH + SVM stuff
-  ROS_INFO("Loading VFH training data for SVM...");
+  logger.logInfo("Loading VFH training data for SVM...");
   svm_classification.trainVFHData();
 
   // Init the topic for the plane segmentation result
@@ -109,7 +109,7 @@ void SuturoPerceptionROSNode::fallback_receive_cloud(const sensor_msgs::PointClo
 {
   if(processing)
   {
-    ROS_INFO("Received a pointcloud message");
+    logger.logInfo("Received a pointcloud message");
     sensor_msgs::ImageConstPtr nullPtr; // boost::shared_ptr NullPtr
     receive_image_and_cloud(nullPtr, inputCloud);
   }
@@ -162,6 +162,11 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
           &SuturoPerceptionROSNode::fallback_receive_cloud, this);
         fallback_enabled = true;
         cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
+      }
+      else // fallback failed as well. no data available. Abort service call.
+      {
+        logger.logError("No sensor data available. Aborting.");
+        return false;
       }
     } 
     ros::spinOnce();
