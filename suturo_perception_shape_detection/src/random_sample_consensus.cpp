@@ -110,28 +110,53 @@ RandomSampleConsensus::detectShape(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudI
     p_modelcustom->setAxis (Eigen::Vector3f (0.0, 0.0, 1.0));
     p_modelcustom->setEpsAngle (0.564); 
     pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransacBox (p_modelcustom);
+    // pcl::ModelCoefficients::Ptr mc;
+    Eigen::VectorXf mc;
     ransacBox.setDistanceThreshold (.01);
     ransacBox.computeModel();
     ransacBox.getInliers(inliers);
+    ransacBox.getModelCoefficients(mc);
+    Eigen::Vector3f zAxis(
+            mc[0],
+            mc[1],
+            mc[2]
+            );
     int inCountY = inliers.size();
     
     // find a plane perpendicular to the x axis, accepting points up to 30°
+    // pcl::ModelCoefficients::Ptr mc2;
+    Eigen::VectorXf mc2;
     p_modelcustom->setAxis (Eigen::Vector3f (0.0, 1.0, 0.0));
     p_modelcustom->setEpsAngle (0.564);
     ransacBox.setDistanceThreshold (.01);
     ransacBox.computeModel();
     ransacBox.getInliers(inliers); 
+    ransacBox.getModelCoefficients(mc2);
+    Eigen::Vector3f xAxis(
+            mc2[0],
+            mc2[1],
+            mc2[2]
+            );
     int inCountZ = inliers.size();
 
     logger.logInfo((boost::format("inCountY: %s") % inCountY).str());
     float boxCount = inCountY + inCountZ;
     float percBox = boxCount / pcCount;
     
+    float dotPlanes = mc.dot(mc2);
+
+    float anglePlanes = acos(dotPlanes) * (180 / 3.14159265);
+
     logger.logInfo((boost::format("inCountBox: %s  percBox: %s") % boxCount % percBox).str());
     logger.logInfo((boost::format("inCountSphere: %s  percSphere: %s") % inCountSphere % percSphere).str());
     logger.logInfo((boost::format("inCountCylinder: %s  percCylinder: %s") % inCountCylinder % percCylinder).str());
-
-    if (percCylinder > percBox && percCylinder > percSphere && percCylinder > 0.70)
+        
+    if (anglePlanes > 80.0 && anglePlanes < 100.0)
+    {
+        shape = Box;
+        logger.logInfo((boost::format("Object is a BOX, angle is: %s") % anglePlanes).str());
+    }
+    else if (percCylinder > percBox && percCylinder > percSphere && percCylinder > 0.70)
     {
         shape = Cylinder;
         logger.logInfo((boost::format("Object is a CYLINDER. percCylinder: %s") % percCylinder).str());
