@@ -1,4 +1,6 @@
 <launch>
+  
+  <param name="camera/driver/image_mode" value="1" />
 
   <include file="$(find openni_launch)/launch/openni.launch">
     <arg name="load_driver" value="false" />
