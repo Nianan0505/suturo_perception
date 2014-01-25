@@ -24,7 +24,7 @@ SuturoPerception::SuturoPerception()
   planeMaxIterations = 1000;
   planeDistanceThreshold = 0.01;
   ecClusterTolerance = 0.02; // 2cm
-  ecMinClusterSize = 8000;
+  ecMinClusterSize = 6000;
   ecMaxClusterSize = 200000;  
   prismZMin = 0.02;
   prismZMax = 0.50; // cutoff 50 cm above plane
