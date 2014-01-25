@@ -227,7 +227,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     }
     else
     {
-      std::cerr << "UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS" << std::endl;
+      logger.logError("UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS");
     }
 
     }
@@ -335,61 +335,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // sync.shutdown();
   visualizationPublisher.publishMarkers(res.perceivedObjs);
 
-  // ===============================================================
-  // dirty demo hack. get objects and plane to merge collision_cloud
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr collision_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  collision_cloud = sp.getPlaneCloud();
-
-  if(collision_cloud != NULL)
-  {
-    // get edible
-    int queryId = 0;
-    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin(); 
-      it != res.perceivedObjs.end(); ++it)
-    {
-      suturo_perception_msgs::PrologQuery pq;
-      suturo_perception_msgs::PrologNextSolution pqn;
-      suturo_perception_msgs::PrologFinish pqf;
-      pq.request.mode = 0;
-      pq.request.id = queryId;
-      std::stringstream ss;
-      ss << "is_edible([[" << queryId << ", '', '" << it->c_volume << "', 0]], Out)"; 
-      logger.logDebug((boost::format("Knowledge query for collision_cloud: %s") % ss.str().c_str()).str()); 
-      pq.request.query = ss.str();
-      if(is_edible_service.call(pq))
-      {
-        
-        pqn.request.id = queryId;
-        is_edible_service_next.call(pqn);
-        logger.logDebug((boost::format("SOLUTION: %s") % pqn.response.solution.c_str()).str());
-
-        if(pqn.response.solution.empty()) logger.logDebug("Prolog returned fishy results");
-        else
-        {
-          if(pqn.response.solution.substr(8, 1).compare("]") == 0)
-          {
-            logger.logDebug("Added to collision_cloud");
-            *collision_cloud += *sp.collision_objects[queryId];  
-          }
-        }
-        pqf.request.id = queryId;
-        is_edible_service_finish.call(pqf);
-      }
-      else
-      logger.logError("Knowledge not reachable");
-      queryId++;
-    }
-    ph.publish_pointcloud(COLLISION_CLOUD_TOPIC, collision_cloud, frameId);
-  }
-  else
-  {
-    logger.logError("collision cloud (aka plane) is NULL ... skipping iteration");
-  }
-
   logger.logInfo("Service call finished. return");
-  
-  
-  
   return true;
 }
 
