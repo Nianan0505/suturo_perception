@@ -43,6 +43,8 @@ class CuboidMatcher
     std::vector<DetectedPlane> *getDetectedPlanes();
     void setInputCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
 
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> getIntermediateClouds(){ return intermediate_clouds_; } 
+
     // Set this to true to save every transformed pointcloud
     // which will be generated during the fitting process
     // This is helpful, if you want to visualize the intermediate
