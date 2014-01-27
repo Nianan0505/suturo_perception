@@ -7,6 +7,7 @@ CuboidMatcher::CuboidMatcher()
 {
     input_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     debug = true;
+    save_intermediate_results_ = true;
 }
 std::vector<DetectedPlane> *CuboidMatcher::getDetectedPlanes()
 {
@@ -280,6 +281,7 @@ Cuboid CuboidMatcher::computeCuboidFromBorderPoints(pcl::PointCloud<pcl::PointXY
   Eigen::Vector4f centroid;
   CuboidMatcher::computeCentroid(corner_points, centroid);
   c.center = getVector3fFromVector4f(centroid);
+  c.corner_points = corner_points;
   return c;
 }
 
@@ -287,6 +289,8 @@ Cuboid CuboidMatcher::computeCuboidFromBorderPoints(pcl::PointCloud<pcl::PointXY
 bool CuboidMatcher::execute(Cuboid &c)
 {
   segmentPlanes();
+  // TODO check pointsize of the detected planes
+  
   if(detected_planes_.size() < 2)
   {
     std::cout << "Couldn't detect atleast two planes with RANSAC" << std::endl;
@@ -321,15 +325,22 @@ bool CuboidMatcher::execute(Cuboid &c)
   std::cout << "Transformed first time" << std::endl;
   pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
 
+  if(save_intermediate_results_)
+  {
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr intermediate_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::copyPointCloud<pcl::PointXYZRGB, pcl::PointXYZRGB>(*rotated_cloud, *intermediate_cloud);
+    intermediate_clouds_.push_back(intermediate_cloud);
+  }
+
   // Update all normal vectors
   updateTransformedNormals(rotationBox);
 
 
   // Now align the second normal (which has been rotated) with the x-z plane
-  Eigen::Vector3f xz_plane;
-  xz_plane(0)=0;
-  xz_plane(1)=1;
-  xz_plane(2)=0;
+  Eigen::Vector3f xz_plane(0,1,0);
+  // xz_plane(0)=0;
+  // xz_plane(1)=1;
+  // xz_plane(2)=0;
 
   // TODO this behaviour differs from the original one. Does it give other results?
   xz_plane = CuboidMatcher::reduceNormAngle(transformed_normals_.at(1), xz_plane);
@@ -340,6 +351,14 @@ bool CuboidMatcher::execute(Cuboid &c)
 
   std::cout << "Transformed second time" << std::endl;
   pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, secondRotation);   
+
+  if(save_intermediate_results_)
+  {
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr intermediate_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::copyPointCloud<pcl::PointXYZRGB, pcl::PointXYZRGB>(*rotated_cloud, *intermediate_cloud);
+    intermediate_clouds_.push_back(intermediate_cloud);
+  }
+
 
   // calculate bb
   // Compute the bounding box for the rotated object

@@ -273,6 +273,7 @@ int
 main (int argc, char** argv)
 {
   bool second_rotation_performed = false;
+  bool visualize_results = true;
 
   boost::posix_time::ptime t_s = boost::posix_time::microsec_clock::local_time();
 
@@ -309,8 +310,60 @@ main (int argc, char** argv)
   cm.setSaveIntermediateResults(true);
   Cuboid cuboid;
   cm.execute(cuboid);
+  boost::posix_time::ptime t_algorithm_done = boost::posix_time::microsec_clock::local_time();
+  printDuration(t_file_loaded, t_algorithm_done, "Algorithm Runtime");
 
   std::cout << "Algorithm done. Visualize results" << std::endl;
+
+  
+  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> intermediate_clouds;
+  intermediate_clouds = cm.getIntermediateClouds();
+
+  if(!visualize_results)
+    exit(0);
+  // Atleast one intermediate clouds means, that the user want's to display them here.
+  
+  std::cout << "The algorithm did " << intermediate_clouds.size() << " transformation(s)" << std::endl;
+
+  // Create the viewports for the rotated object
+  pcl::visualization::PCLVisualizer viewer;
+  // Visualize original pointcloud
+  int v1(0);
+  viewer.createViewPort(0.0, 0.0, 0.2, 1.0, v1);
+  viewer.addCoordinateSystem(1.0,v1);
+
+  // Visualize the found inliers
+  int v2(1);
+  viewer.createViewPort(0.2, 0.0, 0.6, 1.0, v2);
+  viewer.addCoordinateSystem(1.0,v2);
+
+  int v3(2);
+  viewer.createViewPort(0.6, 0.0, 1.0, 1.0, v3);
+  viewer.addCoordinateSystem(0.5,v3);
+
+  // Fill the viewpoints with the desired clouds
+  pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(original_cloud);
+  viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, rgb, "sample cloud1", v1);
+
+  if( intermediate_clouds.size() >= 1) 
+  {
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_v2(intermediate_clouds.at(0));
+    viewer.addPointCloud<pcl::PointXYZRGB> (intermediate_clouds.at(0), rgb_v2, "first rotated cloud", v2);
+  }
+
+
+  if( intermediate_clouds.size() >= 2) 
+  {
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_v3(intermediate_clouds.at(1));
+    viewer.addPointCloud<pcl::PointXYZRGB> (intermediate_clouds.at(1), rgb_v3, "second rotated cloud", v3);
+  }
+
+  drawBoundingBoxLines(viewer, cuboid.corner_points, v1);
+  viewer.spin();
+
+
+
+
   /*
   boost::posix_time::ptime t_extraction_done = boost::posix_time::microsec_clock::local_time();
   // --------------------------------------------
