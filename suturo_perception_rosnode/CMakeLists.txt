@@ -156,6 +156,7 @@ add_executable(segment_objects src/segment_objects.cpp)
 add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
+add_executable(calc_pc_from_img_and_depth src/calc_pc_from_img_and_depth.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -177,6 +178,10 @@ target_link_libraries(suturo_perception_rosclient
 )
 
 target_link_libraries(segment_objects
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(calc_pc_from_img_and_depth
   ${catkin_LIBRARIES}
 )
 #############

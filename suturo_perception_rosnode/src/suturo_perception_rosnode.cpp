@@ -220,7 +220,9 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     // std::cout << "vs. Cloud " <<  sp.getOriginalCloud()->width << "x" << sp.getOriginalCloud()->height << std::endl;
 
     // Adjust the ROI if the image is at 1280x1024 and the pointcloud is at 640x480
-    if(sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 1024)
+    // Adjust the ROI if the image is at 1280x960 and the pointcloud is at 640x480 (Gazebo Mode)
+    if( (sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 1024) ||
+     (sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 960) )
     {
        for (int i = 0; i < perceivedObjects.size(); i++) {
           ROI roi = perceivedObjects.at(i).get_c_roi();
