@@ -9,7 +9,8 @@ CuboidMatcher::CuboidMatcher()
     debug = true;
     save_intermediate_results_ = true;
     estimation_succesful_ = false;
-
+    // Use the more general WITHOUT_COEFFICIENTS mode per default
+    mode_ = CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS;
 }
 std::vector<DetectedPlane> *CuboidMatcher::getDetectedPlanes()
 {
@@ -45,6 +46,16 @@ Eigen::Vector3f CuboidMatcher::reduceNormAngle(Eigen::Vector3f v1, Eigen::Vector
 int CuboidMatcher::transformationCount()
 {
   return transformations_.size();
+}
+
+Eigen::Vector3f CuboidMatcher::getTableCoefficientsAsVector3f()
+{
+  Eigen::Vector3f v(
+      table_coefficients_ ->values.at(0),
+      table_coefficients_ ->values.at(1),
+      table_coefficients_ ->values.at(2)
+      );
+  return v;
 }
 
 void CuboidMatcher::segmentPlanes()
@@ -100,6 +111,21 @@ void CuboidMatcher::segmentPlanes()
 
     planeIdx ++ ;
   }
+
+  if(mode_ == CUBOID_MATCHER_MODE_WITH_COEFFICIENTS)
+  {
+    // Check the biggest plane against the table
+    //
+
+    float angle = detected_planes_.at(0).angleBetween(
+      getTableCoefficientsAsVector3f());
+    if(debug)
+    {
+      std::cout << "Angle between Normal of plane 0 and table normal";
+      std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG" << std::endl;
+    }
+  }
+
 
   // TODO check amount of extracted points
 

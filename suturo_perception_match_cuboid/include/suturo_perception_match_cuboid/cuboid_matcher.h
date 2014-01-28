@@ -35,6 +35,10 @@
 // By following these transformations backwards, we get the orientation
 // and the Cuboid
 
+// 
+#define CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS 0 
+#define CUBOID_MATCHER_MODE_WITH_COEFFICIENTS 1
+
 class CuboidMatcher
 {
   public:
@@ -83,9 +87,27 @@ class CuboidMatcher
     // TODO: Move to private, when migration is done
     static void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid);
 
+    // If you use CUBOID_MATCHER_MODE_WITH_COEFFICIENTS
+    // you MUST supply the coefficients with
+    // setTableCoefficients() !
+    void setMode(int mode){ mode_ = mode; }
+
+    // Set the table coefficients that will be used in
+    // CUBOID_MATCHER_MODE_WITH_COEFFICIENTS mode
+    void setTableCoefficients(pcl::ModelCoefficients::Ptr table_coefficients)
+    { table_coefficients_ = table_coefficients;}
   private:
+    Eigen::Vector3f getTableCoefficientsAsVector3f();
+
     // true, if a cuboid could be matched to the given input cloud
     bool estimation_succesful_;
+
+    // Decide which mode you will run:
+    //   Without table coefficients
+    //   With table coefficients
+    //   The first one is less accurate, but can estimate a bounding box
+    //   even when the underlying plane of the object is not known.
+    int mode_;
 
     Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
         Eigen::Vector3f base_normal,
@@ -106,6 +128,8 @@ class CuboidMatcher
     void segmentPlanes();
 
     bool save_intermediate_results_;
+
+    pcl::ModelCoefficients::Ptr table_coefficients_;
 
     // The input cloud.
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_;
