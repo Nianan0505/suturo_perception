@@ -97,6 +97,7 @@ namespace suturo_perception_lib
 		// void writeCloudToDisk(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractedObjects, std::string filename);
 		// void writeCloudToDisk(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud, std::string filename);
 
+    pcl::ModelCoefficients::Ptr getTableCoefficients(){ return table_coefficients_;}
     // getters and setters
     void setZAxisFilterMin(float v) {zAxisFilterMin = v;};
     void setZAxisFilterMax(float v) {zAxisFilterMax = v;};
@@ -164,6 +165,8 @@ namespace suturo_perception_lib
     int ecObjMaxClusterSize;
     std::vector<cv::Mat> perceived_cluster_images_;
     std::vector<ROI> perceived_cluster_rois_;
+    // The coefficients of the detected table
+    pcl::ModelCoefficients::Ptr table_coefficients_;
 
     // Pointer to the input images. These can be used to review the original input and compare
     // it to the results.

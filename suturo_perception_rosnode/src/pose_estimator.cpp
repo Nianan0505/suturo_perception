@@ -35,6 +35,11 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
   ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
   sp.setOriginalCloud(cloud_in);
   sp.processCloudWithProjections(cloud_in);
+  pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
+  std::cout << table_coefficients->values.at(0) << " ";
+  std::cout << table_coefficients->values.at(1) << " ";
+  std::cout << table_coefficients->values.at(2) << " ";
+  std::cout << table_coefficients->values.at(3) << std::endl;
 
   std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   perceivedObjects = sp.getPerceivedObjects();
@@ -44,7 +49,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     pcl::PCDWriter writer;
     CuboidMatcher cm;
     cm.setInputCloud(object_cloud);
-    cm.setDebug(false);
+    cm.setDebug(true);
     // cm.setSaveIntermediateResults(true);
     Cuboid cuboid;
     cm.execute(cuboid);
@@ -60,10 +65,10 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     cuboidMarker.pose.position.x = cuboid.center(0);
     cuboidMarker.pose.position.y = cuboid.center(1);
     cuboidMarker.pose.position.z = cuboid.center(2);
-    cuboidMarker.pose.orientation.x = 0.0;
-    cuboidMarker.pose.orientation.y = 0.0;
-    cuboidMarker.pose.orientation.z = 0.0;
-    cuboidMarker.pose.orientation.w = 0.0;
+    cuboidMarker.pose.orientation.x = cuboid.orientation.x();
+    cuboidMarker.pose.orientation.y = cuboid.orientation.y();
+    cuboidMarker.pose.orientation.z = cuboid.orientation.y();
+    cuboidMarker.pose.orientation.w = cuboid.orientation.w();
     cuboidMarker.scale.x = cuboid.length1;
     cuboidMarker.scale.y = cuboid.length2;
     cuboidMarker.scale.z = cuboid.length3;

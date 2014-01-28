@@ -116,7 +116,7 @@ void CuboidMatcher::segmentPlanes()
   // Exit instantly if the two biggest planes are not properly aligned
   angle = ((angle * 180) / M_PI);
 
-  if( !( (angle >= 80 && angle <= 100) || 
+  if( !( (angle >= 75 && angle <= 100) || 
       (angle >= 260 && angle <= 280) ) ){
     detected_planes_.clear();
     return;

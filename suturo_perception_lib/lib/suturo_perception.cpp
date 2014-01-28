@@ -234,6 +234,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   PointCloudOperations::fitPlanarModel(cloud_filtered, inliers, coefficients, planeMaxIterations, planeDistanceThreshold);
   logger.logInfo((boost::format("Table inlier count: %s") % inliers->indices.size ()).str());
   // Table segmentation done
+  table_coefficients_ = coefficients;
   
   // Extract the plane as a PointCloud from the calculated inliers
   PointCloudOperations::extractInliersFromPointCloud(cloud_filtered, inliers, cloud_plane, false);
