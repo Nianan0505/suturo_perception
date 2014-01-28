@@ -78,10 +78,15 @@ class CuboidMatcher
     //
     bool execute(Cuboid &c);
 
+    bool estimationSuccessful(){ return estimation_succesful_; }
+
     // TODO: Move to private, when migration is done
     static void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid);
 
   private:
+    // true, if a cuboid could be matched to the given input cloud
+    bool estimation_succesful_;
+
     Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
         Eigen::Vector3f base_normal,
         Eigen::Vector3f normal_to_rotate, bool store_transformation);

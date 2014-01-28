@@ -15,5 +15,6 @@ class Cuboid
     Eigen::Vector3f center;
     float volume;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points;
+    Eigen::Quaternion<float> orientation;
 };
 #endif

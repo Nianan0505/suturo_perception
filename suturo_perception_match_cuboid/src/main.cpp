@@ -1,3 +1,7 @@
+// TODO:
+// Use ModelCoefficients if possible to get a better alignment
+//   -> the top edge of an object has weird normals sometimes
+
 #include <iostream>
 #include <cmath>
 #include <pcl/io/pcd_io.h>
@@ -329,12 +333,12 @@ main (int argc, char** argv)
   pcl::visualization::PCLVisualizer viewer;
   // Visualize original pointcloud
   int v1(0);
-  viewer.createViewPort(0.0, 0.0, 0.2, 1.0, v1);
+  viewer.createViewPort(0.0, 0.0, 0.3, 1.0, v1);
   viewer.addCoordinateSystem(1.0,v1);
 
   // Visualize the found inliers
   int v2(1);
-  viewer.createViewPort(0.2, 0.0, 0.6, 1.0, v2);
+  viewer.createViewPort(0.3, 0.0, 0.6, 1.0, v2);
   viewer.addCoordinateSystem(1.0,v2);
 
   int v3(2);
@@ -342,23 +346,52 @@ main (int argc, char** argv)
   viewer.addCoordinateSystem(0.5,v3);
 
   // Fill the viewpoints with the desired clouds
-  pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(original_cloud);
-  viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, rgb, "sample cloud1", v1);
+  // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(original_cloud);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_pts (original_cloud, 255,0,0);
+  // viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, rgb, "sample cloud1", v1);
+  viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, red_pts, "sample cloud1", v1);
 
   if( intermediate_clouds.size() >= 1) 
   {
-    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_v2(intermediate_clouds.at(0));
-    viewer.addPointCloud<pcl::PointXYZRGB> (intermediate_clouds.at(0), rgb_v2, "first rotated cloud", v2);
+    // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_v2(intermediate_clouds.at(0));
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_v2 (intermediate_clouds.at(0), 255,0,0);
+    // viewer.addPointCloud<pcl::PointXYZRGB> (intermediate_clouds.at(0), rgb_v2, "first rotated cloud", v2);
+    viewer.addPointCloud<pcl::PointXYZRGB> (intermediate_clouds.at(0), red_v2, "first rotated cloud", v2);
   }
 
 
   if( intermediate_clouds.size() >= 2) 
   {
-    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_v3(intermediate_clouds.at(1));
-    viewer.addPointCloud<pcl::PointXYZRGB> (intermediate_clouds.at(1), rgb_v3, "second rotated cloud", v3);
+    // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_v3(intermediate_clouds.at(1));
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_v3 (intermediate_clouds.at(1), 255,0,0);
+    viewer.addPointCloud<pcl::PointXYZRGB> (intermediate_clouds.at(1), red_v3, "second rotated cloud", v3);
+    // viewer.addPointCloud<pcl::PointXYZRGB> (intermediate_clouds.at(1), rgb_v3, "second rotated cloud", v3);
   }
 
+  // Draw the bounding box from the given corner points
   drawBoundingBoxLines(viewer, cuboid.corner_points, v1);
+
+  viewer.addCube	(	Eigen::Vector3f(0,0,0),
+      Eigen::Quaternion<float>::Identity(),
+      cuboid.length1,
+      cuboid.length2,
+      cuboid.length3,
+      "matched_cuboid",
+      v2
+    );
+
+ 
+  
+  viewer.addCube	(	cuboid.center,
+      cuboid.orientation,
+      cuboid.length1,
+      cuboid.length2,
+      cuboid.length3,
+      "matched_cuboid_centered",
+      v1
+    );
+  
+
   viewer.spin();
 
 

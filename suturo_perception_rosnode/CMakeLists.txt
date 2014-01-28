@@ -35,7 +35,7 @@ generate_dynamic_reconfigure_options(
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system program_options thread)
 
 # WORKAROUND - import pcl here as well 
 find_package(PCL 1.6 REQUIRED COMPONENTS)
@@ -176,6 +176,7 @@ target_link_libraries(suturo_perception_rosclient
 )
 
 target_link_libraries(segment_objects
+  ${Boost_LIBRARIES} 
   ${catkin_LIBRARIES}
 )
 #############
