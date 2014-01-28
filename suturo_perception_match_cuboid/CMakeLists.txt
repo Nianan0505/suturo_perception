@@ -84,9 +84,9 @@ add_definitions(${PCL_DEFINITIONS})
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES suturo_perception_match_cuboid
-#  CATKIN_DEPENDS pcl_ros roscpp
+  INCLUDE_DIRS include
+  LIBRARIES suturo_perception_match_cuboid
+  CATKIN_DEPENDS pcl_ros roscpp
 #  DEPENDS system_lib
 )
 
@@ -119,6 +119,10 @@ add_executable(main
   src/cuboid_matcher.cpp
 )
 
+add_library(suturo_perception_match_cuboid 
+  src/detected_plane.cpp
+  src/cuboid_matcher.cpp
+)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -128,6 +132,10 @@ add_executable(main
 target_link_libraries(main
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
+)
+
+target_link_libraries(suturo_perception_match_cuboid
+  ${catkin_LIBRARIES}
 )
 
 target_link_libraries(match_cuboid
@@ -182,3 +190,19 @@ target_link_libraries(match_cuboid
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+catkin_add_gtest(${PROJECT_NAME}-test 
+  test/test.cpp
+)
+if(TARGET ${PROJECT_NAME}-test)
+	# target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} suturo_perception_shape_detection)
+  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+	# find_package(PCL 1.6 REQUIRED COMPONENTS)
+	# include_directories(${PCL_INCLUDE_DIRS})
+	# link_directories(${PCL_LIBRARY_DIRS})
+	# add_definitions(${PCL_DEFINITIONS})
+	# Link against catkin libs for ROS etc.
+
+	# In contrast to the tests in suturo_perception_lib, i need this declaration ..
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+endif()

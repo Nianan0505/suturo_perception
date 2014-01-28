@@ -8,6 +8,8 @@ CuboidMatcher::CuboidMatcher()
     input_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     debug = true;
     save_intermediate_results_ = true;
+    estimation_succesful_ = false;
+
 }
 std::vector<DetectedPlane> *CuboidMatcher::getDetectedPlanes()
 {
@@ -72,6 +74,13 @@ void CuboidMatcher::segmentPlanes()
     seg.segment (*detected_planes_.at(planeIdx).getInliers(),
         *detected_planes_.at(planeIdx).getCoefficients());
 
+    // Delete the latest DP instance if no inliers can be found and exit immediately
+    if( detected_planes_.at(planeIdx).getInliers()->indices.size() == 0 )
+    {
+      detected_planes_.pop_back();
+      return;
+    }
+
     // Create the filtering object
     pcl::ExtractIndices<pcl::PointXYZRGB> extract;
     // Extract the inliers
@@ -92,29 +101,50 @@ void CuboidMatcher::segmentPlanes()
     planeIdx ++ ;
   }
 
-  for (int i = 0; i < detected_planes_.size(); i++)
+  // TODO check amount of extracted points
+
+  float angle = detected_planes_.at(0).angleBetween(
+      detected_planes_.at(1).getCoefficientsAsVector3f());
+  if(debug)
   {
-    for (int j = 0; j < detected_planes_.size(); j++)
-    {
-      if(i==j) continue;
-
-      if(debug)
-        std::cout << "Angle between Normal " << i << " and Normal " << j;
-
-      // TODO check angle between planes. The should be near 0°, 90°, 180° or 270°
-      // for cuboids
-
-      float angle = detected_planes_.at(i).angleBetween(
-          detected_planes_.at(j).getCoefficientsAsVector3f());
-
-      if(debug)
-      {
-        std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG";
-        std::cout << std::endl;
-      }
-
-    }
+    std::cout << "Angle between Normal of plane 0 and Normal of plane 1";
+    std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG";
   }
+
+  // check angle between planes. They should be near 0°, 90°, 180° or 270°
+  // for cuboids
+  // Exit instantly if the two biggest planes are not properly aligned
+  angle = ((angle * 180) / M_PI);
+
+  if( !( (angle >= 80 && angle <= 100) || 
+      (angle >= 260 && angle <= 280) ) ){
+    detected_planes_.clear();
+    return;
+  }
+
+  // for (int i = 0; i < detected_planes_.size(); i++)
+  // {
+  //   for (int j = 0; j < detected_planes_.size(); j++)
+  //   {
+  //     if(i==j) continue;
+
+  //     if(debug)
+  //       std::cout << "Angle between Normal " << i << " and Normal " << j;
+
+  //     // TODO check angle between planes. They should be near 0°, 90°, 180° or 270°
+  //     // for cuboids
+
+  //     float angle = detected_planes_.at(i).angleBetween(
+  //         detected_planes_.at(j).getCoefficientsAsVector3f());
+
+  //     if(debug)
+  //     {
+  //       std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG";
+  //       std::cout << std::endl;
+  //     }
+
+  //   }
+  // }
 
   for (int i = 0; i < detected_planes_.size(); i++)
   {
@@ -130,6 +160,7 @@ void CuboidMatcher::computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 
   pcl::ConvexHull<pcl::PointXYZRGB> hull;
   hull.setInputCloud(cloud_in);
+  hull.setDimension(3);
   hull.reconstruct (*hull_points);
 
   // Centroid calulcation
@@ -338,9 +369,6 @@ bool CuboidMatcher::execute(Cuboid &c)
 
   // Now align the second normal (which has been rotated) with the x-z plane
   Eigen::Vector3f xz_plane(0,1,0);
-  // xz_plane(0)=0;
-  // xz_plane(1)=1;
-  // xz_plane(2)=0;
 
   // TODO this behaviour differs from the original one. Does it give other results?
   xz_plane = CuboidMatcher::reduceNormAngle(transformed_normals_.at(1), xz_plane);
@@ -371,17 +399,37 @@ bool CuboidMatcher::execute(Cuboid &c)
 
   // transform bb corners back to the object by inversing the last transformations
   // which were necessary to align the object with the xy and xz plane
-  // TODO: calculate orientation
-  for(int i = transformations_.size()-1; i >= 0; i--)
+  
+  // Store the necessary transformations, to rotate the bounding box correctly (e.g. get the orientation )
+  std::vector<Eigen::Quaternion<float> > transformations_as_q;
+
+  for(int i = transformations_.size()-1; i >= 0; i--){
     pcl::transformPointCloud (*bounding_box, *bounding_box, transformations_.at(i).transpose());   
+    Eigen::Quaternion<float> q(removeTranslationVectorFromMatrix( transformations_.at(i).transpose() ) );
+    transformations_as_q.push_back(q);
+  }
 
   // calculate stats of the bounding box
   // We do this after the backtransformaton, to get the proper centroid of it
   c = computeCuboidFromBorderPoints(bounding_box);
+
+  // Construct the orientation quaternion of the bounding box
+  Eigen::Quaternion<float> orientation;
+  orientation.setIdentity();
+
+  for (int i = transformations_as_q.size() -1; i >= 0; i--)
+  {
+    orientation *= transformations_as_q.at(i);
+  }
+
+  c.orientation = orientation;
+
+
   if(debug)
   {
     std::cout << "Cuboid statistics" << std::endl;
     std::cout << "Width: " << c.length1 << " Height: " << c.length2 << " Depth: " << c.length3 << " Volume: " << c.volume << " m^3" << std::endl;
   }
+  estimation_succesful_ = true;
   return true;
 }
