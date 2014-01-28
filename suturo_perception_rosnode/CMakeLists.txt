@@ -22,7 +22,11 @@ suturo_perception_shape_detection
 suturo_perception_ros_utils 
 suturo_perception_utils 
 suturo_perception_vfh_estimation
+<<<<<<< HEAD
 suturo_perception_svm_classification
+=======
+suturo_perception_match_cuboid
+>>>>>>> PER-71 added a ROSNode which uses the cuboid library for visualization purposes
 pcl
 pcl_ros
 )
@@ -153,6 +157,7 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(segment_objects src/segment_objects.cpp)
+add_executable(pose_estimator src/pose_estimator.cpp)
 add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
@@ -189,6 +194,11 @@ target_link_libraries(segment_objects
 )
 
 target_link_libraries(calc_pc_from_img_and_depth
+  ${Boost_LIBRARIES} 
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(pose_estimator
+  ${Boost_LIBRARIES} 
   ${catkin_LIBRARIES}
 )
 #############
