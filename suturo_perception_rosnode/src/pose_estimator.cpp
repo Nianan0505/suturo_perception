@@ -36,10 +36,6 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
   sp.setOriginalCloud(cloud_in);
   sp.processCloudWithProjections(cloud_in);
   pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
-  std::cout << table_coefficients->values.at(0) << " ";
-  std::cout << table_coefficients->values.at(1) << " ";
-  std::cout << table_coefficients->values.at(2) << " ";
-  std::cout << table_coefficients->values.at(3) << std::endl;
 
   std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   perceivedObjects = sp.getPerceivedObjects();
@@ -50,6 +46,8 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     CuboidMatcher cm;
     cm.setInputCloud(object_cloud);
     cm.setDebug(true);
+    cm.setTableCoefficients(table_coefficients);
+    cm.setMode(CUBOID_MATCHER_MODE_WITH_COEFFICIENTS);
     // cm.setSaveIntermediateResults(true);
     Cuboid cuboid;
     cm.execute(cuboid);
