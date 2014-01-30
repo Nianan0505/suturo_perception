@@ -97,6 +97,11 @@ class CuboidMatcher
     void setTableCoefficients(pcl::ModelCoefficients::Ptr table_coefficients)
     { table_coefficients_ = table_coefficients;}
   private:
+    // If mode == CUBOID_MATCHER_MODE_WITH_COEFFICIENTS, this
+    // integer describes the best matching plane
+    // that is perpendicular to the given table coefficients
+    int good_matching_plane_;
+
     Eigen::Vector3f getTableCoefficientsAsVector3f();
 
     // true, if a cuboid could be matched to the given input cloud

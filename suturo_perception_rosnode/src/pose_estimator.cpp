@@ -16,6 +16,7 @@
 #include "suturo_perception.h"
 #include <suturo_perception_match_cuboid/cuboid_matcher.h>
 #include <visualization_msgs/Marker.h>
+#include <ros/console.h>
 
 #include <boost/program_options.hpp>
 
@@ -32,7 +33,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 
   rgb_pc_ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
   pcl::fromROSMsg(*inputCloud,*cloud_in);
-  ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
+  // ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
   sp.setOriginalCloud(cloud_in);
   sp.processCloudWithProjections(cloud_in);
   pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
@@ -40,6 +41,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
   std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   perceivedObjects = sp.getPerceivedObjects();
 
+  ROS_INFO("Received perceived Objects %lu", perceivedObjects.size());
   for (int i = 0; i < perceivedObjects.size(); i++) {
     rgb_pc_ptr object_cloud = perceivedObjects.at(i).get_pointCloud();
     pcl::PCDWriter writer;

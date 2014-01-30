@@ -239,6 +239,156 @@ TEST(suturo_perception_match_cuboid, unmatchable_cleaner)
   SUCCEED();
 }
 
+TEST(suturo_perception_match_cuboid, match_cafetfilter_with_table)
+{
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  std::string package_path = ros::package::getPath("suturo_perception_match_cuboid");
+  std::string filepath = "test_data/cafetfilter_plane_mode.pcd";
+  // pcl::ModelCoefficients::ptr table(-0.00567581,-0.782561,-0.622548,0.928668);
+  pcl::ModelCoefficients::Ptr table_coefficients (new pcl::ModelCoefficients);
+
+  // The rough normal of the table plane
+  table_coefficients->values.push_back(-0.00567581);
+  table_coefficients->values.push_back(-0.782561);
+  table_coefficients->values.push_back(-0.622548);
+  table_coefficients->values.push_back( 0.928668);
+
+  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (package_path + "/" + filepath, *input_cloud) == -1)
+  {
+    PCL_ERROR ("Couldn't read input file\n");
+    exit (-1);
+  }
+
+  CuboidMatcher cm;
+  cm.setInputCloud(input_cloud);
+  cm.setDebug(false);
+  cm.setTableCoefficients(table_coefficients);
+  cm.setMode(CUBOID_MATCHER_MODE_WITH_COEFFICIENTS);
+  Cuboid cuboid;
+  cm.execute(cuboid);
+
+	ASSERT_TRUE( cm.estimationSuccessful() );
+
+  // Width: 0.1443
+	ASSERT_TRUE( cuboid.length1 > 0.13);
+	ASSERT_TRUE( cuboid.length1 < 0.15);
+
+  // Height: 0.187366 
+	ASSERT_TRUE( cuboid.length2 > 0.18);
+	ASSERT_TRUE( cuboid.length2 < 0.20);
+
+  // Depth: 0.051284  
+	ASSERT_TRUE( cuboid.length3 > 0.04);
+	ASSERT_TRUE( cuboid.length3 < 0.06);
+  
+  // Volume: 0.00138657 
+	ASSERT_TRUE( cuboid.volume > 0.001);
+	ASSERT_TRUE( cuboid.volume < 0.0015);
+
+  SUCCEED();
+}
+
+TEST(suturo_perception_match_cuboid, match_baguette_with_table)
+{
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  std::string package_path = ros::package::getPath("suturo_perception_match_cuboid");
+  std::string filepath = "test_data/baguette_plane_mode.pcd";
+  // pcl::ModelCoefficients::ptr table(-0.00567581,-0.782561,-0.622548,0.928668);
+  pcl::ModelCoefficients::Ptr table_coefficients (new pcl::ModelCoefficients);
+
+  // The rough normal of the table plane
+  table_coefficients->values.push_back(-0.00567581);
+  table_coefficients->values.push_back(-0.782561);
+  table_coefficients->values.push_back(-0.622548);
+  table_coefficients->values.push_back( 0.928668);
+
+  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (package_path + "/" + filepath, *input_cloud) == -1)
+  {
+    PCL_ERROR ("Couldn't read input file\n");
+    exit (-1);
+  }
+
+  CuboidMatcher cm;
+  cm.setInputCloud(input_cloud);
+  cm.setDebug(false);
+  cm.setTableCoefficients(table_coefficients);
+  cm.setMode(CUBOID_MATCHER_MODE_WITH_COEFFICIENTS);
+  Cuboid cuboid;
+  cm.execute(cuboid);
+
+	ASSERT_TRUE( cm.estimationSuccessful() );
+
+  
+  // Width: 0.216117 
+	ASSERT_TRUE( cuboid.length1 > 0.20);
+	ASSERT_TRUE( cuboid.length1 < 0.22);
+
+  // Height: 0.122619
+  ASSERT_TRUE( cuboid.length2 > 0.12);
+	ASSERT_TRUE( cuboid.length2 < 0.14);
+
+  // Depth: 0.0442761 
+	ASSERT_TRUE( cuboid.length3 > 0.04);
+	ASSERT_TRUE( cuboid.length3 < 0.06);
+  
+  // Volume: 0.00117332 
+	ASSERT_TRUE( cuboid.volume > 0.001);
+	ASSERT_TRUE( cuboid.volume < 0.0015);
+
+  SUCCEED();
+}
+
+
+TEST(suturo_perception_match_cuboid, match_corny_with_table)
+{
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  std::string package_path = ros::package::getPath("suturo_perception_match_cuboid");
+  std::string filepath = "test_data/corny_plane_mode.pcd";
+  pcl::ModelCoefficients::Ptr table_coefficients (new pcl::ModelCoefficients);
+
+  // The rough normal of the table plane
+  table_coefficients->values.push_back(-0.00567581);
+  table_coefficients->values.push_back(-0.782561);
+  table_coefficients->values.push_back(-0.622548);
+  table_coefficients->values.push_back( 0.928668);
+
+  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (package_path + "/" + filepath, *input_cloud) == -1)
+  {
+    PCL_ERROR ("Couldn't read input file\n");
+    exit (-1);
+  }
+
+  CuboidMatcher cm;
+  cm.setInputCloud(input_cloud);
+  cm.setDebug(false);
+  cm.setTableCoefficients(table_coefficients);
+  cm.setMode(CUBOID_MATCHER_MODE_WITH_COEFFICIENTS);
+  Cuboid cuboid;
+  cm.execute(cuboid);
+
+	ASSERT_TRUE( cm.estimationSuccessful() );
+
+ 
+  // Width: 0.144728 
+	ASSERT_TRUE( cuboid.length1 > 0.14);
+	ASSERT_TRUE( cuboid.length1 < 0.16);
+
+  // Height: 0.134177 
+  ASSERT_TRUE( cuboid.length2 > 0.13);
+	ASSERT_TRUE( cuboid.length2 < 0.14);
+
+  // Depth: 0.038689 
+	ASSERT_TRUE( cuboid.length3 > 0.03);
+	ASSERT_TRUE( cuboid.length3 < 0.05);
+  
+  // Volume: 0.000751307
+	ASSERT_TRUE( cuboid.volume > 0.0007);
+	ASSERT_TRUE( cuboid.volume < 0.0009);
+  
+
+  SUCCEED();
+}
+
 
 
 int main(int argc, char **argv) 
