@@ -54,7 +54,7 @@ int main (int argc, char** argv)
   ros::init(argc, argv, "segment_objects");
   ros::NodeHandle nh;
   ros::Subscriber sub;
-  std::string image_topic="";
+  std::string cloud_topic="";
 
   // "HashMap" for program parameters
   po::variables_map vm;
@@ -64,7 +64,7 @@ int main (int argc, char** argv)
     po::options_description desc("Allowed options");
     desc.add_options()
       ("help", "produce help message")
-      ("topic,t", po::value<std::string>(&image_topic), "The ROS topic this node should listen to")
+      ("topic,t", po::value<std::string>(&cloud_topic), "The ROS topic this node should listen to")
     ;
 
     po::positional_options_description p;
@@ -94,7 +94,10 @@ int main (int argc, char** argv)
     return false;
   } 
 
-  sub = nh.subscribe("/camera/depth_registered/points", 1, 
+  if(cloud_topic.empty())
+      cloud_topic = "/camera/depth_registered/points";
+
+  sub = nh.subscribe(cloud_topic, 1, 
       &receive_cloud);
 
   ros::Rate r(20); // 20 hz

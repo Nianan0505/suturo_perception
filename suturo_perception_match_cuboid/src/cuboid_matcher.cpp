@@ -37,7 +37,7 @@ Eigen::Vector3f CuboidMatcher::reduceNormAngle(Eigen::Vector3f v1, Eigen::Vector
   float dotproduct = v1.dot(v2);
   if(acos(dotproduct)> M_PI/2)
   {
-    std::cout << "NORM IS ABOVE 90 DEG! TURN IN THE OTHER DIRECTION" << std::endl;
+    // std::cout << "NORM IS ABOVE 90 DEG! TURN IN THE OTHER DIRECTION" << std::endl;
     v2 = -v2;
   }
   return v2;
@@ -85,11 +85,14 @@ void CuboidMatcher::segmentPlanes()
     seg.segment (*detected_planes_.at(planeIdx).getInliers(),
         *detected_planes_.at(planeIdx).getCoefficients());
 
-    // Delete the latest DP instance if no inliers can be found and exit immediately
-    if( detected_planes_.at(planeIdx).getInliers()->indices.size() == 0 )
+    if(mode_ == CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS)
     {
-      detected_planes_.pop_back();
-      return;
+      // Delete the latest DP instance if no inliers can be found and exit immediately
+      if( detected_planes_.at(planeIdx).getInliers()->indices.size() == 0 )
+      {
+        detected_planes_.pop_back();
+        return;
+      }
     }
 
     // Create the filtering object
@@ -110,73 +113,118 @@ void CuboidMatcher::segmentPlanes()
     detected_planes_.at(planeIdx).setCentroid(centroid);
 
     planeIdx ++ ;
-  }
 
+  }
+  // std::cout << "Mode is " << mode_ << std::endl;
   if(mode_ == CUBOID_MATCHER_MODE_WITH_COEFFICIENTS)
   {
-    // Check the biggest plane against the table
+    // std::cout << "Segmenting in COEFFICIENT MODE" << std::endl;
+    int good_plane = -1;
+    // Check the plane angles against the table
+    // Use the plane that is perpendicular 
+    // to the normal of the table
     //
+    // no planes? Exit immediately
+    if(detected_planes_.size() == 0) return;
 
     float angle = detected_planes_.at(0).angleBetween(
-      getTableCoefficientsAsVector3f());
+           getTableCoefficientsAsVector3f());
     if(debug)
     {
       std::cout << "Angle between Normal of plane 0 and table normal";
       std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG" << std::endl;
     }
+    angle = ((angle * 180) / M_PI);
+
+    if( ( (angle >= 80 && angle <= 100) || 
+          (angle >= 260 && angle <= 280) ) ){
+        good_plane = 0;
+    }
+    else
+    {
+      if(debug)
+        std::cout << "Plane 0 doesnt have a proper angle to the table" << std::endl;
+    }
+
+    // has a good plane already been found?
+    if(good_plane == -1 && detected_planes_.size() >=2)
+    {
+      // Estimate the angle between plane 1 and the table
+      float angle = detected_planes_.at(1).angleBetween(
+          getTableCoefficientsAsVector3f());
+      if(debug)
+      {
+        std::cout << "Angle between Normal of plane 1 and table normal";
+        std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG" << std::endl;
+      }
+      angle = ((angle * 180) / M_PI);
+
+      if( ( (angle >= 80 && angle <= 100) || 
+            (angle >= 260 && angle <= 280) ) ){
+        good_plane = 1;
+      }
+      else
+      {
+        // The second plane also fails. Delete all the detected planes to
+        // indicate a failed segmentation
+        detected_planes_.clear();
+        return;
+      }
+
+    }
+    else
+    {
+      // No proper plane found, no more plane candidates available
+      // -> exit with an empty set of suitable planes
+      if( good_plane == -1 ){
+        detected_planes_.clear();
+        return;
+      }
+    }
+
+    if(good_plane == -1) return; // Security - This should not happen
+
+
+    // Push the normal of the good plane and the table
+    transformed_normals_.push_back(detected_planes_.at( good_plane ).
+        getCoefficientsAsVector3f());
+    transformed_normals_.push_back(getTableCoefficientsAsVector3f() );
+
+    good_matching_plane_ = good_plane;
+
   }
-
-
-  // TODO check amount of extracted points
-
-  float angle = detected_planes_.at(0).angleBetween(
-      detected_planes_.at(1).getCoefficientsAsVector3f());
-  if(debug)
+  else
   {
-    std::cout << "Angle between Normal of plane 0 and Normal of plane 1";
-    std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG";
+    // std::cout << "Segmenting in NORMAL MODE" << std::endl;
+    // TODO check amount of extracted points
+    float angle = detected_planes_.at(0).angleBetween(
+        detected_planes_.at(1).getCoefficientsAsVector3f());
+    if(debug)
+    {
+      std::cout << "Angle between Normal of plane 0 and Normal of plane 1";
+      std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG" << std::endl;
+    }
+
+    // check angle between planes. They should be near 0°, 90°, 180° or 270°
+    // for cuboids
+    // Exit instantly if the two biggest planes are not properly aligned
+    angle = ((angle * 180) / M_PI);
+
+    if( !( (angle >= 75 && angle <= 100) || 
+          (angle >= 260 && angle <= 280) ) ){
+      detected_planes_.clear();
+      return;
+    }
+
+    for (int i = 0; i < detected_planes_.size(); i++)
+    {
+      // fill the transformed_normals vector for the first time
+      transformed_normals_.push_back(detected_planes_.at(i).getCoefficientsAsVector3f());
+    }
+
+
   }
 
-  // check angle between planes. They should be near 0°, 90°, 180° or 270°
-  // for cuboids
-  // Exit instantly if the two biggest planes are not properly aligned
-  angle = ((angle * 180) / M_PI);
-
-  if( !( (angle >= 75 && angle <= 100) || 
-      (angle >= 260 && angle <= 280) ) ){
-    detected_planes_.clear();
-    return;
-  }
-
-  // for (int i = 0; i < detected_planes_.size(); i++)
-  // {
-  //   for (int j = 0; j < detected_planes_.size(); j++)
-  //   {
-  //     if(i==j) continue;
-
-  //     if(debug)
-  //       std::cout << "Angle between Normal " << i << " and Normal " << j;
-
-  //     // TODO check angle between planes. They should be near 0°, 90°, 180° or 270°
-  //     // for cuboids
-
-  //     float angle = detected_planes_.at(i).angleBetween(
-  //         detected_planes_.at(j).getCoefficientsAsVector3f());
-
-  //     if(debug)
-  //     {
-  //       std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG";
-  //       std::cout << std::endl;
-  //     }
-
-  //   }
-  // }
-
-  for (int i = 0; i < detected_planes_.size(); i++)
-  {
-    // fill the transformed_normals vector for the first time
-    transformed_normals_.push_back(detected_planes_.at(i).getCoefficientsAsVector3f());
-  }
 
 }
 void CuboidMatcher::computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid)
@@ -209,7 +257,7 @@ Eigen::Matrix< float, 4, 4 > CuboidMatcher::rotateAroundCrossProductOfNormals(
     firstAxis.normalize();
     axis=firstAxis;
     float c = costheta;
-    std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
+    // std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
     float s = sqrt(1-c*c);
     float CO = 1-c;
 
@@ -347,11 +395,24 @@ bool CuboidMatcher::execute(Cuboid &c)
 {
   segmentPlanes();
   // TODO check pointsize of the detected planes
-  
-  if(detected_planes_.size() < 2)
+ 
+  if(mode_ == CUBOID_MATCHER_MODE_WITH_COEFFICIENTS)
   {
-    std::cout << "Couldn't detect atleast two planes with RANSAC" << std::endl;
-    return false;
+    // Check the size of the norm vector vector
+    // This should be equal to two
+    if( transformed_normals_.size() < 2)
+    {
+      std::cout << "Couldn't detect atleast one plane that is perpendicular with the table. TN: " << transformed_normals_.size() << std::endl;
+      return false;
+    }
+  }
+  else
+  {
+    if(detected_planes_.size() < 2)
+    {
+      std::cout << "Couldn't detect atleast two planes with RANSAC" << std::endl;
+      return false;
+    }
   }
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr rotated_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -362,15 +423,25 @@ bool CuboidMatcher::execute(Cuboid &c)
   //   TODO: use the face with the smallest angle to the x-y plane
 
   // M
-  Eigen::Vector3f plane_normal = detected_planes_.at(0).getCoefficientsAsVector3f();
+  Eigen::Vector3f plane_normal;
+  if(mode_ == CUBOID_MATCHER_MODE_WITH_COEFFICIENTS)
+  {
+    if(good_matching_plane_ == -1)
+    {
+      std::cerr << "Tried to match against a non existing plane candidate! Exit." << std::endl;
+      return false;
+    }
+    plane_normal = detected_planes_.at(good_matching_plane_).getCoefficientsAsVector3f();
+  }
+  else
+  {
+    plane_normal = detected_planes_.at(0).getCoefficientsAsVector3f();
+  }
 
   // Compute the necessary rotation to align a face of the object with the camera's
   // imaginary image plane
   // N
-  Eigen::Vector3f camera_normal;
-  camera_normal(0)=0;
-  camera_normal(1)=0;
-  camera_normal(2)=1;
+  Eigen::Vector3f camera_normal(0,0,1);
 
   camera_normal = CuboidMatcher::reduceNormAngle(plane_normal, camera_normal);
   
@@ -379,7 +450,7 @@ bool CuboidMatcher::execute(Cuboid &c)
   Eigen::Matrix< float, 4, 4 > rotationBox = 
     rotateAroundCrossProductOfNormals(camera_normal, plane_normal);
   
-  std::cout << "Transformed first time" << std::endl;
+  // std::cout << "Transformed first time" << std::endl;
   pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, rotationBox);   
 
   if(save_intermediate_results_)
@@ -403,7 +474,7 @@ bool CuboidMatcher::execute(Cuboid &c)
   Eigen::Matrix< float, 4, 4 > secondRotation = 
     rotateAroundCrossProductOfNormals(xz_plane, transformed_normals_.at(1));
 
-  std::cout << "Transformed second time" << std::endl;
+  // std::cout << "Transformed second time" << std::endl;
   pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, secondRotation);   
 
   if(save_intermediate_results_)
@@ -453,7 +524,7 @@ bool CuboidMatcher::execute(Cuboid &c)
 
   if(debug)
   {
-    std::cout << "Cuboid statistics" << std::endl;
+    std::cout << "Cuboid statistics: ";
     std::cout << "Width: " << c.length1 << " Height: " << c.length2 << " Depth: " << c.length3 << " Volume: " << c.volume << " m^3" << std::endl;
   }
   estimation_succesful_ = true;
