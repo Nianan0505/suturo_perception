@@ -35,6 +35,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
   pcl::fromROSMsg(*inputCloud,*cloud_in);
   // ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
   sp.setOriginalCloud(cloud_in);
+  sp.setCalculateHullVolume(false);
   sp.processCloudWithProjections(cloud_in);
   pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
 

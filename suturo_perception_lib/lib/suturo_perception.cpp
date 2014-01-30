@@ -33,6 +33,7 @@ SuturoPerception::SuturoPerception()
   ecObjMaxClusterSize = 25000;
   debug = true;
   writer_pcd = false;
+  calculateHullVolume_ = true;
 }
 
 
@@ -302,7 +303,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
     pcl::ConvexHull<pcl::PointXYZRGB> hull;
     hull.setInputCloud(*it);
     hull.setDimension(3);
-    hull.setComputeAreaVolume(true); // This creates alot of output, but it's necessary for getTotalVolume() ....
+    hull.setComputeAreaVolume(calculateHullVolume_); // This creates alot of output, but it's necessary for getTotalVolume() ....
     hull.reconstruct (*hull_points);
 
     // Centroid calulcation
