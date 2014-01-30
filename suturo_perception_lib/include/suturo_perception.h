@@ -141,6 +141,9 @@ namespace suturo_perception_lib
     // dirty hack collision_objects
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> collision_objects;
 
+    // Flag for volume calculation on the hull of a point cluster
+    void setCalculateHullVolume(bool c){ calculateHullVolume_ = c; }
+
     private:
     // the logger
     Logger logger;
@@ -163,6 +166,7 @@ namespace suturo_perception_lib
     double ecObjClusterTolerance;
     int ecObjMinClusterSize;
     int ecObjMaxClusterSize;
+    bool calculateHullVolume_;
     std::vector<cv::Mat> perceived_cluster_images_;
     std::vector<ROI> perceived_cluster_rois_;
     // The coefficients of the detected table
