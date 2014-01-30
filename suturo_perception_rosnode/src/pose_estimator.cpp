@@ -27,6 +27,8 @@ suturo_perception_lib::SuturoPerception sp;
 typedef pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_pc_ptr;
 
 ros::Publisher vis_pub;
+ros::Publisher first_t_pub;
+ros::Publisher second_t_pub;
 
 void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
@@ -36,6 +38,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
   // ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
   sp.setOriginalCloud(cloud_in);
   sp.setCalculateHullVolume(false);
+  sp.setEcMinClusterSize(4000);
   sp.processCloudWithProjections(cloud_in);
   pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
 
@@ -51,7 +54,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     cm.setDebug(true);
     cm.setTableCoefficients(table_coefficients);
     cm.setMode(CUBOID_MATCHER_MODE_WITH_COEFFICIENTS);
-    // cm.setSaveIntermediateResults(true);
+    cm.setSaveIntermediateResults(true);
     Cuboid cuboid;
     cm.execute(cuboid);
 
@@ -61,6 +64,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     cuboidMarker.header.stamp = ros::Time();
     cuboidMarker.ns = "suturo_perception";
     cuboidMarker.id = i;
+    cuboidMarker.lifetime = ros::Duration(1);
     cuboidMarker.type = visualization_msgs::Marker::CUBE;
     cuboidMarker.action = visualization_msgs::Marker::ADD;
     cuboidMarker.pose.position.x = cuboid.center(0);
@@ -68,7 +72,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     cuboidMarker.pose.position.z = cuboid.center(2);
     cuboidMarker.pose.orientation.x = cuboid.orientation.x();
     cuboidMarker.pose.orientation.y = cuboid.orientation.y();
-    cuboidMarker.pose.orientation.z = cuboid.orientation.y();
+    cuboidMarker.pose.orientation.z = cuboid.orientation.z();
     cuboidMarker.pose.orientation.w = cuboid.orientation.w();
     cuboidMarker.scale.x = cuboid.length1;
     cuboidMarker.scale.y = cuboid.length2;
@@ -78,6 +82,23 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     cuboidMarker.color.g = 0.0;
     cuboidMarker.color.b = 0.0;
     vis_pub.publish(cuboidMarker);
+
+    if(cm.getIntermediateClouds().size()>=1)
+    {
+      sensor_msgs::PointCloud2 pub_message;
+      pcl::toROSMsg(*cm.getIntermediateClouds().at(0), pub_message );
+      pub_message.header.frame_id = inputCloud->header.frame_id;
+      first_t_pub.publish(pub_message);
+    }
+
+    if(cm.getIntermediateClouds().size()>=2)
+    {
+      sensor_msgs::PointCloud2 pub_message;
+      pcl::toROSMsg(*cm.getIntermediateClouds().at(1), pub_message );
+      pub_message.header.frame_id = inputCloud->header.frame_id;
+      second_t_pub.publish(pub_message);
+    }
+// std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> getIntermediateClouds(){ 
   }
 
 }
@@ -131,6 +152,8 @@ int main (int argc, char** argv)
       pointcloud_topic = "/camera/depth_registered/points";
 
   vis_pub = nh.advertise<visualization_msgs::Marker>("/suturo/pose_markers", 0);  
+  first_t_pub = nh.advertise<sensor_msgs::PointCloud2>("/suturo/pose/first_transform", 1000); 
+  second_t_pub = nh.advertise<sensor_msgs::PointCloud2>("/suturo/pose/second_transform", 1000); 
 
   std::cout << "Subscribing to " << pointcloud_topic << std::endl;
   sub = nh.subscribe(pointcloud_topic, 1, 
