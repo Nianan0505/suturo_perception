@@ -177,6 +177,7 @@ void CuboidMatcher::segmentPlanes()
       // No proper plane found, no more plane candidates available
       // -> exit with an empty set of suitable planes
       if( good_plane == -1 ){
+        std::cerr << "No plane found" << std::endl;
         detected_planes_.clear();
         return;
       }
@@ -257,7 +258,7 @@ Eigen::Matrix< float, 4, 4 > CuboidMatcher::rotateAroundCrossProductOfNormals(
     firstAxis.normalize();
     axis=firstAxis;
     float c = costheta;
-    // std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
+    std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
     float s = sqrt(1-c*c);
     float CO = 1-c;
 
@@ -525,7 +526,8 @@ bool CuboidMatcher::execute(Cuboid &c)
   if(debug)
   {
     std::cout << "Cuboid statistics: ";
-    std::cout << "Width: " << c.length1 << " Height: " << c.length2 << " Depth: " << c.length3 << " Volume: " << c.volume << " m^3" << std::endl;
+    std::cout << "Width: " << c.length1 << " Height: " << c.length2 << " Depth: " << c.length3 << " Volume: " << c.volume;
+    std::cout << " m^3" << "O: " << c.orientation.w() << " " << c.orientation.x() << " " << c.orientation.y() << " " << c.orientation.z() << std::endl;
   }
   estimation_succesful_ = true;
   return true;

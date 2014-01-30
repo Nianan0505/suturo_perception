@@ -31,7 +31,14 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
   pcl::fromROSMsg(*inputCloud,*cloud_in);
   ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
   sp.setOriginalCloud(cloud_in);
+  sp.setEcMinClusterSize(5000);
   sp.processCloudWithProjections(cloud_in);
+  pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
+  std::cout << "Estimated normal of the table: ";
+  std::cout << table_coefficients->values.at(0) << " ";
+  std::cout << table_coefficients->values.at(1) << " ";
+  std::cout << table_coefficients->values.at(2) << " ";
+  std::cout << table_coefficients->values.at(3) << std::endl;
 
   std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   perceivedObjects = sp.getPerceivedObjects();
