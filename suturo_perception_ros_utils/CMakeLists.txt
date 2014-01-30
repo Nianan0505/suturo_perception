@@ -122,8 +122,38 @@ add_library(suturo_perception_ros_utils
   src/publisher_helper.cpp
 )
 
+add_library(suturo_perception_ros_utils_basic_io_pcd
+  src/basic_io_pcd.cpp
+)
+
 ## Declare a cpp executable
-# add_executable(suturo_perception_utils_node src/suturo_perception_utils_node.cpp)
+add_executable(remove_nans 
+  src/remove_nans.cpp
+  src/basic_io_pcd.cpp)
+
+add_executable(smooth_surface 
+  src/smooth_surface.cpp
+  src/basic_io_pcd.cpp)
+
+add_executable(compute_bounding_box 
+  src/compute_bounding_box.cpp
+  src/basic_io_pcd.cpp)
+
+add_executable(compute_convex_hull 
+  src/compute_convex_hull.cpp
+  src/basic_io_pcd.cpp)
+
+add_executable(get_min_max_3d 
+  src/get_min_max_3d.cpp
+  src/basic_io_pcd.cpp)
+
+add_executable(downsample_cloud
+  src/downsample_cloud.cpp
+  src/basic_io_pcd.cpp)
+
+add_executable(segment_plane_and_show
+  src/segment_plane_and_show.cpp
+  src/basic_io_pcd.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -131,6 +161,38 @@ add_library(suturo_perception_ros_utils
 
 # Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_ros_utils
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(suturo_perception_ros_utils_basic_io_pcd
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(remove_nans
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(smooth_surface
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(compute_bounding_box
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(compute_convex_hull
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(get_min_max_3d
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(downsample_cloud
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(segment_plane_and_show
   ${catkin_LIBRARIES}
 )
 

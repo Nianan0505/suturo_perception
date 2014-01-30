@@ -17,6 +17,7 @@ SET(POINTCLOUD_PATH "${CMAKE_CURRENT_SOURCE_DIR}/pointclouds" CACHE STRING "Path
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS 
+  pcl
   cv_bridge
   image_transport
   roscpp

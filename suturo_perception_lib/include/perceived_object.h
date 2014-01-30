@@ -106,6 +106,12 @@ namespace suturo_perception_lib
         return c_roi; 
       };
 
+      pcl::VFHSignature308 get_c_vfhs() const
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex); 
+        return c_vfhs; 
+      };
+
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr get_pointCloud() const
       {
         boost::lock_guard<boost::signals2::mutex> lock(*mutex); 
@@ -188,6 +194,11 @@ namespace suturo_perception_lib
         boost::lock_guard<boost::signals2::mutex> lock(*mutex);
         c_roi = value;
       };
+      void set_c_vfhs(pcl::VFHSignature308 value)
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex);
+        c_vfhs = value;
+      };
       void set_pointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr value)
       {
         boost::lock_guard<boost::signals2::mutex> lock(*mutex);
@@ -210,6 +221,7 @@ namespace suturo_perception_lib
       uint8_t c_hue_histogram_quality;
       cv::Mat *c_hue_histogram_image;
       ROI c_roi;
+      pcl::VFHSignature308 c_vfhs;
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud;
 
       boost::shared_ptr<boost::signals2::mutex> mutex;

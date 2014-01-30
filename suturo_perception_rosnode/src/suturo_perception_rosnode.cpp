@@ -30,6 +30,10 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   is_edible_service_finish = nh.serviceClient<suturo_perception_msgs::PrologFinish>("json_prolog/finish");
   objectID = 0;
 
+  // VFH + SVM stuff
+  logger.logInfo("Loading VFH training data for SVM...");
+  svm_classification.trainVFHData();
+
   // Init the topic for the plane segmentation result
 	ph.advertise<sensor_msgs::PointCloud2>(TABLE_PLANE_TOPIC);
 
@@ -54,40 +58,84 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   if(!recognitionDir.empty())
     object_matcher_.readTrainImagesFromDatabase(recognitionDir);
 
-  object_matcher_.setVerboseLevel(0); // TODO use constant
+  object_matcher_.setVerboseLevel(VERBOSE_MINIMAL);
   object_matcher_.setMinGoodMatches(7);
 
-   numThreads = 8;
+  numThreads = 8;
+  callback_called = false;
+  fallback_enabled = false;
 }
 
 /*
  * Receive callback for the /camera/depth_registered/points subscription
  */
-void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, 
+                                                      const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
   // process only one cloud
-  
+  callback_called = true;
   if(processing)
   {
     logger.logInfo("Receiving cloud");
     logger.logInfo("processing...");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*inputCloud,*cloud_in);
-    cv_bridge::CvImagePtr cv_ptr;
-    cv_ptr = cv_bridge::toCvCopy(inputImage, enc::BGR8);
 
-    // Make a deep copy of the passed cv::Mat and set a new
-    // boost pointer to it.
-    boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
+		// Gazebo sends us unorganized pointclouds!
+		// Reorganize them to be able to compute the ROI of the objects
+		// This workaround is only tested for gazebo 1.9!
+		if(!cloud_in->isOrganized ())
+		{
+			logger.logInfo((boost::format("Received an unorganized PointCloud: %d x %d .Convert it to a organized one ...") % cloud_in->width % cloud_in->height ).str());
+
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr org_cloud (new pcl::PointCloud<pcl::PointXYZRGB>());
+			org_cloud->width = 640;
+			org_cloud->height = 480;
+			org_cloud->is_dense = false;
+			org_cloud->points.resize(640 * 480);
+
+			for (int i = 0; i < cloud_in->points.size(); i++) {
+					pcl::PointXYZRGB result;
+					result.x = 0;
+					result.y = 0;
+					result.z = 0;
+					org_cloud->points[i]=cloud_in->points[i];
+			}
+
+			cloud_in = org_cloud;
+		}
+    if(!fallback_enabled)
+    {
+      cv_bridge::CvImagePtr cv_ptr;
+      cv_ptr = cv_bridge::toCvCopy(inputImage, enc::BGR8);
+
+      // Make a deep copy of the passed cv::Mat and set a new
+      // boost pointer to it.
+      boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
+      sp.setOriginalRGBImage(img);
+    }
     
     std::stringstream ss;
     ss << "Received a new point cloud: size = " << cloud_in->points.size();
     logger.logInfo((boost::format("Received a new point cloud: size = %s") % cloud_in->points.size()).str());
-    sp.setOriginalRGBImage(img);
     sp.setOriginalCloud(cloud_in);
     sp.processCloudWithProjections(cloud_in);
     processing = false;
     logger.logInfo("Cloud processed. Lock buffer and return the results");      
+  }
+  callback_called = false;
+}
+
+/*
+ * Fallback, if only pointcloud data is available.
+ */
+void SuturoPerceptionROSNode::fallback_receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+{
+  if(processing)
+  {
+    logger.logInfo("Received a pointcloud message");
+    sensor_msgs::ImageConstPtr nullPtr; // boost::shared_ptr NullPtr
+    receive_image_and_cloud(nullPtr, inputCloud);
   }
 }
 
@@ -103,7 +151,6 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 {
   boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
 
-  // ros::Subscriber sub;
   processing = true;
 
   // signal failed call, if request string does not match
@@ -112,7 +159,6 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     return false;
   }
 
-  // TODO Make this configurable!!
   message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, colorTopic, 1);
   message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub(nh, pointTopic, 1);
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::PointCloud2> MySyncPolicy;
@@ -126,7 +172,27 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
   while(processing)
   {
-    if(boost::posix_time::second_clock::local_time() >= cancelTime) processing = false;
+    if(boost::posix_time::second_clock::local_time() >= cancelTime && !callback_called)
+    {
+      processing = false;
+      // register normal callback just for the cloud topic and retry, if no color data is available
+      if(!fallback_enabled)
+      {
+        processing = true;
+        logger.logWarn("No color image received. Falling back to point clouds only.");
+        image_sub.unsubscribe();
+        pc_sub.unsubscribe();
+        sub_cloud = nh.subscribe(pointTopic, 1, 
+          &SuturoPerceptionROSNode::fallback_receive_cloud, this);
+        fallback_enabled = true;
+        cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
+      }
+      else // fallback failed as well. no data available. Abort service call.
+      {
+        logger.logError("No sensor data available. Aborting.");
+        return false;
+      }
+    } 
     ros::spinOnce();
     r.sleep();
   }
@@ -136,6 +202,35 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
   perceived_cluster_images = sp.getPerceivedClusterImages();
+
+  // If the image dimension is bigger then
+  // the dimension of the pointcloud, we have to adjust the ROI of every
+  // perceived object
+  if(sp.getOriginalRGBImage()->cols != sp.getOriginalCloud()->width
+      && sp.getOriginalRGBImage()->rows != sp.getOriginalCloud()->height)
+  {
+    // std::cout << "Image dimensions differ from PC dimensions: ";
+    // std::cout << "Image " <<  sp.getOriginalRGBImage()->cols << "x" << sp.getOriginalRGBImage()->rows;
+    // std::cout << "vs. Cloud " <<  sp.getOriginalCloud()->width << "x" << sp.getOriginalCloud()->height << std::endl;
+
+    // Adjust the ROI if the image is at 1280x1024 and the pointcloud is at 640x480
+    if(sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 1024)
+    {
+       for (int i = 0; i < perceivedObjects.size(); i++) {
+          ROI roi = perceivedObjects.at(i).get_c_roi();
+          roi.origin.x*=2;
+          roi.origin.y*=2;
+          roi.width*=2;
+          roi.height*=2;
+          perceivedObjects.at(i).set_c_roi(roi);
+       }
+    }
+    else
+    {
+      logger.logError("UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS");
+    }
+
+    }
   
   // Execution pipeline
   // Each capability provides an enrichment for the
@@ -160,13 +255,15 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     // Initialize Capabilities
     ColorAnalysis ca(perceivedObjects[i]);
     suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
+    suturo_perception_vfh_estimation::VFHEstimation vfhe(perceivedObjects[i]);
 
     // post work to threadpool
     ioService.post(boost::bind(&ColorAnalysis::execute, ca));
     ioService.post(boost::bind(&suturo_perception_shape_detection::RandomSampleConsensus::execute, sd));
+    ioService.post(boost::bind(&suturo_perception_vfh_estimation::VFHEstimation::execute, vfhe));
 
     // Is 2d recognition enabled?
-    if(!recognitionDir.empty())
+    if(!recognitionDir.empty() && !fallback_enabled)
     {
       // perceivedObjects[i].c_recognition_label_2d="";
       suturo_perception_2d_capabilities::LabelAnnotator2D la(perceivedObjects[i], sp.getOriginalRGBImage(), object_matcher_);
@@ -179,13 +276,15 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     }
 
     // Publish the ROI-cropped images
-    suturo_perception_2d_capabilities::ROIPublisher 
-      rp(perceivedObjects.at(i), ph,sp.getOriginalRGBImage(),frameId);
-    std::stringstream ss;
-    ss << i;
-    rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
-    rp.execute();
- 
+    if(!fallback_enabled)
+    {
+      suturo_perception_2d_capabilities::ROIPublisher 
+        rp(perceivedObjects.at(i), ph,sp.getOriginalRGBImage(),frameId);
+      std::stringstream ss;
+      ss << i;
+      rp.setTopicName(CROPPED_IMAGE_PREFIX_TOPIC + ss.str());
+      rp.execute();
+    }
   }
   //boost::this_thread::sleep(boost::posix_time::microseconds(1000));
   // wait for thread completion.
@@ -236,61 +335,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // sync.shutdown();
   visualizationPublisher.publishMarkers(res.perceivedObjs);
 
-  // ===============================================================
-  // dirty demo hack. get objects and plane to merge collision_cloud
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr collision_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  collision_cloud = sp.getPlaneCloud();
-
-  if(collision_cloud != NULL)
-  {
-    // get edible
-    int queryId = 0;
-    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin(); 
-      it != res.perceivedObjs.end(); ++it)
-    {
-      suturo_perception_msgs::PrologQuery pq;
-      suturo_perception_msgs::PrologNextSolution pqn;
-      suturo_perception_msgs::PrologFinish pqf;
-      pq.request.mode = 0;
-      pq.request.id = queryId;
-      std::stringstream ss;
-      ss << "is_edible([[" << queryId << ", '', '" << it->c_volume << "', 0]], Out)"; 
-      logger.logDebug((boost::format("Knowledge query for collision_cloud: %s") % ss.str().c_str()).str()); 
-      pq.request.query = ss.str();
-      if(is_edible_service.call(pq))
-      {
-        
-        pqn.request.id = queryId;
-        is_edible_service_next.call(pqn);
-        logger.logDebug((boost::format("SOLUTION: %s") % pqn.response.solution.c_str()).str());
-
-        if(pqn.response.solution.empty()) logger.logDebug("Prolog returned fishy results");
-        else
-        {
-          if(pqn.response.solution.substr(8, 1).compare("]") == 0)
-          {
-            logger.logDebug("Added to collision_cloud");
-            *collision_cloud += *sp.collision_objects[queryId];  
-          }
-        }
-        pqf.request.id = queryId;
-        is_edible_service_finish.call(pqf);
-      }
-      else
-      logger.logError("Knowledge not reachable");
-      queryId++;
-    }
-    ph.publish_pointcloud(COLLISION_CLOUD_TOPIC, collision_cloud, frameId);
-  }
-  else
-  {
-    logger.logError("collision cloud (aka plane) is NULL ... skipping iteration");
-  }
-
   logger.logInfo("Service call finished. return");
-  
-  
-  
   return true;
 }
 
@@ -370,9 +415,16 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_hue_histogram = *it->get_c_hue_histogram();
     msgObj->c_hue_histogram_quality = it->get_c_hue_histogram_quality();
     msgObj->recognition_label_2d = it->get_c_recognition_label_2d();
+    for (int i = 0; i < 308; i++) 
+    {
+      msgObj->c_vfh_estimation.push_back(it->get_c_vfhs().histogram[i]);
+    }
+    msgObj->c_svm_result = svm_classification.classifyVFHSignature308(it->get_c_vfhs());
+    msgObj->c_pose = svm_classification.classifyPoseVFHSignature308(it->get_c_vfhs(), msgObj->c_svm_result);
 
     // these are not set for now
     msgObj->recognition_label_3d = "";
+    
     result->push_back(*msgObj);
   }
   return result;

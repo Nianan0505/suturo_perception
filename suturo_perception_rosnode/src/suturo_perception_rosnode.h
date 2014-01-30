@@ -30,10 +30,13 @@
 #include "suturo_perception_utils.h"
 #include <sensor_msgs/Image.h>
 #include "suturo_perception_2d_capabilities/label_annotator_2d.h"
+#include "vfh_estimation.h"
+#include "svm_classification.h"
 
 using namespace suturo_perception_ros_utils;
 using namespace suturo_perception_utils;
 using namespace suturo_perception_color_analysis;
+using namespace suturo_perception_svm_classification;
 
 class SuturoPerceptionROSNode
 {
@@ -45,6 +48,8 @@ public:
     suturo_perception_msgs::GetClusters::Response &res);
   void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level);
 
+  void fallback_receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud);
+
 private:
   // Declare the names of the used Topics
   static const std::string TABLE_PLANE_TOPIC;
@@ -55,10 +60,14 @@ private:
   static const std::string HISTOGRAM_PREFIX_TOPIC;
 
   bool processing; // processing flag
+  bool callback_called; // cloud and image received, callback is running
+  bool fallback_enabled; // flag, if fallback to just cloud data is enabled
+  ros::Subscriber sub_cloud; // fallback subscriber
   ObjectMatcher object_matcher_;
   suturo_perception_lib::SuturoPerception sp;
   std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   ros::NodeHandle nh;
+  SVMClassification svm_classification;
   boost::signals2::mutex mutex;
   // ID counter for the perceived objects
   int objectID;

@@ -21,6 +21,8 @@ suturo_perception_color_analysis
 suturo_perception_shape_detection
 suturo_perception_ros_utils 
 suturo_perception_utils 
+suturo_perception_vfh_estimation
+suturo_perception_svm_classification
 pcl
 pcl_ros
 )
@@ -47,7 +49,7 @@ link_directories(${suturo_perception_lib_LIBRARY_DIRS})
 link_directories(${suturo_perception_ros_utils_LIBRARY_DIRS})
 link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 
-#add_dependencies(suturo_perception_rosnode ${PROJECT_NAME}_gencfg)
+# add_dependencies(suturo_perception_rosnode ${PROJECT_NAME}_gencfg)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -150,13 +152,15 @@ include_directories(
 # )
 
 ## Declare a cpp executable
+add_executable(segment_objects src/segment_objects.cpp)
 add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(suturo_perception_rosnode suturo_perception_lib suturo_perception_msgs)
+add_dependencies(suturo_perception_rosnode suturo_perception_lib suturo_perception_msgs ${PROJECT_NAME}_gencfg)
+add_dependencies(suturo_perception_dummynode suturo_perception_lib suturo_perception_msgs ${PROJECT_NAME}_gencfg)
 add_dependencies(suturo_perception_rosclient suturo_perception_lib suturo_perception_msgs)
 
 ## Specify libraries to link a library or executable target against
@@ -169,6 +173,10 @@ target_link_libraries(suturo_perception_dummynode
 )
 
 target_link_libraries(suturo_perception_rosclient
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(segment_objects
   ${catkin_LIBRARIES}
 )
 #############
