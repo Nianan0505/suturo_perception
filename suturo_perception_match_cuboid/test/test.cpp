@@ -389,9 +389,9 @@ TEST(suturo_perception_match_cuboid, match_corny_with_table)
   SUCCEED();
 }
 
+// TODO: Build test
 // Estimated normal of the table: -0.0315049 -0.906697 -0.420605 0.772575
 // cornflakes_on_table
-// Gives wrong pose estimation right now
 
 
 int main(int argc, char **argv) 
