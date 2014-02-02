@@ -5,6 +5,76 @@ using namespace suturo_perception_color_analysis;
 ColorAnalysis::ColorAnalysis(PerceivedObject &obj) : Capability(obj)
 {
   logger = suturo_perception_utils::Logger("color_analysis");
+  s_lower_threshold = 0.2;
+  s_upper_threshold = 0.8;
+  v_lower_threshold = 0.2;
+  v_upper_threshold = 0.8;
+}
+
+void
+ColorAnalysis::allInOne(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+{
+  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
+  if(cloud_in->points.size() == 0) 
+  {
+    logger.logError("Input PointCloud empty!");
+    return;  
+  }
+
+  hueHistogram = new std::vector<uint32_t>(120); // 360 / 3 = 120
+  double average_r = 0.0;
+  double average_g = 0.0;
+  double average_b = 0.0;
+  double average_h = 0.0; 
+  double average_s = 0.0;
+  double average_v = 0.0;
+  uint32_t excluded_point_cnt = 0;
+  for (int i = 0; i < (*hueHistogram).size(); i++)
+  {
+    hueHistogram->at(i) = 0;
+  }
+  for(int i = 0; i < cloud_in->points.size(); ++i)
+  {
+    uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
+    uint8_t r = (rgb >> 16) & 0x0000ff;
+    uint8_t g = (rgb >> 8) & 0x0000ff;
+    uint8_t b = (rgb) & 0x0000ff;
+    average_r += (double)r / (double)cloud_in->points.size();
+    average_g += (double)g / (double)cloud_in->points.size();
+    average_b += (double)b / (double)cloud_in->points.size();
+    HSVColor hsv = convertRGBToHSV(rgb);
+    average_s += (double)hsv.s / (double)cloud_in->points.size();
+    average_v += (double)hsv.v / (double)cloud_in->points.size();
+    if (!inHSVThreshold(hsv))
+    {
+      excluded_point_cnt++;
+    }
+    else
+    {
+      hueHistogram->at(hsv.h/3) ++;
+    }
+  }
+  averageColor = ((uint32_t)average_r << 16 | (uint32_t)average_g << 8 | (uint32_t)average_b);
+  averageColorHSV.h = average_h;
+  averageColorHSV.s = average_s;
+  averageColorHSV.v = average_v;
+  histogramQuality = (uint8_t) (100.0 - ((100.0 / (double) cloud_in->points.size()) * (double) excluded_point_cnt));
+  average_h = 0.0; 
+  for(int i = 0; i < cloud_in->points.size(); ++i)
+  {
+    uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
+    HSVColor hsv = convertRGBToHSV(rgb);
+    if (!inHSVThreshold(hsv))
+      continue;
+    average_h += (double)hsv.h / ((double)cloud_in->points.size() - excluded_point_cnt);
+  }
+  averageColorHSVQuality.h = average_h;
+  averageColorHSVQuality.s = average_s;
+  averageColorHSVQuality.v = average_v;
+
+  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+  logger.logTime(s, e, "allInOne()");
 }
 
 uint32_t
@@ -108,7 +178,7 @@ ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr clou
     ret->at(hsv.h/3) ++;
   }
 
-  histogram_quality = (uint8_t) (100.0 - ((100.0 / (double) cloud_in->points.size()) * (double) excluded_point_cnt));
+  histogramQuality = (uint8_t) (100.0 - ((100.0 / (double) cloud_in->points.size()) * (double) excluded_point_cnt));
 
   boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
   logger.logTime(s, e, "getHistogramHue()");
@@ -323,7 +393,7 @@ ColorAnalysis::histogramToImage(std::vector<uint32_t> *histogram)
 uint8_t
 ColorAnalysis::getHistogramQuality()
 {
-  return histogram_quality;
+  return histogramQuality;
 }
 
 
@@ -331,16 +401,18 @@ void
 ColorAnalysis::execute()
 {
   // Get average color of the object
-  uint32_t averageColor = getAverageColor(perceivedObject.get_pointCloud());
-  HSVColor averageColorHSV = convertRGBToHSV(averageColor);
-  HSVColor averageColorHSVQuality = getAverageColorHSVQuality(perceivedObject.get_pointCloud());
+  //uint32_t averageColor = getAverageColor(perceivedObject.get_pointCloud());
+  //HSVColor averageColorHSV = convertRGBToHSV(averageColor);
+  //HSVColor averageColorHSVQuality = getAverageColorHSVQuality(perceivedObject.get_pointCloud());
 
   // Get hue histogram of the object
-  std::vector<uint32_t> *histogram = getHistogramHue(perceivedObject.get_pointCloud());
-  uint8_t histogram_quality = getHistogramQuality();
+  //std::vector<uint32_t> *histogram = getHistogramHue(perceivedObject.get_pointCloud());
+  //uint8_t histogram_quality = getHistogramQuality();
+  
+  allInOne(perceivedObject.get_pointCloud());
 
   // generate image of histogram
-  cv::Mat *histogram_image = histogramToImage(histogram);
+  cv::Mat *histogram_image = histogramToImage(hueHistogram);
 
   // update perceived object
   perceivedObject.set_c_color_average_r((averageColor >> 16) & 0x0000ff);
@@ -352,8 +424,8 @@ ColorAnalysis::execute()
   perceivedObject.set_c_color_average_qh(averageColorHSVQuality.h);
   perceivedObject.set_c_color_average_qs(averageColorHSVQuality.s);
   perceivedObject.set_c_color_average_qv(averageColorHSVQuality.v);
-  perceivedObject.set_c_hue_histogram(histogram);
-  perceivedObject.set_c_hue_histogram_quality(histogram_quality);
+  perceivedObject.set_c_hue_histogram(hueHistogram);
+  perceivedObject.set_c_hue_histogram_quality(histogramQuality);
   perceivedObject.set_c_hue_histogram_image(histogram_image);
 }
 
