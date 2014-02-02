@@ -16,6 +16,10 @@ uint8 c_color_average_r
 uint8 c_color_average_g
 uint8 c_color_average_b
 
+uint32 c_color_average_qh
+float32 c_color_average_qs
+float32 c_color_average_qv
+
 uint32 c_color_average_h
 float32 c_color_average_s
 float32 c_color_average_v

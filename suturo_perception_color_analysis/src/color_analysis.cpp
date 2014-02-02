@@ -41,6 +41,44 @@ ColorAnalysis::getAverageColorHSV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr c
   return convertRGBToHSV(getAverageColor(cloud_in));
 }
 
+HSVColor
+ColorAnalysis::getAverageColorHSVQuality(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
+{
+  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
+  HSVColor fail_ret;
+  fail_ret.h = -1;
+  fail_ret.s = -1.0;
+  fail_ret.v = -1.0;
+
+  if(cloud_in->points.size() == 0) return fail_ret;
+
+  HSVColor avg_col;
+  avg_col.h = 0;
+  double avg_col_h = 0.0;
+  avg_col.s = 0.0;
+  avg_col.v = 0.0;
+  for(int i = 0; i < cloud_in->points.size(); ++i)
+  {
+    uint32_t rgb = *reinterpret_cast<int*>(&cloud_in->points[i].rgb);
+    HSVColor hsv_col = convertRGBToHSV(rgb);
+
+    if (!inHSVThreshold(hsv_col))
+      continue;
+
+    avg_col_h += hsv_col.h / (double)cloud_in->points.size();
+    avg_col.s += hsv_col.s / (double)cloud_in->points.size();
+    avg_col.v += hsv_col.v / (double)cloud_in->points.size();
+  }
+
+  avg_col.h = (uint32_t) avg_col_h;
+
+  boost::posix_time::ptime e = boost::posix_time::microsec_clock::local_time();
+  logger.logTime(s, e, "getAverageColorHSVQuality()");
+
+  return avg_col;
+}
+
 std::vector<uint32_t> *
 ColorAnalysis::getHistogramHue(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
 {
@@ -295,6 +333,7 @@ ColorAnalysis::execute()
   // Get average color of the object
   uint32_t averageColor = getAverageColor(perceivedObject.get_pointCloud());
   HSVColor averageColorHSV = convertRGBToHSV(averageColor);
+  HSVColor averageColorHSVQuality = getAverageColorHSVQuality(perceivedObject.get_pointCloud());
 
   // Get hue histogram of the object
   std::vector<uint32_t> *histogram = getHistogramHue(perceivedObject.get_pointCloud());
@@ -310,7 +349,23 @@ ColorAnalysis::execute()
   perceivedObject.set_c_color_average_h(averageColorHSV.h);
   perceivedObject.set_c_color_average_s(averageColorHSV.s);
   perceivedObject.set_c_color_average_v(averageColorHSV.v);
+  perceivedObject.set_c_color_average_qh(averageColorHSVQuality.h);
+  perceivedObject.set_c_color_average_qs(averageColorHSVQuality.s);
+  perceivedObject.set_c_color_average_qv(averageColorHSVQuality.v);
   perceivedObject.set_c_hue_histogram(histogram);
   perceivedObject.set_c_hue_histogram_quality(histogram_quality);
   perceivedObject.set_c_hue_histogram_image(histogram_image);
+}
+
+bool
+ColorAnalysis::inHSVThreshold(HSVColor col)
+{
+  if (col.s >= s_lower_threshold && 
+      col.s <= s_upper_threshold &&
+      col.v >= v_lower_threshold &&
+      col.v <= v_lower_threshold)
+  {
+    return true;
+  }
+  return false;
 }
