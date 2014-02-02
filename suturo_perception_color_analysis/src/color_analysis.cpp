@@ -44,6 +44,7 @@ ColorAnalysis::allInOne(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in)
     average_g += (double)g / (double)cloud_in->points.size();
     average_b += (double)b / (double)cloud_in->points.size();
     HSVColor hsv = convertRGBToHSV(rgb);
+    average_h += (double)hsv.h / (double)cloud_in->points.size();
     average_s += (double)hsv.s / (double)cloud_in->points.size();
     average_v += (double)hsv.v / (double)cloud_in->points.size();
     if (!inHSVThreshold(hsv))
