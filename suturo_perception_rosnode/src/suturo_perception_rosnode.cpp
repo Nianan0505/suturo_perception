@@ -64,6 +64,12 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   numThreads = 8;
   callback_called = false;
   fallback_enabled = false;
+
+  // set default values for color_analysis if no reconfigure callback happens
+  color_analysis_lower_s = 0.2;
+  color_analysis_upper_s = 0.8;
+  color_analysis_lower_v = 0.2;
+  color_analysis_upper_v = 0.8;
 }
 
 /*
@@ -262,6 +268,10 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   {
     // Initialize Capabilities
     ColorAnalysis ca(perceivedObjects[i]);
+    ca.setLowerSThreshold(color_analysis_lower_s);
+    ca.setUpperSThreshold(color_analysis_upper_s);
+    ca.setLowerVThreshold(color_analysis_lower_v);
+    ca.setUpperVThreshold(color_analysis_upper_v);
     suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
     suturo_perception_vfh_estimation::VFHEstimation vfhe(perceivedObjects[i]);
 
@@ -366,11 +376,17 @@ void SuturoPerceptionROSNode::reconfigureCallback(suturo_perception_rosnode::Sut
             "segmenter: ecObjClusterTolerance: %f \n"
             "segmenter: ecObjMinClusterSize: %i \n"
             "segmenter: ecObjMaxClusterSize: %i \n"
+            "colorAnalysis: hsvFilterLowerSThreshold: %f \n"
+            "colorAnalysis: hsvFilterUpperSThreshold: %f \n"
+            "colorAnalysis: hsvFilterLowerVThreshold: %f \n"
+            "colorAnalysis: hsvFilterUpperVThreshold: %f \n"
             "general: numThreads: %i \n") %
             config.zAxisFilterMin % config.zAxisFilterMax % config.downsampleLeafSize %
             config.planeMaxIterations % config.planeDistanceThreshold % config.ecClusterTolerance %
             config.ecMinClusterSize % config.ecMaxClusterSize % config.prismZMin % config.prismZMax %
             config.ecObjClusterTolerance % config.ecObjMinClusterSize % config.ecObjMaxClusterSize % 
+            config.hsvFilterLowerSThreshold % config.hsvFilterUpperSThreshold % 
+            config.hsvFilterLowerVThreshold % config.hsvFilterUpperVThreshold % 
             config.numThreads).str());
   /*while(processing) // wait until current processing run is completed 
   { 
@@ -389,6 +405,10 @@ void SuturoPerceptionROSNode::reconfigureCallback(suturo_perception_rosnode::Sut
   sp.setEcObjClusterTolerance(config.ecObjClusterTolerance);
   sp.setEcObjMinClusterSize(config.ecObjMinClusterSize);
   sp.setEcObjMaxClusterSize(config.ecObjMaxClusterSize);
+  color_analysis_lower_s = config.hsvFilterLowerSThreshold;
+  color_analysis_upper_s = config.hsvFilterUpperSThreshold;
+  color_analysis_lower_v = config.hsvFilterLowerVThreshold;
+  color_analysis_upper_v = config.hsvFilterUpperVThreshold;
   logger.logInfo("Reconfigure successful");
 }
 

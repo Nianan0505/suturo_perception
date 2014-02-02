@@ -86,6 +86,11 @@ private:
   // dynamic reconfigure
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig> reconfSrv;
   dynamic_reconfigure::Server<suturo_perception_rosnode::SuturoPerceptionConfig>::CallbackType reconfCb;
+  // color analysis config
+  double color_analysis_lower_s;
+  double color_analysis_upper_s;
+  double color_analysis_lower_v;
+  double color_analysis_upper_v;
 
   VisualizationPublisher visualizationPublisher;
   Logger logger;
