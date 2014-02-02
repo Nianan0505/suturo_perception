@@ -416,6 +416,9 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_color_average_h = it->get_c_color_average_h();
     msgObj->c_color_average_s = it->get_c_color_average_s();
     msgObj->c_color_average_v = it->get_c_color_average_v();
+    msgObj->c_color_average_qh = it->get_c_color_average_qh();
+    msgObj->c_color_average_qs = it->get_c_color_average_qs();
+    msgObj->c_color_average_qv = it->get_c_color_average_qv();
     msgObj->c_roi_origin.x = it->get_c_roi().origin.x;
     msgObj->c_roi_origin.y = it->get_c_roi().origin.y;
     msgObj->c_roi_width = it->get_c_roi().width;

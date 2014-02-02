@@ -50,6 +50,10 @@ int main(int argc, char **argv)
                   clusterSrv.response.perceivedObjs[i].c_color_average_h,
                   clusterSrv.response.perceivedObjs[i].c_color_average_s,
                   clusterSrv.response.perceivedObjs[i].c_color_average_v);
+        ROS_INFO("Average HSV color with quality filter of perceived object is: h: %i  s: %f  v: %f", 
+                  clusterSrv.response.perceivedObjs[i].c_color_average_qh,
+                  clusterSrv.response.perceivedObjs[i].c_color_average_qs,
+                  clusterSrv.response.perceivedObjs[i].c_color_average_qv);
         ROS_INFO("2D recognition label of perceived object is: %s", clusterSrv.response.perceivedObjs[i].recognition_label_2d.c_str());
         ROS_INFO("ROI of object: (origin, width, height): ( %f x %f ) , %i , %i ",
           clusterSrv.response.perceivedObjs[i].c_roi_origin.x,
@@ -67,7 +71,7 @@ int main(int argc, char **argv)
           vfh_ss << clusterSrv.response.perceivedObjs[i].c_vfh_estimation.at(j);
           vfh_ss << " ";
         }
-        ROS_INFO("VFH Estimation: %s ", vfh_ss.str().c_str());
+        //ROS_INFO("VFH Estimation: %s ", vfh_ss.str().c_str());
         ROS_INFO("SVM Result: %s ", clusterSrv.response.perceivedObjs[i].c_svm_result.c_str());
         ROS_INFO("Pose: %d ", clusterSrv.response.perceivedObjs[i].c_pose);
       }

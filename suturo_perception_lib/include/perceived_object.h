@@ -58,6 +58,24 @@ namespace suturo_perception_lib
         return c_color_average_b; 
       };
 
+      uint32_t get_c_color_average_qh() const
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex); 
+        return c_color_average_qh; 
+      };
+
+      double get_c_color_average_qs() const
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex); 
+        return c_color_average_qs; 
+      };
+
+      double get_c_color_average_qv() const
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex); 
+        return c_color_average_qv; 
+      };
+
       uint32_t get_c_color_average_h() const
       {
         boost::lock_guard<boost::signals2::mutex> lock(*mutex); 
@@ -154,6 +172,21 @@ namespace suturo_perception_lib
         boost::lock_guard<boost::signals2::mutex> lock(*mutex);
         c_color_average_b = value;
       };
+      void set_c_color_average_qh(uint32_t value)
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex);
+        c_color_average_qh = value;
+      };
+      void set_c_color_average_qs(double value)
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex);
+        c_color_average_qs = value;
+      };
+      void set_c_color_average_qv(double value)
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex);
+        c_color_average_qv = value;
+      };
       void set_c_color_average_h(uint32_t value)
       {
         boost::lock_guard<boost::signals2::mutex> lock(*mutex);
@@ -216,6 +249,9 @@ namespace suturo_perception_lib
       uint32_t c_color_average_h;
       double c_color_average_s;
       double c_color_average_v;
+      uint32_t c_color_average_qh;
+      double c_color_average_qs;
+      double c_color_average_qv;
       std::string c_recognition_label_2d;
       std::vector<uint32_t> *c_hue_histogram;
       uint8_t c_hue_histogram_quality;
