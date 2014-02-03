@@ -192,6 +192,10 @@ target_link_libraries(pose_estimator
 target_link_libraries(calc_pc_from_img_and_depth
   ${catkin_LIBRARIES}
 )
+
+target_link_libraries(calc_pc_from_img_and_depth
+  ${catkin_LIBRARIES}
+)
 #############
 ## Install ##
 #############

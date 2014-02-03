@@ -195,6 +195,11 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 
 	boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
 
+  // reset data first, in case something goes wrong 
+  mutex.lock();
+  perceivedObjects.clear();
+  mutex.unlock();
+
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>), 
                                       cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>), 
                                       cloud_projected (new pcl::PointCloud<pcl::PointXYZRGB>),
