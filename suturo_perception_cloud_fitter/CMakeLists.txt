@@ -9,7 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
   suturo_perception_utils
   suturo_perception_lib
 )
+
 link_directories(${suturo_perception_utils_LIBRARY_DIRS})
+link_directories(${suturo_perception_cloud_fitter_LIBRARY_DIRS})
 
 catkin_package(
   INCLUDE_DIRS include
@@ -32,19 +34,26 @@ include_directories(
 ## Declare a cpp library
 add_library(suturo_perception_cloud_fitter
  src/mesh_loader.cpp
+ src/ply.c
  )
 
 ## Declare a cpp executable
-# add_executable(perception_node src/perception_node.cpp)
+add_executable(fitter_test
+ src/fitter_test.cpp
+ )
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(perception_node perception_generate_messages_cpp)
+add_dependencies(fitter_test suturo_perception_cloud_fitter)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(perception_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(suturo_perception_cloud_fitter
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(fitter_test
+  suturo_perception_cloud_fitter
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

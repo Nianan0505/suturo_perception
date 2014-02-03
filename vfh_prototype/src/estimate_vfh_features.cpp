@@ -35,7 +35,7 @@ main (int argc, char** argv)
   // This file is provided by the VFH data set
   // Please read the README file in the vfh_prototype package
   // to get this data.
-  if (pcl::io::loadPCDFile<pcl::PointXYZ> (package_path + "/" + file_path, *cloud) == -1)
+  if (pcl::io::loadPCDFile<pcl::PointXYZ> (file_path, *cloud) == -1)
 
   {
     PCL_ERROR ("Couldn't read given pcd file for VFH estimation \n");
@@ -75,7 +75,7 @@ main (int argc, char** argv)
 
   // Compute the features
   vfh.compute (*vfhs);
-  pcl::io::savePCDFile(package_path + "/" + file_path + "_vfh", *vfhs);
+  pcl::io::savePCDFile(file_path + "_vfh", *vfhs);
   // vfhs->points.size () should be of size 1*
   return 0;
 }

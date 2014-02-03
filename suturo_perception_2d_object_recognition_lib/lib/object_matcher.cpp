@@ -102,7 +102,7 @@ bool ObjectMatcher::objectRecognized(std::vector< DMatch > &good_matches, std::v
     return false;
 
   }else{
-    if(verbose_level>=VERBOSE_NORMAL)
+    if(verbose_level>=VERBOSE_EXTRA)
       std::cout << "Didn't try to compute homography. Either good_matches is not greater than 4 or min_good_matches_ is not reached. Good matches: " << good_matches.size() << " min_good_matches_ : " << min_good_matches_ << endl;
   }
   return false;
@@ -232,6 +232,20 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
     return result;
   }
 
+  /*
+   * To recognize an object, proceed with the following steps:
+   *  - Match all training images against the scene
+   *  - Store the Vector with the Correspondences between a training
+   *    image and the scene in a list
+   *  - Evaluate afterwards, which training images has the most correspondences with the scene
+   *  - Return this object as the best match
+   */
+
+  // true, if objectRecognized() was true on the training_image at index i
+  std::vector<bool> object_recognized;
+  std::vector<std::vector< DMatch > > good_matches_for_train_image;
+  std::vector<Mat> object_img_matches;
+
   // Check these descriptors against all stored training images
   for(int i = 0; i < training_images_.size(); i++)
   {
@@ -249,47 +263,149 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
     bool return_value = false;
 
     // Mat for the computed homography, if the object has been found
-    Mat H;
-    if(objectRecognized(good_matches, ti.keypoints, keypoints_scene, H))
-    {
-        // Only calculate bounding box if running with GUI
-        bool crossings = drawBoundingBoxFromHomography(H, ti.img, img_matches);
-        // if(!headless){
-        if(crossings){
-          if(verbose_level>=VERBOSE_NORMAL){
-            cout << "Bounding Box lines contain crossings. Discard the result... " << endl;
-            // Skip this iteration if crossings occured
-            cout << "Object recognized: [ ]" << endl;
-          }
-          continue;
-          // return_value=false;
-        }
-        else
-        {
-          return_value=true;
-        }
-        //-- Show detected matches
-        if(!headless)
-        {
-          imshow( "Good Matches & Object detection", img_matches );
-          waitKey(0);
-        }
+    Mat Hom;
 
-        // Exit on the first non-crossing match (for now)
-        ExecutionResult result;
-        result.object_recognized = return_value;
-        result.match_image = img_matches;
-        if(!ti.label.empty() && return_value ){
-          result.label = ti.label; // Do we have to copy the string here?
+    if(objectRecognized(good_matches, ti.keypoints, keypoints_scene, Hom))
+    {
+      // Does the homography contain crossings?
+      bool crossings = drawBoundingBoxFromHomography(Hom, ti.img, img_matches);
+      if(crossings)
+      {
+        if(verbose_level>=VERBOSE_NORMAL)
+        {
+          cout << "Bounding Box lines contain crossings. Discard the result... " << endl;
+          // Skip this iteration if crossings occured
+          cout << "Object recognized: [ ]" << endl;
         }
-        if(verbose_level>=VERBOSE_NORMAL)
-          cout << "Object recognized: [x]" << endl;
-        return result;
-    }else{
-        if(verbose_level>=VERBOSE_NORMAL)
-          cout << "Object recognized:[ ]"<<endl;
+        object_recognized.push_back(false);
+      }
+      else
+      {
+        object_recognized.push_back(true);
+      }
     }
+    else
+    {
+      object_recognized.push_back(false);
+    }
+    // Push back the necessary data for the matches
+    good_matches_for_train_image.push_back(good_matches);
+    object_img_matches.push_back(img_matches);
   }
+
+  //   Mat H;
+  //   if(objectRecognized(good_matches, ti.keypoints, keypoints_scene, H))
+  //   {
+  //       // Only calculate bounding box if running with GUI
+  //       bool crossings = drawBoundingBoxFromHomography(H, ti.img, img_matches);
+  //       // if(!headless){
+  //       if(crossings){
+  //         if(verbose_level>=VERBOSE_NORMAL){
+  //           cout << "Bounding Box lines contain crossings. Discard the result... " << endl;
+  //           // Skip this iteration if crossings occured
+  //           cout << "Object recognized: [ ]" << endl;
+  //         }
+  //         continue;
+  //         // return_value=false;
+  //       }
+  //       else
+  //       {
+  //         return_value=true;
+  //       }
+  //       //-- Show detected matches
+  //       if(!headless)
+  //       {
+  //         imshow( "Good Matches & Object detection", img_matches );
+  //         waitKey(0);
+  //       }
+
+  //       // Exit on the first non-crossing match (for now)
+  //       ExecutionResult result;
+  //       result.object_recognized = return_value;
+  //       result.match_image = img_matches;
+  //       if(!ti.label.empty() && return_value ){
+  //         result.label = ti.label; // Do we have to copy the string here?
+  //       }
+  //       if(verbose_level>=VERBOSE_NORMAL)
+  //         cout << "Object recognized: [x] GoodMatchCount: " << good_matches.size() << endl;
+  //       return result;
+  //   }else{
+  //       if(verbose_level>=VERBOSE_NORMAL)
+  //         cout << "Object recognized:[ ]"<<endl;
+  //   }
+  // }
+
+  int max_match_id = 0;
+  int max_match_count = 0;
+  int recognized_count = 0;
+  bool one_image_matched = false;
+
+  // TODO get the best result
+  for (int i = 0; i < training_images_.size(); i++) {
+      // Could the object at index i be recognized?
+      if( object_recognized.at(i) )
+      {
+        if( good_matches_for_train_image.at(i).size() >= max_match_count )
+        {
+          max_match_count = good_matches_for_train_image.at(i).size();
+          max_match_id = i;
+          one_image_matched = true;
+          recognized_count++;
+        }
+      }
+  }
+
+  // Return the results if atleast one image has matched the criteria
+  // Return the one with the most matches
+  
+  if(one_image_matched)
+  {
+    //-- Show detected matches
+    if(verbose_level>=VERBOSE_NORMAL)
+    {
+      cout << "Got " << recognized_count << " recognized objs: ";
+      for (int i = 0; i < training_images_.size(); i++) {
+        // Could the object at index i be recognized?
+        if( object_recognized.at(i) )
+          cout << training_images_.at(i).label << "("<< good_matches_for_train_image.at(i).size() << ") ";
+      }
+      cout << endl;
+
+    }
+    if(!headless)
+    {
+      imshow( "Good Matches & Object detection", object_img_matches.at(max_match_id) );
+      waitKey(0);
+    }
+
+    // Exit on the first non-crossing match (for now)
+    ExecutionResult result;
+    result.object_recognized = true;
+    result.match_image = object_img_matches.at(max_match_id);
+    result.good_match_count = good_matches_for_train_image.at(max_match_id).size();
+    if(!training_images_.at(max_match_id).label.empty())
+    {
+      result.label = training_images_.at(max_match_id).label; // Do we have to copy the string here?
+    }
+    else
+    {
+      std::cerr << "No label on trained image" << std::endl;
+    }
+    // if(!ti.label.empty()){
+    //   result.label = ti.label; // Do we have to copy the string here?
+    // }
+    if(verbose_level>=VERBOSE_NORMAL)
+      cout << "Object recognized: [x] GoodMatchCount: " << good_matches_for_train_image.at(max_match_id).size() << endl;
+
+    return result;
+  }
+  else
+  {
+    if(verbose_level>=VERBOSE_NORMAL)
+      cout << "Object recognized:[ ]"<<endl;
+  } 
+  
+
 
   // No match has been found? return false with an empty image
   // and show the scene without any matches
@@ -306,6 +422,7 @@ ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(cv::Mat &te
   ExecutionResult result;
   result.object_recognized = false;
   result.match_image = img_matches; 
+  result.good_match_count = 0;
   return result;
 }
 ObjectMatcher::ExecutionResult ObjectMatcher::recognizeTrainedImages(std::string test_image, bool headless)
@@ -399,7 +516,7 @@ bool ObjectMatcher::isInlierRatioHighEnough(std::vector<uchar> &outlier_mask, in
   // and count the object as recognized
   float actualInlierRatio = static_cast<float>(inliers) / static_cast<float>(good_match_count);
 
-  if(verbose_level>=VERBOSE_NORMAL)
+  if(verbose_level>=VERBOSE_EXTRA)
   {
     std::cout << "Homography Inlier count: " << inliers << endl;
     std::cout << "Homography Outlier count: " << outliers << endl;

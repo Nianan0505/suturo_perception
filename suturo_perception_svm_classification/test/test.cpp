@@ -6,6 +6,7 @@
 #include "suturo_perception_ml_classifiers_msgs/TrainClassifier.h"
 #include "suturo_perception_ml_classifiers_msgs/ClassifyData.h"
 #include "svm_classification.h"
+#include "vfh_estimation.h"
 
 TEST(svm_classification_test, classification_1_test)
 {
@@ -59,8 +60,7 @@ TEST(svm_classification_test, classification_1_test)
   char **argv = NULL;
   ros::init(argc, argv, "classifiers_test");
 
-  suturo_perception_lib::PerceivedObject obj;
-  suturo_perception_svm_classification::SVMClassification svmc(obj);
+  suturo_perception_svm_classification::SVMClassification svmc;
 
   if (!svmc.createClassifier("testc"))
     ASSERT_TRUE(false);
@@ -84,6 +84,62 @@ TEST(svm_classification_test, classification_1_test)
 
  
   ASSERT_TRUE(true);
+}
+
+TEST(svm_classification_test, classification_2_test)
+{
+  int argc = 0;
+  char **argv = NULL;
+  ros::init(argc, argv, "classifiers_test");
+
+  suturo_perception_svm_classification::SVMClassification svmc;
+
+  suturo_perception_lib::PerceivedObject obj;
+  suturo_perception_vfh_estimation::VFHEstimation vfhe(obj);
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+  std::stringstream boxpath;
+  boxpath << "pringles_laying.pcd";
+
+  if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (boxpath.str().c_str(), *cloud) == -1) //* load the file
+  {
+    std::stringstream error_msg;
+    error_msg << "Couldn't read file " << boxpath << "\n";
+    PCL_ERROR (error_msg.str().c_str());
+    FAIL() << error_msg.str().c_str();
+  }
+
+  printf("loaded pointcloud pringles_laying.pcd\n");
+
+  pcl::VFHSignature308 pringles_laying_sig = vfhe.estimateCloud(cloud);
+
+  printf("estimated vfh of cloud\n");
+
+  std::vector<suturo_perception_ml_classifiers_msgs::ClassDataPoint> train_points;
+
+  suturo_perception_ml_classifiers_msgs::ClassDataPoint *pringles_laying = new suturo_perception_ml_classifiers_msgs::ClassDataPoint();
+  for (int i = 0; i < 308; i++)
+  {
+    printf("%f ", pringles_laying_sig.histogram[i]);
+    pringles_laying->point.insert(pringles_laying->point.end(), pringles_laying_sig.histogram[i]);
+  }
+  printf("\n");
+  pringles_laying->target_class = "pringles_laying";
+  train_points.insert(train_points.end(), *pringles_laying);
+
+  if (!svmc.createClassifier("testvfh"))
+    ASSERT_TRUE(false);
+
+  if (!svmc.addData("testvfh", train_points))
+    ASSERT_TRUE(false);
+
+  if (!svmc.trainClassifier("testvfh"))
+    ASSERT_TRUE(false);
+
+  //std::vector<std::string> classification = svmc.classifyData("testvfh", test_points);
+
+
 }
 
 int main(int argc, char **argv) {

@@ -1,9 +1,13 @@
 <launch>
-
+ 
+  <param name="kinect_head/driver/image_mode" value="1" />
+  
   <include file="$(find openni_launch)/launch/openni.launch">
     <arg name="load_driver" value="true" />
     <arg name="depth_registration" value="true" />
   </include>
+
+  <include file="$(find ml_classifiers)/launch/classifier_server.launch" />
 
   <arg name="2d_recognition_data" default="_" /> <!-- leave '_' in here-. roslaunch fucks up the params otherwise-->
   

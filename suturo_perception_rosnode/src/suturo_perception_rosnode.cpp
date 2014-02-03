@@ -30,6 +30,10 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   is_edible_service_finish = nh.serviceClient<suturo_perception_msgs::PrologFinish>("json_prolog/finish");
   objectID = 0;
 
+  // VFH + SVM stuff
+  logger.logInfo("Loading VFH training data for SVM...");
+  svm_classification.trainVFHData();
+
   // Init the topic for the plane segmentation result
 	ph.advertise<sensor_msgs::PointCloud2>(TABLE_PLANE_TOPIC);
 
@@ -54,7 +58,7 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   if(!recognitionDir.empty())
     object_matcher_.readTrainImagesFromDatabase(recognitionDir);
 
-  object_matcher_.setVerboseLevel(0); // TODO use constant
+  object_matcher_.setVerboseLevel(VERBOSE_MINIMAL);
   object_matcher_.setMinGoodMatches(7);
 
   numThreads = 8;
@@ -76,6 +80,30 @@ void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageCo
     logger.logInfo("processing...");
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::fromROSMsg(*inputCloud,*cloud_in);
+
+		// Gazebo sends us unorganized pointclouds!
+		// Reorganize them to be able to compute the ROI of the objects
+		// This workaround is only tested for gazebo 1.9!
+		if(!cloud_in->isOrganized ())
+		{
+			logger.logInfo((boost::format("Received an unorganized PointCloud: %d x %d .Convert it to a organized one ...") % cloud_in->width % cloud_in->height ).str());
+
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr org_cloud (new pcl::PointCloud<pcl::PointXYZRGB>());
+			org_cloud->width = 640;
+			org_cloud->height = 480;
+			org_cloud->is_dense = false;
+			org_cloud->points.resize(640 * 480);
+
+			for (int i = 0; i < cloud_in->points.size(); i++) {
+					pcl::PointXYZRGB result;
+					result.x = 0;
+					result.y = 0;
+					result.z = 0;
+					org_cloud->points[i]=cloud_in->points[i];
+			}
+
+			cloud_in = org_cloud;
+		}
     if(!fallback_enabled)
     {
       cv_bridge::CvImagePtr cv_ptr;
@@ -105,7 +133,7 @@ void SuturoPerceptionROSNode::fallback_receive_cloud(const sensor_msgs::PointClo
 {
   if(processing)
   {
-    ROS_INFO("Received a pointcloud message");
+    logger.logInfo("Received a pointcloud message");
     sensor_msgs::ImageConstPtr nullPtr; // boost::shared_ptr NullPtr
     receive_image_and_cloud(nullPtr, inputCloud);
   }
@@ -159,6 +187,11 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
         fallback_enabled = true;
         cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
       }
+      else // fallback failed as well. no data available. Abort service call.
+      {
+        logger.logError("No sensor data available. Aborting.");
+        return false;
+      }
     } 
     ros::spinOnce();
     r.sleep();
@@ -169,6 +202,37 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
   perceived_cluster_images = sp.getPerceivedClusterImages();
+
+  // If the image dimension is bigger then
+  // the dimension of the pointcloud, we have to adjust the ROI of every
+  // perceived object
+  if(sp.getOriginalRGBImage()->cols != sp.getOriginalCloud()->width
+      && sp.getOriginalRGBImage()->rows != sp.getOriginalCloud()->height)
+  {
+    // std::cout << "Image dimensions differ from PC dimensions: ";
+    // std::cout << "Image " <<  sp.getOriginalRGBImage()->cols << "x" << sp.getOriginalRGBImage()->rows;
+    // std::cout << "vs. Cloud " <<  sp.getOriginalCloud()->width << "x" << sp.getOriginalCloud()->height << std::endl;
+
+    // Adjust the ROI if the image is at 1280x1024 and the pointcloud is at 640x480
+    // Adjust the ROI if the image is at 1280x960 and the pointcloud is at 640x480 (Gazebo Mode)
+    if( (sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 1024) ||
+     (sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 960) )
+    {
+       for (int i = 0; i < perceivedObjects.size(); i++) {
+          ROI roi = perceivedObjects.at(i).get_c_roi();
+          roi.origin.x*=2;
+          roi.origin.y*=2;
+          roi.width*=2;
+          roi.height*=2;
+          perceivedObjects.at(i).set_c_roi(roi);
+       }
+    }
+    else
+    {
+      logger.logError("UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS");
+    }
+
+    }
   
   // Execution pipeline
   // Each capability provides an enrichment for the
@@ -273,61 +337,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // sync.shutdown();
   visualizationPublisher.publishMarkers(res.perceivedObjs);
 
-  // ===============================================================
-  // dirty demo hack. get objects and plane to merge collision_cloud
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr collision_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  collision_cloud = sp.getPlaneCloud();
-
-  if(collision_cloud != NULL)
-  {
-    // get edible
-    int queryId = 0;
-    for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = res.perceivedObjs.begin(); 
-      it != res.perceivedObjs.end(); ++it)
-    {
-      suturo_perception_msgs::PrologQuery pq;
-      suturo_perception_msgs::PrologNextSolution pqn;
-      suturo_perception_msgs::PrologFinish pqf;
-      pq.request.mode = 0;
-      pq.request.id = queryId;
-      std::stringstream ss;
-      ss << "is_edible([[" << queryId << ", '', '" << it->c_volume << "', 0]], Out)"; 
-      logger.logDebug((boost::format("Knowledge query for collision_cloud: %s") % ss.str().c_str()).str()); 
-      pq.request.query = ss.str();
-      if(is_edible_service.call(pq))
-      {
-        
-        pqn.request.id = queryId;
-        is_edible_service_next.call(pqn);
-        logger.logDebug((boost::format("SOLUTION: %s") % pqn.response.solution.c_str()).str());
-
-        if(pqn.response.solution.empty()) logger.logDebug("Prolog returned fishy results");
-        else
-        {
-          if(pqn.response.solution.substr(8, 1).compare("]") == 0)
-          {
-            logger.logDebug("Added to collision_cloud");
-            *collision_cloud += *sp.collision_objects[queryId];  
-          }
-        }
-        pqf.request.id = queryId;
-        is_edible_service_finish.call(pqf);
-      }
-      else
-      logger.logError("Knowledge not reachable");
-      queryId++;
-    }
-    ph.publish_pointcloud(COLLISION_CLOUD_TOPIC, collision_cloud, frameId);
-  }
-  else
-  {
-    logger.logError("collision cloud (aka plane) is NULL ... skipping iteration");
-  }
-
   logger.logInfo("Service call finished. return");
-  
-  
-  
   return true;
 }
 
@@ -407,9 +417,16 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_hue_histogram = *it->get_c_hue_histogram();
     msgObj->c_hue_histogram_quality = it->get_c_hue_histogram_quality();
     msgObj->recognition_label_2d = it->get_c_recognition_label_2d();
+    for (int i = 0; i < 308; i++) 
+    {
+      msgObj->c_vfh_estimation.push_back(it->get_c_vfhs().histogram[i]);
+    }
+    msgObj->c_svm_result = svm_classification.classifyVFHSignature308(it->get_c_vfhs());
+    msgObj->c_pose = svm_classification.classifyPoseVFHSignature308(it->get_c_vfhs(), msgObj->c_svm_result);
 
     // these are not set for now
     msgObj->recognition_label_3d = "";
+    
     result->push_back(*msgObj);
   }
   return result;

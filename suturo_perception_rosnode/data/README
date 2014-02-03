@@ -1,0 +1,3 @@
+This directory contains necessary data for the suturo_perception_rosnode.
+For example, the trained databases for our 2d object recognizer are located
+in this directory

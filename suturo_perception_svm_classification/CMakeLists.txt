@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(suturo_perception_svm_classification)
 
+SET(POINTCLOUD_PATH_2 "${CMAKE_CURRENT_SOURCE_DIR}/kaffee" CACHE STRING "Path of Pointclouds for svm/vfh")
+message("PONTCLOUD PATH: "${POINTCLOUD_PATH_2})
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -9,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   suturo_perception_utils
   suturo_perception_lib
   suturo_perception_ml_classifiers_msgs
+  suturo_perception_vfh_estimation
 )
 link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 
@@ -80,7 +84,7 @@ link_directories(${suturo_perception_utils_LIBRARY_DIRS})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_svm_classification
-  CATKIN_DEPENDS roscpp suturo_perception_lib suturo_perception_utils suturo_perception_ml_classifiers_msgs 
+  CATKIN_DEPENDS roscpp suturo_perception_lib suturo_perception_utils suturo_perception_ml_classifiers_msgs suturo_perception_vfh_estimation
   #  DEPENDS opencv
 )
 
@@ -154,7 +158,7 @@ include_directories(
 ## Add gtest based cpp test target and link libraries
 catkin_add_gtest(${PROJECT_NAME}-test 
   test/test.cpp
-#  WORKING_DIRECTORY ${POINTCLOUD_PATH}
+  WORKING_DIRECTORY ${POINTCLOUD_PATH_2}
 )
 if(TARGET ${PROJECT_NAME}-test)
   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})

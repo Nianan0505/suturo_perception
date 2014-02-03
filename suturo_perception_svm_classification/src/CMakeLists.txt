@@ -20,4 +20,5 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 target_link_libraries(suturo_perception_svm_classification ${PCL_LIBRARIES}
     ${Boost_LIBRARIES}
+    ${catkin_LIBRARIES}
 )
