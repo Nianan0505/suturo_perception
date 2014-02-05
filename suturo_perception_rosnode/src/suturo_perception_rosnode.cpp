@@ -212,33 +212,36 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   // If the image dimension is bigger then
   // the dimension of the pointcloud, we have to adjust the ROI of every
   // perceived object
-  if(sp.getOriginalRGBImage()->cols != sp.getOriginalCloud()->width
-      && sp.getOriginalRGBImage()->rows != sp.getOriginalCloud()->height)
+  if (sp.getOriginalRGBImage() != NULL)
   {
-    // std::cout << "Image dimensions differ from PC dimensions: ";
-    // std::cout << "Image " <<  sp.getOriginalRGBImage()->cols << "x" << sp.getOriginalRGBImage()->rows;
-    // std::cout << "vs. Cloud " <<  sp.getOriginalCloud()->width << "x" << sp.getOriginalCloud()->height << std::endl;
-
-    // Adjust the ROI if the image is at 1280x1024 and the pointcloud is at 640x480
-    // Adjust the ROI if the image is at 1280x960 and the pointcloud is at 640x480 (Gazebo Mode)
-    if( (sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 1024) ||
-     (sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 960) )
+    if(sp.getOriginalRGBImage()->cols != sp.getOriginalCloud()->width
+        && sp.getOriginalRGBImage()->rows != sp.getOriginalCloud()->height)
     {
-       for (int i = 0; i < perceivedObjects.size(); i++) {
-          ROI roi = perceivedObjects.at(i).get_c_roi();
-          roi.origin.x*=2;
-          roi.origin.y*=2;
-          roi.width*=2;
-          roi.height*=2;
-          perceivedObjects.at(i).set_c_roi(roi);
-       }
-    }
-    else
-    {
-      logger.logError("UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS");
-    }
+      // std::cout << "Image dimensions differ from PC dimensions: ";
+      // std::cout << "Image " <<  sp.getOriginalRGBImage()->cols << "x" << sp.getOriginalRGBImage()->rows;
+      // std::cout << "vs. Cloud " <<  sp.getOriginalCloud()->width << "x" << sp.getOriginalCloud()->height << std::endl;
+
+      // Adjust the ROI if the image is at 1280x1024 and the pointcloud is at 640x480
+      // Adjust the ROI if the image is at 1280x960 and the pointcloud is at 640x480 (Gazebo Mode)
+      if( (sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 1024) ||
+      (sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 960) )
+      {
+        for (int i = 0; i < perceivedObjects.size(); i++) {
+            ROI roi = perceivedObjects.at(i).get_c_roi();
+            roi.origin.x*=2;
+            roi.origin.y*=2;
+            roi.width*=2;
+            roi.height*=2;
+            perceivedObjects.at(i).set_c_roi(roi);
+        }
+      }
+      else
+      {
+        logger.logError("UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS");
+      }
 
     }
+  }
   
   // Execution pipeline
   // Each capability provides an enrichment for the
