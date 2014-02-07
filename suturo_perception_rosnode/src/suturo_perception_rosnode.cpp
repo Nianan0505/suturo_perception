@@ -271,7 +271,9 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     ca.setUpperVThreshold(color_analysis_upper_v);
     suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
     suturo_perception_vfh_estimation::VFHEstimation vfhe(perceivedObjects[i]);
-    suturo_perception_3d_capabilities::CuboidMatcherAnnotator cma(perceivedObjects[i]);
+    // suturo_perception_3d_capabilities::CuboidMatcherAnnotator cma(perceivedObjects[i]);
+    // Init the cuboid matcher with the table coefficients
+    suturo_perception_3d_capabilities::CuboidMatcherAnnotator cma(perceivedObjects[i], sp.getTableCoefficients() );
 
     // post work to threadpool
     ioService.post(boost::bind(&ColorAnalysis::execute, ca));

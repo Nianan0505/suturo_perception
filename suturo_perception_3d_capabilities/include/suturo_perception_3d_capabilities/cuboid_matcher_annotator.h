@@ -7,6 +7,7 @@
 #include "perceived_object.h"
 #include "suturo_perception_utils.h"
 #include "suturo_perception_match_cuboid/cuboid_matcher.h"
+#include <pcl/ModelCoefficients.h>
 
 
 namespace suturo_perception_3d_capabilities
@@ -20,11 +21,15 @@ namespace suturo_perception_3d_capabilities
     public:
       // capability method
       CuboidMatcherAnnotator(suturo_perception_lib::PerceivedObject &obj);
+      // Start the CuboidMatcher in table coefficient mode
+      CuboidMatcherAnnotator(suturo_perception_lib::PerceivedObject &obj, pcl::ModelCoefficients::Ptr table_coefficients);
       void execute();
 
     private:
       suturo_perception_utils::Logger logger_;
       suturo_perception_lib::PerceivedObject &perceived_object_;
+      bool table_mode_;
+      pcl::ModelCoefficients::Ptr table_coefficients_;
   };
 }
 #endif
