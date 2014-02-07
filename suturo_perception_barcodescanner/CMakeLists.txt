@@ -10,6 +10,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/suturo_perceptio
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   suturo_perception_utils
+  suturo_perception_msgs
+  image_transport
 )
 
 #  ZBAR_FOUND - 
@@ -93,7 +95,7 @@ set(LIBS ${LIBS} ${ZBAR_LIBRARIES})
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES suturo_perception_barcodescanner
-#  CATKIN_DEPENDS roscpp suturo_perception_utils
+  CATKIN_DEPENDS roscpp suturo_perception_utils image_transport
 #  DEPENDS system_lib
 )
 
