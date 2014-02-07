@@ -50,6 +50,7 @@
   <build_depend>message_generation</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>suturo_perception_2d_capabilities</build_depend>
+  <build_depend>suturo_perception_3d_capabilities</build_depend>
   <build_depend>suturo_perception_2d_object_recognition_lib</build_depend>
   <build_depend>suturo_perception_color_analysis</build_depend>
   <build_depend>suturo_perception_shape_detection</build_depend>
@@ -69,6 +70,7 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>opencv2</run_depend>
   <run_depend>suturo_perception_2d_capabilities</run_depend>
+  <run_depend>suturo_perception_3d_capabilities</run_depend>
   <run_depend>suturo_perception_color_analysis</run_depend>
   <run_depend>suturo_perception_shape_detection</run_depend>
   <run_depend>suturo_perception_ros_utils</run_depend>

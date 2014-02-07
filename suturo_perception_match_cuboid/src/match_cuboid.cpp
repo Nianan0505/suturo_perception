@@ -18,7 +18,7 @@
 #include <pcl/filters/project_inliers.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/registration/distances.h>
-#include <point_cloud_operations.h>
+// #include <point_cloud_operations.h>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <suturo_perception_match_cuboid/detected_plane.h>
 #include <suturo_perception_match_cuboid/cuboid_matcher.h>

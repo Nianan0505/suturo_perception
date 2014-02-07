@@ -32,6 +32,7 @@
 #include "suturo_perception_2d_capabilities/label_annotator_2d.h"
 #include "vfh_estimation.h"
 #include "svm_classification.h"
+#include "suturo_perception_3d_capabilities/cuboid_matcher_annotator.h"
 
 using namespace suturo_perception_ros_utils;
 using namespace suturo_perception_utils;

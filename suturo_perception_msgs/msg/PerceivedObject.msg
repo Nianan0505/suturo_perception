@@ -34,5 +34,6 @@ uint32 c_roi_height
 float32[] c_vfh_estimation
 string c_svm_result
 uint32 c_pose
-
+# The algorithm was unable to find a proper cuboid,
+# if all the given lengths in this cuboid are 0
 Cuboid matched_cuboid
