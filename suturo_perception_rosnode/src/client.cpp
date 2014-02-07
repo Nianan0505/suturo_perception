@@ -74,7 +74,10 @@ int main(int argc, char **argv)
         //ROS_INFO("VFH Estimation: %s ", vfh_ss.str().c_str());
         // ROS_INFO("SVM Result: %s ", clusterSrv.response.perceivedObjs[i].c_svm_result.c_str());
         // ROS_INFO("Pose: %d ", clusterSrv.response.perceivedObjs[i].c_pose);
-        ROS_INFO("Volume of matched cuboid is: %f",
+        ROS_INFO("Matched cuboid: %f x %f x %f , Vol: %f",
+          clusterSrv.response.perceivedObjs[i].matched_cuboid.length1,
+          clusterSrv.response.perceivedObjs[i].matched_cuboid.length2,
+          clusterSrv.response.perceivedObjs[i].matched_cuboid.length3,
           clusterSrv.response.perceivedObjs[i].matched_cuboid.volume);
       }
       ROS_INFO_STREAM("------------------------------------------------------------");
