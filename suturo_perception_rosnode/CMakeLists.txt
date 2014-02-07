@@ -16,6 +16,7 @@ image_transport
 roscpp
 std_msgs
 suturo_perception_2d_capabilities
+suturo_perception_3d_capabilities
 suturo_perception_2d_object_recognition_lib
 suturo_perception_color_analysis
 suturo_perception_shape_detection
