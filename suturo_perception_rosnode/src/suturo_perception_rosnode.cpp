@@ -92,7 +92,7 @@ void SuturoPerceptionROSNode::receive_image_and_cloud(const sensor_msgs::ImageCo
 		// This workaround is only tested for gazebo 1.9!
 		if(!cloud_in->isOrganized ())
 		{
-			logger.logInfo((boost::format("Received an unorganized PointCloud: %d x %d .Convert it to a organized one ...") % cloud_in->width % cloud_in->height ).str());
+			logger.logInfo((boost::format("Received an unorganized PointCloud: %d x %d .Convert it to an organized one ...") % cloud_in->width % cloud_in->height ).str());
 
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr org_cloud (new pcl::PointCloud<pcl::PointXYZRGB>());
 			org_cloud->width = 640;
