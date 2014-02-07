@@ -258,7 +258,8 @@ Eigen::Matrix< float, 4, 4 > CuboidMatcher::rotateAroundCrossProductOfNormals(
     firstAxis.normalize();
     axis=firstAxis;
     float c = costheta;
-    std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
+    if(debug)
+      std::cout << "rotate COSTHETA: " << acos(c) << " RAD, " << ((acos(c) * 180) / M_PI) << " DEG" << std::endl;
     float s = sqrt(1-c*c);
     float CO = 1-c;
 
