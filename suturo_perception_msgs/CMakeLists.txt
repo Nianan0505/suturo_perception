@@ -43,6 +43,7 @@ find_package(catkin REQUIRED message_generation std_msgs geometry_msgs)
 add_message_files(
   FILES
   PerceivedObject.msg
+  Cuboid.msg
 )
 
 ## Generate services in the 'srv' folder
