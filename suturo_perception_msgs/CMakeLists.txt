@@ -50,6 +50,7 @@ add_message_files(
 add_service_files(
   FILES
   GetClusters.srv
+  GetBarcode.srv
   PrologQuery.srv
   PrologNextSolution.srv
   PrologFinish.srv
