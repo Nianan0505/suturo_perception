@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(suturo_perception_barcodescanner)
 
+#include hacked zbar cmake config
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/suturo_perception/suturo_perception_barcodescanner/cmake/Modules/")
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -8,6 +11,15 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   suturo_perception_utils
 )
+
+#  ZBAR_FOUND - 
+#  ZBAR_LIBRARY_DIR - 
+#  ZBAR_INCLUDE_DIR - 
+#  ZBAR_LIBRARIES -
+find_package(ZBAR REQUIRED)
+include_directories(${ZBAR_INCLUDE_DIR})
+set(LIBS ${LIBS} ${ZBAR_LIBRARIES})
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -79,7 +91,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES suturo_perception_barcodescanner
 #  CATKIN_DEPENDS roscpp suturo_perception_utils
 #  DEPENDS system_lib
@@ -91,9 +103,11 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
+include_directories(include)
+
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${ZBAR_INCLUDE_DIR}
 )
 
 ## Declare a cpp library
@@ -102,16 +116,17 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-# add_executable(suturo_perception_barcodescanner_node src/suturo_perception_barcodescanner_node.cpp)
+add_executable(suturo_perception_barcodescanner_node src/suturo_perception_barcodescanner_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(suturo_perception_barcodescanner_node suturo_perception_barcodescanner_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(suturo_perception_barcodescanner_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(suturo_perception_barcodescanner_node
+  ${catkin_LIBRARIES}
+  ${LIBS}
+)
 
 #############
 ## Install ##
