@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   suturo_perception_utils
   suturo_perception_msgs
   image_transport
+  cv_bridge
 )
 
 #  ZBAR_FOUND - 

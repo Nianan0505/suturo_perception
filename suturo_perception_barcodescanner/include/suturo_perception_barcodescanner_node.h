@@ -4,6 +4,7 @@
 #include "ros/ros.h"
 #include <sensor_msgs/Image.h>
 #include <boost/signals2/mutex.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include <zbar.h>
 
 #include "suturo_perception_utils.h"
@@ -31,6 +32,7 @@ namespace suturo_perception_barcodescanner
       std::string imageTopic_;
       std::string currentBarcode_;
       boost::signals2::mutex mutex_;
+      cv_bridge::CvImagePtr cv_bridge_;
       bool processing_;
   };
 
