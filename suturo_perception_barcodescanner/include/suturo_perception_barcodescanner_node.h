@@ -11,6 +11,8 @@
 #include "suturo_perception_utils.h"
 #include "suturo_perception_msgs/GetBarcode.h"
 #include "suturo_perception_msgs/Barcode.h"
+#include "highgui.h"
+#include <opencv2/opencv.hpp>
 
 using namespace suturo_perception_utils;
 using namespace zbar;
@@ -36,6 +38,9 @@ namespace suturo_perception_barcodescanner
       boost::signals2::mutex mutex_;
       cv_bridge::CvImagePtr cv_bridge_;
       bool processing_;
+      
+      cv::Point getTopLeftIndex(const Symbol&);
+      cv::Point getBottomRightIndex(const Symbol&);
   };
 
 }
