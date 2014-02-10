@@ -1,21 +1,20 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(suturo_perception_match_cuboid)
+project(suturo_perception_3d_capabilities)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  pcl_ros
   roscpp
+  rospy
+  std_msgs
+  suturo_perception_lib
+  suturo_perception_match_cuboid
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-find_package(PCL 1.6 REQUIRED COMPONENTS)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -70,7 +69,7 @@ add_definitions(${PCL_DEFINITIONS})
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   std_msgs
 # )
 
 ###################################
@@ -84,8 +83,8 @@ add_definitions(${PCL_DEFINITIONS})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES suturo_perception_match_cuboid
-  CATKIN_DEPENDS pcl_ros roscpp
+  LIBRARIES suturo_perception_3d_capabilities
+#  CATKIN_DEPENDS roscpp rospy std_msgs suturo_perception_lib suturo_perception_match_cuboid
 #  DEPENDS system_lib
 )
 
@@ -101,45 +100,20 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(suturo_perception_match_cuboid
-#   src/${PROJECT_NAME}/suturo_perception_match_cuboid.cpp
-# )
+add_library(suturo_perception_3d_capabilities
+  src/cuboid_matcher_annotator.cpp
+)
 
 ## Declare a cpp executable
-add_executable(match_cuboid 
-  src/match_cuboid.cpp
-  src/detected_plane.cpp
-  src/cuboid_matcher.cpp
-  )
-
-add_executable(main 
-  src/main.cpp
-  src/detected_plane.cpp
-  src/cuboid_matcher.cpp
-)
-
-add_library(suturo_perception_match_cuboid 
-  src/detected_plane.cpp
-  src/cuboid_matcher.cpp
-)
+# add_executable(suturo_perception_3d_capabilities_node src/suturo_perception_3d_capabilities_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(suturo_perception_match_cuboid_node suturo_perception_match_cuboid_generate_messages_cpp)
+# add_dependencies(suturo_perception_3d_capabilities_node suturo_perception_3d_capabilities_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(main
+target_link_libraries(suturo_perception_3d_capabilities
   ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES}
-)
-
-target_link_libraries(suturo_perception_match_cuboid
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(match_cuboid
-  ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES}
 )
 
 #############
@@ -157,7 +131,7 @@ target_link_libraries(match_cuboid
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS suturo_perception_match_cuboid suturo_perception_match_cuboid_node
+# install(TARGETS suturo_perception_3d_capabilities suturo_perception_3d_capabilities_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -182,26 +156,10 @@ target_link_libraries(match_cuboid
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_suturo_perception_match_cuboid.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_suturo_perception_3d_capabilities.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-catkin_add_gtest(${PROJECT_NAME}-test 
-  test/test.cpp
-)
-if(TARGET ${PROJECT_NAME}-test)
-	# target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} suturo_perception_shape_detection)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
-	# find_package(PCL 1.6 REQUIRED COMPONENTS)
-	# include_directories(${PCL_INCLUDE_DIRS})
-	# link_directories(${PCL_LIBRARY_DIRS})
-	# add_definitions(${PCL_DEFINITIONS})
-	# Link against catkin libs for ROS etc.
-
-	# In contrast to the tests in suturo_perception_lib, i need this declaration ..
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-endif()

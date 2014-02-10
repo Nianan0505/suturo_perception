@@ -271,11 +271,15 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     ca.setUpperVThreshold(color_analysis_upper_v);
     suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
     suturo_perception_vfh_estimation::VFHEstimation vfhe(perceivedObjects[i]);
+    // suturo_perception_3d_capabilities::CuboidMatcherAnnotator cma(perceivedObjects[i]);
+    // Init the cuboid matcher with the table coefficients
+    suturo_perception_3d_capabilities::CuboidMatcherAnnotator cma(perceivedObjects[i], sp.getTableCoefficients() );
 
     // post work to threadpool
     ioService.post(boost::bind(&ColorAnalysis::execute, ca));
     ioService.post(boost::bind(&suturo_perception_shape_detection::RandomSampleConsensus::execute, sd));
     ioService.post(boost::bind(&suturo_perception_vfh_estimation::VFHEstimation::execute, vfhe));
+    ioService.post(boost::bind(&suturo_perception_3d_capabilities::CuboidMatcherAnnotator::execute, cma));
 
     // Is 2d recognition enabled?
     if(!recognitionDir.empty() && !fallback_enabled)
@@ -443,6 +447,20 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->c_hue_histogram = *it->get_c_hue_histogram();
     msgObj->c_hue_histogram_quality = it->get_c_hue_histogram_quality();
     msgObj->recognition_label_2d = it->get_c_recognition_label_2d();
+  
+    Cuboid c = it->get_c_cuboid();
+    msgObj->matched_cuboid.length1  = c.length1;
+    msgObj->matched_cuboid.length2  = c.length2;
+    msgObj->matched_cuboid.length3  = c.length3;
+    msgObj->matched_cuboid.volume   = c.volume;
+    msgObj->matched_cuboid.pose.position.x   = c.center(0);
+    msgObj->matched_cuboid.pose.position.y   = c.center(1);
+    msgObj->matched_cuboid.pose.position.z   = c.center(2);
+    msgObj->matched_cuboid.pose.orientation.x   = c.orientation.x();
+    msgObj->matched_cuboid.pose.orientation.y   = c.orientation.y();
+    msgObj->matched_cuboid.pose.orientation.y   = c.orientation.z();
+    msgObj->matched_cuboid.pose.orientation.w   = c.orientation.w();
+
     for (int i = 0; i < 308; i++) 
     {
       msgObj->c_vfh_estimation.push_back(it->get_c_vfhs().histogram[i]);

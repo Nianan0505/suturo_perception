@@ -7,6 +7,7 @@
 #include <boost/signals2/mutex.hpp>
 #include "opencv2/core/core.hpp"
 #include <boost/thread.hpp>
+#include <suturo_perception_match_cuboid/cuboid.h>
 
 namespace suturo_perception_lib
 {
@@ -136,6 +137,12 @@ namespace suturo_perception_lib
         return pointCloud; 
       };
 
+      Cuboid get_c_cuboid() const
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex); 
+        return c_cuboid; 
+      };
+
       // Threadsafe setters
       void set_c_id(int value)
       {
@@ -238,6 +245,12 @@ namespace suturo_perception_lib
         pointCloud = value;
       };
     
+      void set_c_cuboid(Cuboid value)
+      {
+        boost::lock_guard<boost::signals2::mutex> lock(*mutex);
+        c_cuboid = value;
+      };
+    
     private:
       int c_id;
       Point c_centroid;
@@ -259,6 +272,8 @@ namespace suturo_perception_lib
       ROI c_roi;
       pcl::VFHSignature308 c_vfhs;
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud;
+      Cuboid c_cuboid;
+
 
       boost::shared_ptr<boost::signals2::mutex> mutex;
   };

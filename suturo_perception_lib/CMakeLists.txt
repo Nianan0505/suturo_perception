@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   suturo_perception_2d_object_recognition_lib
+  suturo_perception_match_cuboid
   suturo_perception_utils
 )
 link_directories(${suturo_perception_lib_LIBRARY_DIRS})
@@ -97,7 +98,7 @@ link_directories(${suturo_perception_color_analysis_LIBRARY_DIRS})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_lib
-  CATKIN_DEPENDS pcl suturo_perception_utils cv_bridge image_transport roscpp std_msgs
+  CATKIN_DEPENDS pcl suturo_perception_utils cv_bridge image_transport roscpp std_msgs suturo_perception_match_cuboid
   DEPENDS opencv
 )
 

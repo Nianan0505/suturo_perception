@@ -55,11 +55,11 @@ int main(int argc, char **argv)
                   clusterSrv.response.perceivedObjs[i].c_color_average_qs,
                   clusterSrv.response.perceivedObjs[i].c_color_average_qv);
         ROS_INFO("2D recognition label of perceived object is: %s", clusterSrv.response.perceivedObjs[i].recognition_label_2d.c_str());
-        ROS_INFO("ROI of object: (origin, width, height): ( %f x %f ) , %i , %i ",
-          clusterSrv.response.perceivedObjs[i].c_roi_origin.x,
-          clusterSrv.response.perceivedObjs[i].c_roi_origin.y,
-          clusterSrv.response.perceivedObjs[i].c_roi_width, 
-          clusterSrv.response.perceivedObjs[i].c_roi_height);
+        // ROS_INFO("ROI of object: (origin, width, height): ( %f x %f ) , %i , %i ",
+        //   clusterSrv.response.perceivedObjs[i].c_roi_origin.x,
+        //   clusterSrv.response.perceivedObjs[i].c_roi_origin.y,
+        //   clusterSrv.response.perceivedObjs[i].c_roi_width, 
+        //   clusterSrv.response.perceivedObjs[i].c_roi_height);
         ROS_INFO("Quality of hue histogram: %d ", clusterSrv.response.perceivedObjs[i].c_hue_histogram_quality);
         ROS_INFO("Centroid(x) of perceived object is: %f , %f , %f ",
           clusterSrv.response.perceivedObjs[i].c_centroid.x,
@@ -72,8 +72,13 @@ int main(int argc, char **argv)
           vfh_ss << " ";
         }
         //ROS_INFO("VFH Estimation: %s ", vfh_ss.str().c_str());
-        ROS_INFO("SVM Result: %s ", clusterSrv.response.perceivedObjs[i].c_svm_result.c_str());
-        ROS_INFO("Pose: %d ", clusterSrv.response.perceivedObjs[i].c_pose);
+        // ROS_INFO("SVM Result: %s ", clusterSrv.response.perceivedObjs[i].c_svm_result.c_str());
+        // ROS_INFO("Pose: %d ", clusterSrv.response.perceivedObjs[i].c_pose);
+        ROS_INFO("Matched cuboid: %f x %f x %f , Vol: %f",
+          clusterSrv.response.perceivedObjs[i].matched_cuboid.length1,
+          clusterSrv.response.perceivedObjs[i].matched_cuboid.length2,
+          clusterSrv.response.perceivedObjs[i].matched_cuboid.length3,
+          clusterSrv.response.perceivedObjs[i].matched_cuboid.volume);
       }
       ROS_INFO_STREAM("------------------------------------------------------------");
     }
