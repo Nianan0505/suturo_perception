@@ -44,6 +44,7 @@ add_message_files(
   FILES
   PerceivedObject.msg
   Cuboid.msg
+  Barcode.msg
 )
 
 ## Generate services in the 'srv' folder

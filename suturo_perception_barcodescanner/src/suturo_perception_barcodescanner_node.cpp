@@ -42,29 +42,29 @@ void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageC
     const void *raw = blob.data();
     Image image(width, height, "Y800", raw, width * height);
 
+    std::vector<suturo_perception_msgs::Barcode> tmpBarcodes;
     if(is.scan(image) > 0) // codes found
     {
-      std::stringstream ss;
       for(Image::SymbolIterator symbol = image.symbol_begin();
           symbol != image.symbol_end(); ++symbol)
       {
         logger.logInfo((boost::format("Barcode found: Type: %s, Code: %s") 
           % symbol->get_type_name() % symbol->get_data()).str());
 
-        ss << symbol->get_type_name() << ":" << symbol->get_data();
+        suturo_perception_msgs::Barcode barcode;
+        barcode.type = symbol->get_type_name();
+        barcode.code = symbol->get_data();
         //cv::imwrite("/home/banacer/ros_workspace/yes.jpg",cv_bridge_ptr_->image);
-        mutex_.lock();
-        currentBarcode_ = ss.str(); //result from is
-        mutex_.unlock();
+        tmpBarcodes.push_back(barcode);   
      }
     }
     else
       logger.logWarn("No code found");
 
+    mutex_.lock();
+    currentBarcodes_ = tmpBarcodes; //result from is
+    mutex_.unlock();
     
-
-    
-
     logger.logDebug("finished callback");
     processing_ = false;
   }
@@ -95,7 +95,7 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
   }
 
   mutex_.lock();
-  res.barcode = currentBarcode_; // set service result
+  res.barcodes = currentBarcodes_; // set service result
   mutex_.unlock();
 
   logger.logDebug("Call finished successfully");

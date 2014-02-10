@@ -10,6 +10,7 @@
 
 #include "suturo_perception_utils.h"
 #include "suturo_perception_msgs/GetBarcode.h"
+#include "suturo_perception_msgs/Barcode.h"
 
 using namespace suturo_perception_utils;
 using namespace zbar;
@@ -31,7 +32,7 @@ namespace suturo_perception_barcodescanner
       Logger logger;
       ros::Subscriber sub_image_;
       std::string imageTopic_;
-      std::string currentBarcode_;
+      std::vector<suturo_perception_msgs::Barcode> currentBarcodes_;
       boost::signals2::mutex mutex_;
       cv_bridge::CvImagePtr cv_bridge_;
       bool processing_;
