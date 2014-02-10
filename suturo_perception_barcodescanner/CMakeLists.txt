@@ -15,14 +15,15 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
 )
 
-#  ZBAR_FOUND - 
-#  ZBAR_LIBRARY_DIR - 
-#  ZBAR_INCLUDE_DIR - 
-#  ZBAR_LIBRARIES -
+# find zbar barcode lib
 find_package(ZBAR REQUIRED)
 include_directories(${ZBAR_INCLUDE_DIR})
 set(LIBS ${LIBS} ${ZBAR_LIBRARIES})
 
+# find imagemagick
+find_package(ImageMagick COMPONENTS Magick++)
+include_directories(${ImageMagick_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${ImageMagick_LIBRARIES})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

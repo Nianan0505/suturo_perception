@@ -5,6 +5,7 @@
 #include <sensor_msgs/Image.h>
 #include <boost/signals2/mutex.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <Magick++.h>
 #include <zbar.h>
 
 #include "suturo_perception_utils.h"

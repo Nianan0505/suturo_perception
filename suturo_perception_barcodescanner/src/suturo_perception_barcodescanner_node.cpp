@@ -10,7 +10,7 @@ SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::Node
   barcodeService_ = nh_.advertiseService("/suturo/barcodescanner", 
     &SuturoPerceptionBarcodeScannerNode::getCode, this);
 
-  imageTopic_ = "";
+  imageTopic_ = "/camera/image_raw";
   processing_ = false;
 
   logger.logInfo("BarcodeScanner Service ready!");
@@ -19,35 +19,61 @@ SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::Node
 
 void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageConstPtr& inputImage)
 {
-  try
+  if(processing_)
   {
-    cv_bridge_ = cv_bridge::toCvCopy(inputImage, "mono8");  
-  }
-  catch(cv_bridge::Exception& e)
-  {
-    logger.logError("Could not convert image");
+    try
+    {
+      cv_bridge_ = cv_bridge::toCvCopy(inputImage, "mono8");  
+    }
+    catch(cv_bridge::Exception& e)
+    {
+      logger.logError("Could not convert image");
+      processing_ = false;
+      return;
+    }
+
+    ImageScanner is;
+    is.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
+
+    int width  = cv_bridge_->image.cols;
+    int height = cv_bridge_->image.rows;
+    
+    Magick::Blob blob(cv_bridge_->image.ptr(0), width * height);
+    const void *raw = blob.data();
+    Image image(width, height, "Y800", raw, width * height);
+
+    if(is.scan(image) > 0) // codes found
+    {
+      std::stringstream ss;
+      for(Image::SymbolIterator symbol = image.symbol_begin();
+          symbol != image.symbol_end(); ++symbol)
+      {
+        logger.logInfo((boost::format("Barcode found: Type: %s, Code: %s") 
+          % symbol->get_type_name() % symbol->get_data()).str());
+
+        ss << symbol->get_type_name() << ":" << symbol->get_data();
+        //cv::imwrite("/home/banacer/ros_workspace/yes.jpg",cv_bridge_ptr_->image);
+        mutex_.lock();
+        currentBarcode_ = ss.str(); //result from is
+        mutex_.unlock();
+     }
+    }
+    else
+      logger.logWarn("No code found");
+
+    
+
+    
+
+    logger.logDebug("finished callback");
     processing_ = false;
-    return;
   }
-
-  ImageScanner is;
-  is.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
-
-  int width  = cv_bridge_->image.cols;
-  int height = cv_bridge_->image.rows;
-  
-
-  mutex_.lock();
-  currentBarcode_ = ""; //result from is
-  mutex_.unlock();
-
-  processing_ = false;
 }
 
 bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarcode::Request &req,
         suturo_perception_msgs::GetBarcode::Response &res)
 {
-  logger.logInfo("Got service call");
+  logger.logDebug("Got service call");
   processing_ = true;
 
   sub_image_ = nh_.subscribe(imageTopic_, 1, 
@@ -72,6 +98,7 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
   res.barcode = currentBarcode_; // set service result
   mutex_.unlock();
 
+  logger.logDebug("Call finished successfully");
   return true;
 }
 
