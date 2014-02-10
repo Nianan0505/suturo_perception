@@ -19,8 +19,22 @@ SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::Node
 
 void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageConstPtr& inputImage)
 {
-  ImageScanner is;
+  try
+  {
+    cv_bridge_ = cv_bridge::toCvCopy(inputImage, "mono8");  
+  }
+  catch(cv_bridge::Exception& e)
+  {
+    logger.logError("Could not convert image");
+    processing_ = false;
+    return;
+  }
 
+  ImageScanner is;
+  is.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
+
+  int width  = cv_bridge_->image.cols;
+  int height = cv_bridge_->image.rows;
   
 
   mutex_.lock();
@@ -46,7 +60,7 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
     if(boost::posix_time::second_clock::local_time() >= cancelTime)
     {
       processing_ = false;
-      logger.logError("CodeScanner lib didn't return in time. Call failed");
+      logger.logError("No image received in time. Call failed");
       return false;
     }
       
