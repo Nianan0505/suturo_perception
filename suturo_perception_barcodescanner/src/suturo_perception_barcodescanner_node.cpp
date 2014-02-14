@@ -136,7 +136,7 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
   sub_image_ = nh_.subscribe(imageTopic_, 1, 
           &SuturoPerceptionBarcodeScannerNode::receive_image, this);
   
-  ros::Rate r(20); // 20 hz
+  ros::Rate r(50); // 50 hz
   boost::posix_time::ptime cancelTime = boost::posix_time::second_clock::local_time() + boost::posix_time::seconds(10);
   while(processing_)
   {
