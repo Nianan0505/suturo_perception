@@ -121,6 +121,7 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(suturo_perception_barcodescanner_node src/suturo_perception_barcodescanner_node.cpp)
+add_executable(suturo_perception_barcodescanner_client src/suturo_perception_barcodescanner_client.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -128,6 +129,11 @@ add_executable(suturo_perception_barcodescanner_node src/suturo_perception_barco
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_barcodescanner_node
+  ${catkin_LIBRARIES}
+  ${LIBS}
+)
+
+target_link_libraries(suturo_perception_barcodescanner_client
   ${catkin_LIBRARIES}
   ${LIBS}
 )
