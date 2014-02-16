@@ -21,10 +21,12 @@
 #include <pcl/filters/project_inliers.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/registration/distances.h>
-// #include <point_cloud_operations.h>
 
 // This class will be used to store all
-// the gathered informations for a detected plane
+// the gathered informations for a detected plane.
+// The CuboidMatcher will look for atleast 2 planes
+// in a given PointCloud and use their normals
+// to estimate a Cuboid.
 class DetectedPlane
 {
   public:
