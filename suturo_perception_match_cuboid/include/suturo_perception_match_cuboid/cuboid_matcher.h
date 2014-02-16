@@ -21,10 +21,13 @@
 #include <pcl/filters/project_inliers.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/registration/distances.h>
-// #include <point_cloud_operations.h>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <suturo_perception_match_cuboid/detected_plane.h>
 #include <suturo_perception_match_cuboid/cuboid.h>
+
+// Constants for the different operation modes of this class
+#define CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS 0 
+#define CUBOID_MATCHER_MODE_WITH_COEFFICIENTS 1
 
 // This class implements the main functionality of the Cuboid
 // Matching process.
@@ -33,20 +36,38 @@
 // When the cuboid has been aligned, a bounding box will
 // be calculated
 // By following these transformations backwards, we get the orientation
-// and the Cuboid
-
-// 
-#define CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS 0 
-#define CUBOID_MATCHER_MODE_WITH_COEFFICIENTS 1
-
+// and the Cuboid. 
+// The algorithm can work in two modes:
+//  1) CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS :
+//    Try to estimate a bounding box around the given pointcloud without any other given
+//    parameters. This is useful, if you have just a segmented object without any additional data.
+//    Since pointclouds for smaller objects are rather noisy,
+//    the algorithm might not be able to find a very good right angle
+//    between the different faces of the object.
+//  2) CUBOID_MATCHER_MODE_WITH_COEFFICIENTS :
+//    This mode works similar to the first mode, but aims at cuboid estimation for objects
+//    on a plane (e.g. tables, etc.). Since tables and other big planar surfaces
+//    have a more stable surface, RANSAC will be able to find a better
+//    plane model describing that surface.
+//    In this mode, you can pass pcl::ModelCoefficients to this algorithm.
+//    These ModelCoefficients should describe a plane where the object lies on.
+//    The algorithm will then try to use this plane to estimate the Pose of
+//    the Cuboid in the given PointCloud.
 class CuboidMatcher
 {
   public:
     CuboidMatcher();
-    // Return a pointer to the detected plane list
+    // Return a pointer to the list of detected planes
     std::vector<DetectedPlane> *getDetectedPlanes();
+
+    // Set the input cloud for the algorithm 
+    // (for example, a segmented object)
     void setInputCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
 
+    // If you set setSaveIntermediateResults(true), the algorithm
+    // will place intermediate results of the Cuboid Matching process
+    // in a vector of PointClouds, which is accessible
+    // by this method.
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> getIntermediateClouds(){ return intermediate_clouds_; } 
 
     // Set this to true to save every transformed pointcloud
@@ -73,7 +94,7 @@ class CuboidMatcher
 
     // Execute the algorithm
     // @param c A reference to a cuboid instance, where the fitted cuboid informations
-    //          are stored.
+    //          will be stored.
     //
     // @return false, if the algorithm could not fit a cuboid to the pointcloud
     // this can happen, if the object hasnt atleast 2 planar surfaces which can
@@ -96,6 +117,7 @@ class CuboidMatcher
     // CUBOID_MATCHER_MODE_WITH_COEFFICIENTS mode
     void setTableCoefficients(pcl::ModelCoefficients::Ptr table_coefficients)
     { table_coefficients_ = table_coefficients;}
+
   private:
     // If mode == CUBOID_MATCHER_MODE_WITH_COEFFICIENTS, this
     // integer describes the best matching plane
@@ -114,21 +136,53 @@ class CuboidMatcher
     //   even when the underlying plane of the object is not known.
     int mode_;
 
+    // Rotate the Vector 'normal_to_rotate' into 'base_normal'
+    // Returns a rotation matrix which can be used for the transformation
+    // The matrix also includes an empty translation vector
+    // The resulting matrix can be used to rotate a set of Points
+    // in the given PointCloud.
+    //
+    // By passing store_transformation=true, the transformation
+    // will be saved in the class attribute 'transformations'
     Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
         Eigen::Vector3f base_normal,
         Eigen::Vector3f normal_to_rotate, bool store_transformation);
 
+    // Remove the translation Vector part from a 4x4 matrix
+    // This will yield a matrix that holds only the rotational part.
     Eigen::Matrix< float, 3, 3 > removeTranslationVectorFromMatrix(Eigen::Matrix<float,4,4> m);
+
+
+    // This class will hold record of all necessary normal
+    // vectors during the cuboid estimation process.
+    // By calling this method, you will transform every stored
+    // normal in transformed_normals_  with the given
+    // transformation matrix "transformation"
+    // and save them back into the list transformed_normals_.
     void updateTransformedNormals(Eigen::Matrix<float,4,4> transformation);
-    // Cut off the forth component
+
+    // Get the first 3 dimensions from a 4 dimensional vector
     Eigen::Vector3f getVector3fFromVector4f(Eigen::Vector4f vec);
 
+
+    // This method will use pcl::getMinxMax3D to estimate a BoundingBox around
+    // a given PointCloud.
+    // In this algorithm, this method will only be used on the properly aligned
+    // pointcloud. It is the last step in the estimation process after different
+    // rotations have been used to align the object as good as possible
+    // to be parallel to the cameras origin
+    // 
+    // @returns a PointCloud with the 8 Corner points of the estimated BoundingBox
     void computeCuboidCornersWithMinMax3D(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points);
 
+    // Given a set of corner points ( size = 8),
+    // calculate the various informations for Cuboid
+    // (side lengths, centroid, volume)
     Cuboid computeCuboidFromBorderPoints(
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points);
 
     bool debug;
+
     // Try to find planes on the given pointcloud
     void segmentPlanes();
 
@@ -139,13 +193,12 @@ class CuboidMatcher
     // The input cloud.
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_;
 
-    // TODO use this
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> intermediate_clouds_;
 
     // A vector of all normal vectors from every detected plane
     // During the execution, the object will be rotated and therefore
     // the orientation of the normal vectors should
-    // change too
+    // change too (handled by CuboidMatcher::updateTransformedNormals)
     // The transformed normal vectors will be saved in this attribute.
     std::vector<Eigen::Vector3f> transformed_normals_;
 

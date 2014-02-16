@@ -1,7 +1,7 @@
 #ifndef CUBOID_H
 #define CUBOID_H
 
-// This rectangle will be defined by its three edge lengths
+// This cuboid will be defined by its three edge lengths.
 class Cuboid
 {
   public:
