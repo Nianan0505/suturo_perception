@@ -242,11 +242,6 @@ void CuboidMatcher::computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
   pcl::compute3DCentroid (*hull_points, centroid);  
 }
 
-// Rotate the Vector 'normal_to_rotate' into 'base_normal'
-// Returns a rotation matrix which can be used for the transformation
-// The matrix also includes an empty translation vector
-// By passing store_transformation=true, the transformation
-// will be saved in the class attribute 'transformations'
 Eigen::Matrix< float, 4, 4 > CuboidMatcher::rotateAroundCrossProductOfNormals(
     Eigen::Vector3f base_normal,
     Eigen::Vector3f normal_to_rotate, bool store_transformation=true)
@@ -469,7 +464,6 @@ bool CuboidMatcher::execute(Cuboid &c)
   // Now align the second normal (which has been rotated) with the x-z plane
   Eigen::Vector3f xz_plane(0,1,0);
 
-  // TODO this behaviour differs from the original one. Does it give other results?
   xz_plane = CuboidMatcher::reduceNormAngle(transformed_normals_.at(1), xz_plane);
 
   // TODO check if angle is below treshold. skip transformation then ...
