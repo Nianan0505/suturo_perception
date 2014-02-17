@@ -31,8 +31,8 @@ SuturoPerceptionROSNode::SuturoPerceptionROSNode(ros::NodeHandle& n, std::string
   objectID = 0;
 
   // VFH + SVM stuff
-  logger.logInfo("Loading VFH training data for SVM...");
-  svm_classification.trainVFHData();
+  //logger.logInfo("Loading VFH training data for SVM...");
+  //svm_classification.trainVFHData();
 
   // Init the topic for the plane segmentation result
 	ph.advertise<sensor_msgs::PointCloud2>(TABLE_PLANE_TOPIC);
@@ -465,8 +465,8 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     {
       msgObj->c_vfh_estimation.push_back(it->get_c_vfhs().histogram[i]);
     }
-    msgObj->c_svm_result = svm_classification.classifyVFHSignature308(it->get_c_vfhs());
-    msgObj->c_pose = svm_classification.classifyPoseVFHSignature308(it->get_c_vfhs(), msgObj->c_svm_result);
+    msgObj->c_svm_result = ""; //svm_classification.classifyVFHSignature308(it->get_c_vfhs());
+    msgObj->c_pose = 0; //svm_classification.classifyPoseVFHSignature308(it->get_c_vfhs(), msgObj->c_svm_result);
 
     // these are not set for now
     msgObj->recognition_label_3d = "";
