@@ -160,7 +160,6 @@ add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosn
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
 add_executable(calc_pc_from_img_and_depth src/calc_pc_from_img_and_depth.cpp)
-add_executable(knowledge_gen src/knowledge_gen.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -198,11 +197,6 @@ target_link_libraries(calc_pc_from_img_and_depth
 target_link_libraries(calc_pc_from_img_and_depth
   ${catkin_LIBRARIES}
 )
-
-target_link_libraries(knowledge_gen
- ${OpenCV_LIBS} ${catkin_LIBRARIES}
-)
-
 #############
 ## Install ##
 #############
