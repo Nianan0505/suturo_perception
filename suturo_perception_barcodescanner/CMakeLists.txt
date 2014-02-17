@@ -97,7 +97,7 @@ set(LIBS ${LIBS} ${ImageMagick_LIBRARIES})
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES suturo_perception_barcodescanner
-  CATKIN_DEPENDS roscpp suturo_perception_utils image_transport
+  CATKIN_DEPENDS roscpp suturo_perception_utils image_transport suturo_perception_msgs
 #  DEPENDS system_lib
 )
 
