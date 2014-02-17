@@ -126,6 +126,7 @@ add_executable(suturo_perception_barcodescanner_client src/suturo_perception_bar
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(suturo_perception_barcodescanner_node suturo_perception_msgs)
+add_dependencies(suturo_perception_barcodescanner_client suturo_perception_msgs)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_barcodescanner_node
