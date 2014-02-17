@@ -39,8 +39,10 @@ namespace suturo_perception_barcodescanner
       cv_bridge::CvImagePtr cv_bridge_;
       bool processing_;
       
+      void computeInfoImage(const Symbol&);
       cv::Point getTopLeftIndex(const Symbol&);
       cv::Point getBottomRightIndex(const Symbol&);
+      void publishInfoImage();
   };
 
 }

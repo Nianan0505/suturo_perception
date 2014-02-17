@@ -57,46 +57,58 @@ void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageC
         barcode.type = symbol->get_type_name();
         barcode.code = symbol->get_data();
 
-        // cv playground
-        try
-        {
-          cv::cvtColor(cv_bridge_->image, cv_bridge_->image, CV_GRAY2BGR);  
-        }
-        catch(cv::Exception& e)
-        {
-          logger.logWarn("CV Exception thrown in color conversion");
-        }
+        // mark the found symbol in the input image
+        computeInfoImage(*symbol);
 
-        for(int i = 0; i <= symbol->get_location_size(); ++i)
-        {
-          cv::Point point;
-          point.x = symbol->get_location_x(i);
-          point.y = symbol->get_location_y(i);
-          cv::ellipse(cv_bridge_->image, point, cv::Size(5,5), 0.0, 0.0, 0.0, cv::Scalar(0,255,0), 7, 8, 0);
-        }
-
-        cv::Point pointLeft = getTopLeftIndex(*symbol);
-        cv::Point pointRight = getBottomRightIndex(*symbol);
-        cv::rectangle(cv_bridge_->image, pointRight, pointLeft, cv::Scalar(255,0,0), 2);
-
-        tmpBarcodes.push_back(barcode);   
-     }
+        tmpBarcodes.push_back(barcode);
+      }
     }
     else
       logger.logWarn("No code found");
 
-    cv::resize(cv_bridge_->image, cv_bridge_->image, cv::Size(848,480));
-    cv::imshow(WINDOW, cv_bridge_->image);
-    cv::waitKey(3); // wait 3ms
+    publishInfoImage();
 
     mutex_.lock();
-    currentBarcodes_ = tmpBarcodes; //result from is
+    currentBarcodes_ = tmpBarcodes; //result from image scanner
     mutex_.unlock();
     
     logger.logDebug("finished callback");
     processing_ = false;
   }
 }
+
+void SuturoPerceptionBarcodeScannerNode::computeInfoImage(const Symbol &symbol)
+{
+  // cv playground
+  try
+  {
+    cv::cvtColor(cv_bridge_->image, cv_bridge_->image, CV_GRAY2BGR);  
+  }
+  catch(cv::Exception& e)
+  {
+    logger.logWarn("CV Exception thrown in color conversion");
+  }
+
+  for(int i = 0; i <= symbol.get_location_size(); ++i)
+  {
+    cv::Point point;
+    point.x = symbol.get_location_x(i);
+    point.y = symbol.get_location_y(i);
+    cv::ellipse(cv_bridge_->image, point, cv::Size(5,5), 0.0, 0.0, 0.0, cv::Scalar(0,255,0), 7, 8, 0);
+  }
+
+  cv::Point pointLeft = getTopLeftIndex(symbol);
+  cv::Point pointRight = getBottomRightIndex(symbol);
+  cv::rectangle(cv_bridge_->image, pointRight, pointLeft, cv::Scalar(255,0,0), 2);
+}
+
+void SuturoPerceptionBarcodeScannerNode::publishInfoImage()
+{
+  cv::resize(cv_bridge_->image, cv_bridge_->image, cv::Size(848,480));
+  cv::imshow(WINDOW, cv_bridge_->image);
+  cv::waitKey(3); // wait 3ms  
+}
+
 
 cv::Point SuturoPerceptionBarcodeScannerNode::getTopLeftIndex(const Symbol &symbol)
 {
@@ -105,7 +117,7 @@ cv::Point SuturoPerceptionBarcodeScannerNode::getTopLeftIndex(const Symbol &symb
 
   for(int i = 0; i <= symbol.get_location_size(); ++i)
   { 
-    // lib return funky -1 Points for an index, check that index position is > 0
+    // lib returns funky -1 Points for an index, check that index position is > 0
     if(minX > symbol.get_location_x(i) && symbol.get_location_x(i) > 0) minX = symbol.get_location_x(i);
     if(minY > symbol.get_location_y(i) && symbol.get_location_x(i) > 0) minY = symbol.get_location_y(i);
   }
