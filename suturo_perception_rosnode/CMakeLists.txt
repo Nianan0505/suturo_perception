@@ -156,12 +156,14 @@ add_executable(segment_objects src/segment_objects.cpp)
 add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
+add_executable(knowledge_gen src/knowledge_gen.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(suturo_perception_rosnode suturo_perception_lib suturo_perception_msgs ${PROJECT_NAME}_gencfg)
 add_dependencies(suturo_perception_dummynode suturo_perception_lib suturo_perception_msgs ${PROJECT_NAME}_gencfg)
 add_dependencies(suturo_perception_rosclient suturo_perception_lib suturo_perception_msgs)
+add_dependencies(knowledge_gen suturo_perception_lib suturo_perception_msgs)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_rosnode
@@ -173,6 +175,10 @@ target_link_libraries(suturo_perception_dummynode
 )
 
 target_link_libraries(suturo_perception_rosclient
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(knowledge_gen
   ${catkin_LIBRARIES}
 )
 
