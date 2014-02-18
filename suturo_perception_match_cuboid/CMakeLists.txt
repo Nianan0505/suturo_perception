@@ -7,6 +7,7 @@ project(suturo_perception_match_cuboid)
 find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   roscpp
+	roslib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -85,7 +86,7 @@ add_definitions(${PCL_DEFINITIONS})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES suturo_perception_match_cuboid
-  CATKIN_DEPENDS pcl_ros roscpp
+  CATKIN_DEPENDS pcl_ros roscpp roslib
 #  DEPENDS system_lib
 )
 
@@ -195,6 +196,14 @@ catkin_add_gtest(${PROJECT_NAME}-test
 )
 if(TARGET ${PROJECT_NAME}-test)
 	# target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} suturo_perception_shape_detection)
+	# find_package(catkin REQUIRED COMPONENTS
+	# 	pcl_ros
+	# 	roscpp
+	# 	)
+
+  message(STATUS foo)
+	message(STATUS ${catkin_FOUND})
+  message(STATUS ${catkin_LIBRARIES})
   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
 	# find_package(PCL 1.6 REQUIRED COMPONENTS)
 	# include_directories(${PCL_INCLUDE_DIRS})
