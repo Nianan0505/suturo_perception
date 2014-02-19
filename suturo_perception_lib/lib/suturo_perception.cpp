@@ -280,7 +280,8 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
   logger.logInfo((boost::format(" - extractedROIs  Vector size %s") % perceived_cluster_rois_.size()).str());
     
   // temporary list of perceived objects
-  std::vector<PerceivedObject> tmpPerceivedObjects;
+  //std::vector<PerceivedObject> tmpPerceivedObjects;
+  std::vector<PerceivedObject, Eigen::aligned_allocator<PerceivedObject> > tmpPerceivedObjects;
   
 
   // hack for collision_objects
@@ -355,7 +356,7 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
 }
 
 
-std::vector<PerceivedObject> SuturoPerception::getPerceivedObjects()
+std::vector<PerceivedObject, Eigen::aligned_allocator<PerceivedObject> > SuturoPerception::getPerceivedObjects()
 {
   return perceivedObjects;
 }

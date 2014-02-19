@@ -418,10 +418,11 @@ void SuturoPerceptionROSNode::reconfigureCallback(suturo_perception_rosnode::Sut
 /*
  * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
  */
-std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects)
+//std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects)
+std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > *objects)
 {
   std::vector<suturo_perception_msgs::PerceivedObject> *result = new std::vector<suturo_perception_msgs::PerceivedObject>();
-  for (std::vector<suturo_perception_lib::PerceivedObject>::iterator it = objects->begin(); it != objects->end(); ++it)
+  for (std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> >::iterator it = objects->begin(); it != objects->end(); ++it)
   {
     suturo_perception_msgs::PerceivedObject *msgObj = new suturo_perception_msgs::PerceivedObject();
     msgObj->c_id = it->get_c_id();
