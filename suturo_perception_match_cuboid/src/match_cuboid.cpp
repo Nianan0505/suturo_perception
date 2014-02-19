@@ -490,7 +490,7 @@ origin_cloud_projected->points.at(0).z
       );
   // Translate the norm vector of the second plane to the centroid of the first plane
   viewer.addLine(
-      getPointXYZFromVector4f(detected_planes.at(0).getCentroid()),
+      getPointXYZFromVector3f(detected_planes.at(0).getCentroid()),
       getPointXYZFromVector3f(newDest),
         0, 255, 0, "f1",v2);
 
@@ -503,14 +503,14 @@ origin_cloud_projected->points.at(0).z
       );
   // Translate the norm vector of the second plane to the centroid of the first plane
   viewer.addLine(
-      getPointXYZFromVector4f(detected_planes.at(0).getCentroid()),
+      getPointXYZFromVector3f(detected_planes.at(0).getCentroid()),
       getPointXYZFromVector3f(secondDest),
         255, 0, 0, "f2",v2);
 
   // Create the third axis by using the cross product
   Eigen::Vector3f thirdDest = newDest.cross(secondDest);
   viewer.addLine(
-      getPointXYZFromVector4f(detected_planes.at(0).getCentroid()),
+      getPointXYZFromVector3f(detected_planes.at(0).getCentroid()),
       getPointXYZFromVector3f(thirdDest),
         0, 0, 255, "f3",v2);
 
@@ -614,10 +614,10 @@ origin_cloud_projected->points.at(0).z
     {
     
       // Rotate the original centroid
-      Eigen::Vector4f offset_between_centroids =
+      Eigen::Vector3f offset_between_centroids =
           detected_planes.at(1).getCentroid() - detected_planes.at(0).getCentroid();
       Eigen::Vector3f rotated_offset =
-        removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
+        removeTranslationVectorFromMatrix(rotationBox) * offset_between_centroids;
    
       
       // translatePointCloud(rotated_cloud, 
@@ -673,10 +673,10 @@ origin_cloud_projected->points.at(0).z
     // Translate back to the first centroid, if this was done
     if(second_rotation_performed)
     {
-      Eigen::Vector4f offset_between_centroids =
+      Eigen::Vector3f offset_between_centroids =
         detected_planes.at(1).getCentroid() - detected_planes.at(0).getCentroid();
       Eigen::Vector3f rotated_offset =
-        removeTranslationVectorFromMatrix(rotationBox) * getVector3fFromVector4f(offset_between_centroids);
+        removeTranslationVectorFromMatrix(rotationBox) * offset_between_centroids;
       // translatePointCloud(bounding_box_on_object, 
       //     rotated_offset[0], // Translation is now NOT negative
       //     rotated_offset[1],

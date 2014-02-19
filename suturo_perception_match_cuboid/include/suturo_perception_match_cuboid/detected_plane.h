@@ -31,14 +31,19 @@ class DetectedPlane
 {
   public:
     DetectedPlane();
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Get the angle between the normal of *this*
     // ModelCoefficients (e.g. The Normal vector of the detected plane)
     // The output is in RADIAN
     float angleBetween(Eigen::Vector3f v);
 
     // Trivial setter and getter
-    Eigen::Vector4f getCentroid(){ return centroid_; }
-    void setCentroid(Eigen::Vector4f v){ centroid_ = v; }
+    Eigen::Vector3f getCentroid(){ return centroid_; }
+    void setCentroid(Eigen::Vector4f v){ 
+	centroid_[0] = v[0];
+	centroid_[1] = v[1];
+	centroid_[2] = v[2];
+    }
     Eigen::Vector3f getNormOrigin(){ return normOrigin_; }
     void setNormOrigin(Eigen::Vector3f no){ normOrigin_ = no;}
 
@@ -58,7 +63,7 @@ class DetectedPlane
     // The inliers of the RANSAC plane fitting process
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr points_;
     // The centroid of the plane
-    Eigen::Vector4f centroid_;
+    Eigen::Vector3f centroid_;
     // The projected Origin of the normal vector on the object
     // This is just for visualization purposes
     Eigen::Vector3f normOrigin_;
