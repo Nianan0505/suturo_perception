@@ -66,7 +66,8 @@ private:
   ros::Subscriber sub_cloud; // fallback subscriber
   ObjectMatcher object_matcher_;
   suturo_perception_lib::SuturoPerception sp;
-  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+  //std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+  std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > perceivedObjects;
   ros::NodeHandle nh;
   SVMClassification svm_classification;
   boost::signals2::mutex mutex;
@@ -102,7 +103,8 @@ private:
    * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
    */
   std::vector<suturo_perception_msgs::PerceivedObject> 
-    *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects);
+    *convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > *objects);
+    //*convertPerceivedObjects(std::vector<suturo_perception_lib::PerceivedObject> *objects);
 };
 
 // vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2: 
