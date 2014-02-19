@@ -5,6 +5,7 @@
 class Cuboid
 {
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Cuboid()
     {
       corner_points = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>);

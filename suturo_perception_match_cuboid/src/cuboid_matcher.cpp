@@ -1,4 +1,5 @@
 #include <suturo_perception_match_cuboid/cuboid_matcher.h>
+#include <Eigen/StdVector>
 
 #define MIN_ANGLE 5 // the minimum angle offset between to norm vectors
                     // if this threshold is not reached, no rotation will be made on this axis
@@ -494,11 +495,13 @@ bool CuboidMatcher::execute(Cuboid &c)
   // which were necessary to align the object with the xy and xz plane
   
   // Store the necessary transformations, to rotate the bounding box correctly (e.g. get the orientation )
-  std::vector<Eigen::Quaternion<float> > transformations_as_q;
+  // std::vector<Eigen::Quaternion<float> > transformations_as_q;
+  // std::vector<Eigen::Quaternionf> transformations_as_q;
+  std::vector<Eigen::Quaternionf, Eigen::aligned_allocator<Eigen::Quaternionf> > transformations_as_q;
 
   for(int i = transformations_.size()-1; i >= 0; i--){
     pcl::transformPointCloud (*bounding_box, *bounding_box, transformations_.at(i).transpose());   
-    Eigen::Quaternion<float> q(removeTranslationVectorFromMatrix( transformations_.at(i).transpose() ) );
+    Eigen::Quaternionf q(removeTranslationVectorFromMatrix( transformations_.at(i).transpose() ) );
     transformations_as_q.push_back(q);
   }
 
