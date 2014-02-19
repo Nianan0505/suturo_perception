@@ -40,7 +40,8 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
   std::cout << table_coefficients->values.at(2) << " ";
   std::cout << table_coefficients->values.at(3) << std::endl;
 
-  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+  //std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+  std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > perceivedObjects;
   perceivedObjects = sp.getPerceivedObjects();
 
   for (int i = 0; i < perceivedObjects.size(); i++) {

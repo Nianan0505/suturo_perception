@@ -66,6 +66,8 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+// Include the special Eigen Alignment handling header
+#include <Eigen/StdVector>
 
 using namespace suturo_perception_utils;
 
@@ -78,7 +80,7 @@ namespace suturo_perception_lib
     SuturoPerception();
     // void processCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
 		void processCloudWithProjections(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in);
-    std::vector<PerceivedObject> getPerceivedObjects();
+    std::vector<PerceivedObject, Eigen::aligned_allocator<PerceivedObject> > getPerceivedObjects();
     std::vector<cv::Mat> getPerceivedClusterImages();
     std::vector<ROI> getPerceivedClusterROIs();
 
@@ -190,7 +192,8 @@ namespace suturo_perception_lib
     // ID counter for the perceived objects
     int objectID;
     // Buffer for the last perceived objects
-    std::vector<PerceivedObject> perceivedObjects;
+    // std::vector<PerceivedObject> perceivedObjects;
+    std::vector<PerceivedObject, Eigen::aligned_allocator<PerceivedObject> > perceivedObjects;
     
     // Mutex for buffer locking
     boost::signals2::mutex mutex;

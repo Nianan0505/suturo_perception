@@ -25,7 +25,7 @@ TEST(suturo_perception_test, box_1_test)
   suturo_perception_lib::SuturoPerception sp;
   sp.processCloudWithProjections(cloud);
   
-  std::vector<suturo_perception_lib::PerceivedObject> objects = sp.getPerceivedObjects();
+  std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > objects = sp.getPerceivedObjects();
   
   for (int i = 0; i < objects.size(); i++) 
   {

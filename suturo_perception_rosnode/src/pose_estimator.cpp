@@ -42,7 +42,9 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
   sp.processCloudWithProjections(cloud_in);
   pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
 
-  std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+  //std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+  std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > perceivedObjects;
+
   perceivedObjects = sp.getPerceivedObjects();
 
   ROS_INFO("Received perceived Objects %lu", perceivedObjects.size());
