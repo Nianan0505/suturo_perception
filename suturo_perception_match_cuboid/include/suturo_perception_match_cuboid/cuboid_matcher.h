@@ -205,6 +205,6 @@ class CuboidMatcher
     std::vector<DetectedPlane> detected_planes_;
     // A list with all used transformation
     // matrices 
-    std::vector<Eigen::Matrix< float, 4, 4 > > transformations_;
+    std::vector<Eigen::Matrix< float, 4, 4 >, Eigen::aligned_allocator<Eigen::Matrix< float, 4, 4> > > transformations_;
 };
 #endif
