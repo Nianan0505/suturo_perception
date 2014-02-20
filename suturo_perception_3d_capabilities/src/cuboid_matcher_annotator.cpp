@@ -14,7 +14,7 @@ CuboidMatcherAnnotator::CuboidMatcherAnnotator(suturo_perception_lib::PerceivedO
   table_mode_ = true;
   table_coefficients_ = table_coefficients;
 }
-void CuboidMatcherAnnotator::execute()
+void CuboidMatcherAnnotator::execute(bool debug)
 {
     CuboidMatcher cm;
     cm.setInputCloud(perceived_object_.get_pointCloud() );
@@ -27,7 +27,7 @@ void CuboidMatcherAnnotator::execute()
     {
       cm.setMode(CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS);
     }
-    cm.setDebug(false);
+    cm.setDebug(debug);
     // cm.setMode(CUBOID_MATCHER_MODE_WITH_COEFFICIENTS);
     // cm.setSaveIntermediateResults(true);
     Cuboid cuboid;
@@ -36,4 +36,8 @@ void CuboidMatcherAnnotator::execute()
     // Set cuboid, if the estimation was successful
     if(cm.estimationSuccessful())
       perceived_object_.set_c_cuboid(cuboid);
+}
+void CuboidMatcherAnnotator::execute()
+{
+  execute(false);
 }

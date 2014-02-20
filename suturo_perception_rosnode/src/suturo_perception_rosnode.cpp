@@ -279,7 +279,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     ioService.post(boost::bind(&ColorAnalysis::execute, ca));
     ioService.post(boost::bind(&suturo_perception_shape_detection::RandomSampleConsensus::execute, sd));
     ioService.post(boost::bind(&suturo_perception_vfh_estimation::VFHEstimation::execute, vfhe));
-    ioService.post(boost::bind(&suturo_perception_3d_capabilities::CuboidMatcherAnnotator::execute, cma));
+    ioService.post(boost::bind(&suturo_perception_3d_capabilities::CuboidMatcherAnnotator::execute, cma, true));
 
     // Is 2d recognition enabled?
     if(!recognitionDir.empty() && !fallback_enabled)

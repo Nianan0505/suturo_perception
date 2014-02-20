@@ -24,6 +24,7 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <suturo_perception_match_cuboid/detected_plane.h>
 #include <suturo_perception_match_cuboid/cuboid.h>
+#include <boost/thread.hpp>
 
 // Constants for the different operation modes of this class
 #define CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS 0 
@@ -55,6 +56,7 @@
 //    the Cuboid in the given PointCloud.
 class CuboidMatcher
 {
+  static boost::mutex mx;
   public:
     CuboidMatcher();
     // Return a pointer to the list of detected planes
@@ -106,7 +108,7 @@ class CuboidMatcher
     bool estimationSuccessful(){ return estimation_succesful_; }
 
     // TODO: Move to private, when migration is done
-    static void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid);
+    void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid);
 
     // If you use CUBOID_MATCHER_MODE_WITH_COEFFICIENTS
     // you MUST supply the coefficients with
