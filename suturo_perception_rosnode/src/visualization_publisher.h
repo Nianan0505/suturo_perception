@@ -18,10 +18,10 @@ class VisualizationPublisher
     ros::Publisher cuboid_pub;
     Logger logger;
 
-    int maxMarkerId;
+    int maxMarkerId, maxCuboidMarkerId;
     std::string frameId;
   public:
-    VisualizationPublisher(){maxMarkerId = 0;};
+    VisualizationPublisher(){maxMarkerId = 0; maxCuboidMarkerId = 0;};
     VisualizationPublisher(ros::NodeHandle& n, std::string fi);
     void publishMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs);
     void publishCuboids(std::vector<suturo_perception_msgs::PerceivedObject> objs);

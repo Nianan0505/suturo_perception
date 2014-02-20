@@ -114,7 +114,7 @@ void VisualizationPublisher::publishCuboids(std::vector<suturo_perception_msgs::
     cuboidMarker.header.stamp = ros::Time();
     cuboidMarker.ns = "suturo_perception";
     cuboidMarker.id = markerId;
-    cuboidMarker.lifetime = ros::Duration(1);
+    cuboidMarker.lifetime = ros::Duration(10);
     cuboidMarker.type = visualization_msgs::Marker::CUBE;
     cuboidMarker.action = visualization_msgs::Marker::ADD;
 
@@ -135,6 +135,19 @@ void VisualizationPublisher::publishCuboids(std::vector<suturo_perception_msgs::
 
     cuboid_pub.publish(cuboidMarker);
     markerId++;
+    maxCuboidMarkerId++;
   }
 
+  // remove markers that have not been updated
+  for(int i = markerId; i <= maxCuboidMarkerId; ++i)
+  {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = frameId;
+    marker.header.stamp = ros::Time();
+    marker.ns = "suturo_perception";
+    marker.id = i;
+    marker.action = visualization_msgs::Marker::DELETE;
+    vis_pub.publish(marker);
+  }
+  maxCuboidMarkerId = markerId;
 }
