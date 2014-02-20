@@ -69,18 +69,19 @@ void CuboidMatcher::segmentPlanes()
   // Running index for the plane vectors
   int planeIdx = 0;
 
-  // For each Extraction
-  for (int i = 0; i < 2; i++) // Hack, extract two planes
+  // Extract the two biggest planes of the submitted
+  // pointcloud
+  for (int i = 0; i < 2; i++) 
   {
     DetectedPlane dp;
-    detected_planes_.push_back(dp); // TODO boost pointer
+    detected_planes_.push_back(dp);
 
     // Create the segmentation object
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
     // Optional
     seg.setOptimizeCoefficients (true);
     // Mandatory
-    seg.setModelType (pcl::SACMODEL_PERPENDICULAR_PLANE ); // TODO edit
+    seg.setModelType (pcl::SACMODEL_PLANE );
     seg.setMethodType (pcl::SAC_RANSAC);
     seg.setMaxIterations (1000);
     seg.setDistanceThreshold (0.005); // Tolerance is 0.5 cm
@@ -126,10 +127,13 @@ void CuboidMatcher::segmentPlanes()
     planeIdx ++ ;
 
   }
-  // std::cout << "Mode is " << mode_ << std::endl;
+
+  // If the user of this library submitted us coefficients
+  // for the supporting plane of the object, we will now select
+  // the best, second plane, that is perpendicular to the submitted
+  // coefficients.
   if(mode_ == CUBOID_MATCHER_MODE_WITH_COEFFICIENTS)
   {
-    // std::cout << "Segmenting in COEFFICIENT MODE" << std::endl;
     int good_plane = -1;
     // Check the plane angles against the table
     // Use the plane that is perpendicular 
@@ -207,8 +211,13 @@ void CuboidMatcher::segmentPlanes()
   }
   else
   {
-    // std::cout << "Segmenting in NORMAL MODE" << std::endl;
+    // Segmenting in NORMAL MODE
     // TODO check amount of extracted points
+    // TODO Check if there are 2 planes!
+    if(detected_planes_.size() < 2)
+    {
+      std::cerr << "Tried to estimate angle between two planes. The algorithm just found 2, and the method did not exit properly before this statement! Critical error" << std::endl;
+    }
     float angle = detected_planes_.at(0).angleBetween(
         detected_planes_.at(1).getCoefficientsAsVector3f());
     if(debug)
