@@ -4,6 +4,9 @@
 #define MIN_ANGLE 5 // the minimum angle offset between to norm vectors
                     // if this threshold is not reached, no rotation will be made on this axis
 
+// Define Mutex
+boost::mutex CuboidMatcher::mx;
+
 CuboidMatcher::CuboidMatcher()
 {
     input_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -88,13 +91,14 @@ void CuboidMatcher::segmentPlanes()
 
     if(mode_ == CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS)
     {
-      // Delete the latest DP instance if no inliers can be found and exit immediately
-      if( detected_planes_.at(planeIdx).getInliers()->indices.size() == 0 )
+      // Delete the latest DP instance if not enough inliers can be found and exit immediately
+      if( detected_planes_.at(planeIdx).getInliers()->indices.size() < 10 )
       {
         detected_planes_.pop_back();
         return;
       }
     }
+
 
     // Create the filtering object
     pcl::ExtractIndices<pcl::PointXYZRGB> extract;
@@ -110,6 +114,12 @@ void CuboidMatcher::segmentPlanes()
 
     // Calculate the centroid of each object
     Eigen::Vector4f centroid;
+    // Delete the latest DP instance if not enough inliers can be found and exit immediately
+    if( detected_planes_.at(planeIdx).getPoints()->points.size() < 10 )
+    {
+      detected_planes_.pop_back();
+      return;
+    }
     computeCentroid(detected_planes_.at(planeIdx).getPoints(), centroid);
     detected_planes_.at(planeIdx).setCentroid(centroid);
 
@@ -231,14 +241,26 @@ void CuboidMatcher::segmentPlanes()
 }
 void CuboidMatcher::computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid)
 {
+  boost::mutex::scoped_lock scoped_lock(mx); // Lock this method, since libqull is NOT threadsafe
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
 
+  if(cloud_in == NULL || cloud_in->points.size() == 0)
+  {
+    if(debug)
+      std::cerr << "computeCentroid with empty cloud called" << std::endl;
+    return;
+  }
+
+  if(debug)
+    std::cout << "Try to construct hull("<< cloud_in->points.size() << ")" << std::endl;
   pcl::ConvexHull<pcl::PointXYZRGB> hull;
   hull.setInputCloud(cloud_in);
   hull.setDimension(3);
   hull.reconstruct (*hull_points);
 
+  if(debug)
+    std::cout << "Hull reconstructed" << std::endl;
   // Centroid calulcation
   pcl::compute3DCentroid (*hull_points, centroid);  
 }
@@ -471,7 +493,8 @@ bool CuboidMatcher::execute(Cuboid &c)
   Eigen::Matrix< float, 4, 4 > secondRotation = 
     rotateAroundCrossProductOfNormals(xz_plane, transformed_normals_.at(1));
 
-  // std::cout << "Transformed second time" << std::endl;
+  if(debug)
+    std::cout << "Transformed second time" << std::endl;
   pcl::transformPointCloud (*rotated_cloud, *rotated_cloud, secondRotation);   
 
   if(save_intermediate_results_)
@@ -482,10 +505,12 @@ bool CuboidMatcher::execute(Cuboid &c)
   }
 
 
+  if(debug)
+    std::cout << "Calculating bb" << std::endl;
   // calculate bb
   // Compute the bounding box for the rotated object
-  pcl::PointXYZRGB min_pt, max_pt;
-  pcl::getMinMax3D(*rotated_cloud, min_pt, max_pt);
+  // pcl::PointXYZRGB min_pt, max_pt;
+  // pcl::getMinMax3D(*rotated_cloud, min_pt, max_pt);
 
   // Compute the bounding box edge points
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr bounding_box(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -504,11 +529,20 @@ bool CuboidMatcher::execute(Cuboid &c)
     Eigen::Quaternionf q(removeTranslationVectorFromMatrix( transformations_.at(i).transpose() ) );
     transformations_as_q.push_back(q);
   }
-
+  if(debug)
+    std::cout << "Computing cuboid from border points" << std::endl;
   // calculate stats of the bounding box
   // We do this after the backtransformaton, to get the proper centroid of it
+  if(bounding_box->points.size() != 8)
+  {
+    std::cout << "Bounding box doesn't contain 8 points! Fatal error. Size: ";
+    std::cout << bounding_box->points.size() << std::endl;
+    return false;
+  }
   c = computeCuboidFromBorderPoints(bounding_box);
 
+  if(debug)
+    std::cout << "Calculating orientation" << std::endl;
   // Construct the orientation quaternion of the bounding box
   Eigen::Quaternion<float> orientation;
   orientation.setIdentity();

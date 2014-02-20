@@ -109,7 +109,14 @@ void drawBoundingBoxLines(pcl::visualization::PCLVisualizer &visualizer, pcl::Po
 
   // Draw the centroid of the object
   Eigen::Vector4f centroid;
-  CuboidMatcher::computeCentroid(corner_points, centroid);
+  // CuboidMatcher::computeCentroid(corner_points, centroid);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::ConvexHull<pcl::PointXYZRGB> hull;
+  hull.setInputCloud(corner_points);
+  hull.setDimension(3);
+  hull.reconstruct (*hull_points);
+  // Centroid calulcation
+  pcl::compute3DCentroid (*hull_points, centroid);  
   visualizer.addSphere(getPointXYZFromVector4f(centroid), 0.01, "centroid_bb", viewport);
 
 }
@@ -127,7 +134,14 @@ Cuboid computeCuboidFromBorderPoints(pcl::PointCloud<pcl::PointXYZRGB>::Ptr corn
 
   c.volume = c.length1 * c.length2 * c.length3;
   Eigen::Vector4f centroid;
-  CuboidMatcher::computeCentroid(corner_points, centroid);
+  // CuboidMatcher::computeCentroid(corner_points, centroid);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::ConvexHull<pcl::PointXYZRGB> hull;
+  hull.setInputCloud(corner_points);
+  hull.setDimension(3);
+  hull.reconstruct (*hull_points);
+  // Centroid calulcation
+  pcl::compute3DCentroid (*hull_points, centroid);  
   c.center = getVector3fFromVector4f(centroid);
   return c;
 }

@@ -24,6 +24,7 @@ namespace suturo_perception_3d_capabilities
       // Start the CuboidMatcher in table coefficient mode
       CuboidMatcherAnnotator(suturo_perception_lib::PerceivedObject &obj, pcl::ModelCoefficients::Ptr table_coefficients);
       void execute();
+      void execute(bool debug);
 
     private:
       suturo_perception_utils::Logger logger_;
