@@ -353,6 +353,7 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   pc_sub.unsubscribe(); // shutdown subscriber, to mitigate funky behavior
   // sync.shutdown();
   visualizationPublisher.publishMarkers(res.perceivedObjs);
+  visualizationPublisher.publishCuboids(res.perceivedObjs);
 
   logger.logInfo("Service call finished. return");
   return true;

@@ -15,6 +15,7 @@ class VisualizationPublisher
   private:
     ros::NodeHandle nh;
     ros::Publisher vis_pub;
+    ros::Publisher cuboid_pub;
     Logger logger;
 
     int maxMarkerId;
@@ -23,6 +24,7 @@ class VisualizationPublisher
     VisualizationPublisher(){maxMarkerId = 0;};
     VisualizationPublisher(ros::NodeHandle& n, std::string fi);
     void publishMarkers(std::vector<suturo_perception_msgs::PerceivedObject> objs);
+    void publishCuboids(std::vector<suturo_perception_msgs::PerceivedObject> objs);
 };
 
 #endif
