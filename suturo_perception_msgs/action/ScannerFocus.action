@@ -1,0 +1,8 @@
+#goal definition
+uint8 focusValue
+string videoDevice
+---
+#no result
+---
+#feedback
+uint8 feedbackValue

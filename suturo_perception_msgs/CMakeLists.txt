@@ -5,9 +5,7 @@ project(suturo_perception_msgs)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED message_generation std_msgs geometry_msgs)
-
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(catkin REQUIRED COMPONENTS actionlib_msgs)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -58,15 +56,15 @@ add_service_files(
 )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  ScannerFocus.action
+)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
+  actionlib_msgs
   std_msgs  # Or other packages containing msgs
   geometry_msgs
 )
@@ -83,7 +81,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES kinect_node_msgs
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS actionlib_msgs
 #  DEPENDS system_lib
 )
 
