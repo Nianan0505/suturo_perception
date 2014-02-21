@@ -256,20 +256,15 @@ void CuboidMatcher::computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
 
   if(cloud_in == NULL || cloud_in->points.size() == 0)
   {
-    if(debug)
-      std::cerr << "computeCentroid with empty cloud called" << std::endl;
+    std::cerr << "computeCentroid with empty cloud called" << std::endl;
     return;
   }
 
-  if(debug)
-    std::cout << "Try to construct hull("<< cloud_in->points.size() << ")" << std::endl;
   pcl::ConvexHull<pcl::PointXYZRGB> hull;
   hull.setInputCloud(cloud_in);
   hull.setDimension(3);
   hull.reconstruct (*hull_points);
 
-  if(debug)
-    std::cout << "Hull reconstructed" << std::endl;
   // Centroid calulcation
   pcl::compute3DCentroid (*hull_points, centroid);  
 }
