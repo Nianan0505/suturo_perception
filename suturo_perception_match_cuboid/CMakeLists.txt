@@ -113,8 +113,8 @@ add_executable(match_cuboid
   src/cuboid_matcher.cpp
   )
 
-add_executable(main 
-  src/main.cpp
+add_executable(mc_visualizer 
+  src/mc_visualizer.cpp
   src/detected_plane.cpp
   src/cuboid_matcher.cpp
 )
@@ -129,16 +129,16 @@ add_library(suturo_perception_match_cuboid
 # add_dependencies(suturo_perception_match_cuboid_node suturo_perception_match_cuboid_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(main
-  ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES}
-)
-
 target_link_libraries(suturo_perception_match_cuboid
   ${catkin_LIBRARIES}
 )
 
 target_link_libraries(match_cuboid
+  ${catkin_LIBRARIES}
+  ${VTK_LIBRARIES}
+)
+
+target_link_libraries(mc_visualizer
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
 )
