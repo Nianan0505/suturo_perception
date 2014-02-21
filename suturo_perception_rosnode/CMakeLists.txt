@@ -157,6 +157,7 @@ include_directories(
 add_executable(segment_objects src/segment_objects.cpp)
 add_executable(pose_estimator src/pose_estimator.cpp)
 add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
+add_executable(suturo_perception_knowledge_rosnode src/knowledge_gen_node.cpp src/suturo_perception_knowledge_rosnode.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
 add_executable(calc_pc_from_img_and_depth src/calc_pc_from_img_and_depth.cpp)
@@ -172,6 +173,12 @@ add_dependencies(knowledge_gen suturo_perception_lib suturo_perception_msgs)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_rosnode
  ${OpenCV_LIBS} ${catkin_LIBRARIES}
+)
+
+target_link_libraries(suturo_perception_knowledge_rosnode
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES} 
 )
 
 target_link_libraries(suturo_perception_dummynode
