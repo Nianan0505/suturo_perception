@@ -72,9 +72,17 @@ int main(int argc, char **argv)
   } 
 
   std::string arff_header = "@relation knowledge\n" \
+                            "@attribute red numeric\n" \
+                            "@attribute green numeric\n" \
+                            "@attribute blue numeric\n" \
                             "@attribute hue_sin numeric\n" \
                             "@attribute hue_cos numeric\n" \
+                            "@attribute saturation numeric\n" \
+                            "@attribute value numeric\n" \
                             "@attribute vol numeric\n" \
+                            "@attribute length_1 numeric\n" \
+                            "@attribute length_2 numeric\n" \
+                            "@attribute length_3 numeric\n" \
                             "@attribute cuboid_length_relation_1 numeric\n" \
                             "@attribute cuboid_length_relation_2 numeric\n" \
                             "@attribute label_2d string\n" \
@@ -94,7 +102,7 @@ int main(int argc, char **argv)
   
   ofstream arff_sink;
   
-  arff_sink.open (arff_file.c_str(), ios::out | ios::app | ios::binary); 
+  arff_sink.open (arff_file.c_str(), ios::out | ios::binary); 
   arff_sink << arff_header.c_str();
   arff_sink.close();
 
@@ -119,9 +127,10 @@ int main(int argc, char **argv)
         continue;
       }
 
-      arff_sink.open (arff_file.c_str(), ios::out | ios::app | ios::binary); 
 
       for(int i=0; i < clusterSrv.response.perceivedObjs.size(); i++ ) {
+        arff_sink.open (arff_file.c_str(), ios::out | ios::app | ios::binary); 
+
         int hue = clusterSrv.response.perceivedObjs[i].c_color_average_h;
         double l1 = clusterSrv.response.perceivedObjs[i].matched_cuboid.length1;
         double l2 = clusterSrv.response.perceivedObjs[i].matched_cuboid.length2;
@@ -133,9 +142,17 @@ int main(int argc, char **argv)
         if (label_2d.empty()) {
           label_2d = "?";
         }
+        arff_sink << (int) clusterSrv.response.perceivedObjs[i].c_color_average_r  << ",";
+        arff_sink << (int) clusterSrv.response.perceivedObjs[i].c_color_average_g  << ",";
+        arff_sink << (int) clusterSrv.response.perceivedObjs[i].c_color_average_b  << ",";
         arff_sink << sin(hue * PI / 180) << ",";
         arff_sink << cos(hue * PI / 180) << ",";
+        arff_sink << clusterSrv.response.perceivedObjs[i].c_color_average_s  << ",";
+        arff_sink << clusterSrv.response.perceivedObjs[i].c_color_average_v  << ",";
         arff_sink << clusterSrv.response.perceivedObjs[i].matched_cuboid.volume  << ",";
+        arff_sink << maxl << ",";
+        arff_sink << midl << ",";
+        arff_sink << minl << ",";
         arff_sink << (maxl / midl) << ",";
         arff_sink << (maxl / minl) << ",";
         arff_sink << label_2d.c_str() << ",";
