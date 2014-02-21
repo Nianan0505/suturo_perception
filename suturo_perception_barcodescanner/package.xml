@@ -1,25 +1,25 @@
 <?xml version="1.0"?>
 <package>
-  <name>suturo_perception_msgs</name>
-  <version>0.0.1</version>
-  <description>The suturo_perception_msgs package</description>
+  <name>suturo_perception_barcodescanner</name>
+  <version>0.0.0</version>
+  <description>The suturo_perception_barcodescanner package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="ofenrohr@tzi.de">ofenrohr</maintainer>
+  <maintainer email="aluebken@cs.uni-bremen.de">Andre Lübken</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>GPLv2</license>
+  <license>TODO</license>
 
 
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://ros.org/wiki/kinect_node_msgs</url> -->
+  <!-- <url type="website">http://wiki.ros.org/suturo_perception_barcodescanner</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -32,17 +32,24 @@
   <!-- Dependencies can be catkin packages or system dependencies -->
   <!-- Examples: -->
   <!-- Use build_depend for packages you need at compile time: -->
-  <build_depend>message_generation</build_depend>
+  <!--   <build_depend>message_generation</build_depend> -->
   <!-- Use buildtool_depend for build tool packages: -->
-  <buildtool_depend>catkin</buildtool_depend>
+  <!--   <buildtool_depend>catkin</buildtool_depend> -->
   <!-- Use run_depend for packages you need at runtime: -->
-  <run_depend>message_runtime</run_depend>
+  <!--   <run_depend>message_runtime</run_depend> -->
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <buildtool_depend>std_msgs</buildtool_depend> 
-  <buildtool_depend>roscpp</buildtool_depend>
-  <buildtool_depend>geometry_msgs</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>suturo_perception_utils</build_depend>
+  <build_depend>suturo_perception_msgs</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>suturo_perception_utils</run_depend>
+  <run_depend>suturo_perception_msgs</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>cv_bridge</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
