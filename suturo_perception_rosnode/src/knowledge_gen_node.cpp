@@ -139,6 +139,8 @@ int main (int argc, char** argv)
         gotInputImg = false;
         
         std::vector<suturo_perception_msgs::PerceivedObject> percObjs = spr.receive_image_and_cloud(inputImg, inputCloud);
+        
+        break;
 
         BOOST_FOREACH(suturo_perception_msgs::PerceivedObject obj, percObjs)
         {

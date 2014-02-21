@@ -74,6 +74,8 @@ std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeRO
   boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
   sp.setOriginalRGBImage(img);
   
+  cout << "img width: " << img->cols << "; img height: " << img->rows << endl;
+  
   logger.logInfo("processing...");
   sp.setOriginalCloud(cloud_in);
   sp.processCloudWithProjections(cloud_in);
@@ -82,6 +84,27 @@ std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeRO
   mutex.lock();
   perceivedObjects = sp.getPerceivedObjects();
 
+  if(sp.getOriginalRGBImage()->cols != sp.getOriginalCloud()->width
+      && sp.getOriginalRGBImage()->rows != sp.getOriginalCloud()->height)
+  {
+    // Adjust the ROI if the image is at 1280x1024 and the pointcloud is at 640x480
+    if(sp.getOriginalRGBImage()->cols == 1280 && sp.getOriginalRGBImage()->rows == 1024)
+    {
+      for (int i = 0; i < perceivedObjects.size(); i++) {
+          ROI roi = perceivedObjects.at(i).get_c_roi();
+          roi.origin.x*=2;
+          roi.origin.y*=2;
+          roi.width*=2;
+          roi.height*=2;
+          perceivedObjects.at(i).set_c_roi(roi);
+      }
+    }
+    else
+    {
+      logger.logError("UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS");
+    }
+  }
+    
   // Execution pipeline
   // Each capability provides an enrichment for the
   // returned PerceivedObject
