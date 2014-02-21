@@ -159,7 +159,6 @@ add_executable(pose_estimator src/pose_estimator.cpp)
 add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
-add_executable(knowledge_gen src/knowledge_gen.cpp)
 add_executable(calc_pc_from_img_and_depth src/calc_pc_from_img_and_depth.cpp)
 add_executable(knowledge_gen src/knowledge_gen.cpp)
 
@@ -184,6 +183,7 @@ target_link_libraries(suturo_perception_rosclient
 )
 
 target_link_libraries(knowledge_gen
+  ${Boost_LIBRARIES} 
   ${catkin_LIBRARIES}
 )
 
