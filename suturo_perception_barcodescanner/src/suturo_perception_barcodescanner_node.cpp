@@ -14,6 +14,9 @@ SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::Node
 
   imageTopic_ = "/camera/image_raw";
   processing_ = false;
+  videoDevice_ = "/dev/video1";
+  focusValue_ = 250;
+  want_new_images_ = true;
 
   logger.logInfo("BarcodeScanner Service ready!");
 
@@ -21,8 +24,9 @@ SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::Node
 
 void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageConstPtr& inputImage)
 {
-  if(processing_)
+  if(want_new_images_)
   {
+    want_new_images_ = false;
     try
     {
       cv_bridge_ = cv_bridge::toCvCopy(inputImage, "mono8");  
@@ -64,7 +68,14 @@ void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageC
       }
     }
     else
-      logger.logWarn("No code found");
+    {
+      logger.logWarn((boost::format("No code found, refocusing to %i") % focusValue_).str());
+      refocus(focusValue_);
+      if (focusValue_ <= 0) focusValue_ = 250;
+      else focusValue_-=10; // run through the focus values to find a code
+      want_new_images_ = true;
+      return; // focus reset, wait for new image
+    }
 
     publishInfoImage();
 
@@ -144,6 +155,7 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
 {
   logger.logDebug("Got service call");
   processing_ = true;
+  want_new_images_ = true;
 
   sub_image_ = nh_.subscribe(imageTopic_, 1, 
           &SuturoPerceptionBarcodeScannerNode::receive_image, this);
@@ -169,6 +181,22 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
 
   logger.logDebug("Call finished successfully");
   return true;
+}
+
+/*
+ * Send an action goal to the focus server to adjust the focus
+ * of the camera, if no code is found.
+ */
+void SuturoPerceptionBarcodeScannerNode::refocus(uint8_t focusValue)
+{
+  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
+
+  ros::ServiceClient focusClient = nh_.serviceClient<suturo_perception_msgs::ScannerFocus>("/suturo/ScannerFocus");
+  suturo_perception_msgs::ScannerFocus scannerFocus;
+  scannerFocus.request.videoDevice = videoDevice_;
+  scannerFocus.request.focusValue = focusValue;
+  if (!focusClient.call(scannerFocus))
+    logger.logWarn("refocus service call failed");
 }
 
 

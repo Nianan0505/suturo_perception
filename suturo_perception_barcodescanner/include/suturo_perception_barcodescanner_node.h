@@ -7,10 +7,13 @@
 #include <cv_bridge/cv_bridge.h>
 #include <Magick++.h>
 #include <zbar.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
 
 #include "suturo_perception_utils.h"
 #include "suturo_perception_msgs/GetBarcode.h"
 #include "suturo_perception_msgs/Barcode.h"
+#include "suturo_perception_msgs/ScannerFocus.h"
 #include "highgui.h"
 #include <opencv2/opencv.hpp>
 
@@ -34,15 +37,19 @@ namespace suturo_perception_barcodescanner
       Logger logger;
       ros::Subscriber sub_image_;
       std::string imageTopic_;
+      std::string videoDevice_;
       std::vector<suturo_perception_msgs::Barcode> currentBarcodes_;
       boost::signals2::mutex mutex_;
       cv_bridge::CvImagePtr cv_bridge_;
       bool processing_;
+      bool want_new_images_;
+      int focusValue_;
       
       void computeInfoImage(const Symbol&);
       cv::Point getTopLeftIndex(const Symbol&);
       cv::Point getBottomRightIndex(const Symbol&);
       void publishInfoImage();
+      void refocus(uint8_t);
   };
 
 }
