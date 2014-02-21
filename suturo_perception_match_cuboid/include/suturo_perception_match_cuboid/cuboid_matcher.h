@@ -107,8 +107,7 @@ class CuboidMatcher
 
     bool estimationSuccessful(){ return estimation_succesful_; }
 
-    // TODO: Move to private, when migration is done
-    void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid);
+    static void computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid);
 
     // If you use CUBOID_MATCHER_MODE_WITH_COEFFICIENTS
     // you MUST supply the coefficients with
@@ -119,6 +118,22 @@ class CuboidMatcher
     // CUBOID_MATCHER_MODE_WITH_COEFFICIENTS mode
     void setTableCoefficients(pcl::ModelCoefficients::Ptr table_coefficients)
     { table_coefficients_ = table_coefficients;}
+
+    // This method will use pcl::getMinxMax3D to estimate a BoundingBox around
+    // a given PointCloud.
+    // In this algorithm, this method will only be used on the properly aligned
+    // pointcloud. It is the last step in the estimation process after different
+    // rotations have been used to align the object as good as possible
+    // to be parallel to the cameras origin
+    // 
+    // @returns a PointCloud with the 8 Corner points of the estimated BoundingBox
+    void computeCuboidCornersWithMinMax3D(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points);
+
+    // Given a set of corner points ( size = 8),
+    // calculate the various informations for Cuboid
+    // (side lengths, centroid, volume)
+    Cuboid computeCuboidFromBorderPoints(
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points);
 
   private:
     // If mode == CUBOID_MATCHER_MODE_WITH_COEFFICIENTS, this
@@ -166,22 +181,6 @@ class CuboidMatcher
     // Get the first 3 dimensions from a 4 dimensional vector
     Eigen::Vector3f getVector3fFromVector4f(Eigen::Vector4f vec);
 
-
-    // This method will use pcl::getMinxMax3D to estimate a BoundingBox around
-    // a given PointCloud.
-    // In this algorithm, this method will only be used on the properly aligned
-    // pointcloud. It is the last step in the estimation process after different
-    // rotations have been used to align the object as good as possible
-    // to be parallel to the cameras origin
-    // 
-    // @returns a PointCloud with the 8 Corner points of the estimated BoundingBox
-    void computeCuboidCornersWithMinMax3D(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points);
-
-    // Given a set of corner points ( size = 8),
-    // calculate the various informations for Cuboid
-    // (side lengths, centroid, volume)
-    Cuboid computeCuboidFromBorderPoints(
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points);
 
     bool debug;
 
