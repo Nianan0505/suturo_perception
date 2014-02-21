@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   pcl
   pcl_ros
+  rosbag
   cv_bridge
   image_transport
   suturo_perception_utils
@@ -30,7 +31,7 @@ add_definitions(${PCL_DEFINITIONS})
 find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system program_options thread)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -155,6 +156,10 @@ add_executable(segment_plane_and_show
   src/segment_plane_and_show.cpp
   src/basic_io_pcd.cpp)
 
+add_executable(bag_extraction
+  src/bag_extraction.cpp
+)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(suturo_perception_utils_node suturo_perception_utils_generate_messages_cpp)
@@ -195,6 +200,12 @@ target_link_libraries(downsample_cloud
 target_link_libraries(segment_plane_and_show
   ${catkin_LIBRARIES}
 )
+
+target_link_libraries(bag_extraction
+  ${catkin_LIBRARIES}
+  ${BOOST_LIBRARIES}
+)
+
 
 #############
 ## Install ##
