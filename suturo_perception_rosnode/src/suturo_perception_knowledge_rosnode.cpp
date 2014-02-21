@@ -33,7 +33,7 @@ SuturoPerceptionKnowledgeROSNode::SuturoPerceptionKnowledgeROSNode(ros::NodeHand
 /*
  * Receive callback for the /camera/depth_registered/points subscription
  */
-void SuturoPerceptionKnowledgeROSNode::receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeROSNode::receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
   // process only one cloud
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -125,6 +125,7 @@ void SuturoPerceptionKnowledgeROSNode::receive_cloud(const sensor_msgs::PointClo
 
   mutex.unlock();
 
+  return perceivedObjs;
 }
 
 /*

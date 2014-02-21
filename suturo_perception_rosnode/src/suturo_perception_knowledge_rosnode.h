@@ -40,7 +40,7 @@ class SuturoPerceptionKnowledgeROSNode
 {
 public:
   SuturoPerceptionKnowledgeROSNode(ros::NodeHandle& n, std::string rd);
-  void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud);
+  std::vector<suturo_perception_msgs::PerceivedObject> receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud);
   void reconfigureCallback(suturo_perception_rosnode::SuturoPerceptionConfig &config, uint32_t level);
 
 private:
