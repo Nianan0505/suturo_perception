@@ -74,8 +74,6 @@ std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeRO
   boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
   sp.setOriginalRGBImage(img);
   
-  cout << "img width: " << img->cols << "; img height: " << img->rows << endl;
-  
   logger.logInfo("processing...");
   sp.setOriginalCloud(cloud_in);
   sp.processCloudWithProjections(cloud_in);
