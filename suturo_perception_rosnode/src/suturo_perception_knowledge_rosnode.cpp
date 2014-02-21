@@ -1,5 +1,7 @@
 #include "suturo_perception_knowledge_rosnode.h"
 
+namespace enc = sensor_msgs::image_encodings;
+
 /*
  * Constructor
  */
@@ -33,7 +35,7 @@ SuturoPerceptionKnowledgeROSNode::SuturoPerceptionKnowledgeROSNode(ros::NodeHand
 /*
  * Receive callback for the /camera/depth_registered/points subscription
  */
-std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeROSNode::receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
+std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeROSNode::receive_image_and_cloud(const sensor_msgs::ImageConstPtr& inputImage, const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
   // process only one cloud
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -63,6 +65,14 @@ std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeRO
 
     cloud_in = org_cloud;
   }
+  
+  cv_bridge::CvImagePtr cv_ptr;
+  cv_ptr = cv_bridge::toCvCopy(inputImage, enc::BGR8);
+
+  // Make a deep copy of the passed cv::Mat and set a new
+  // boost pointer to it.
+  boost::shared_ptr<cv::Mat> img(new cv::Mat(cv_ptr->image.clone()));
+  sp.setOriginalRGBImage(img);
   
   logger.logInfo("processing...");
   sp.setOriginalCloud(cloud_in);
@@ -111,8 +121,17 @@ std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeRO
     ioService.post(boost::bind(&suturo_perception_3d_capabilities::CuboidMatcherAnnotator::execute, cma));
 
     // Is 2d recognition enabled?
-    // Set an empty label
-    perceivedObjects[i].set_c_recognition_label_2d("");
+    if(!recognitionDir.empty())
+    {
+      // perceivedObjects[i].c_recognition_label_2d="";
+      suturo_perception_2d_capabilities::LabelAnnotator2D la(perceivedObjects[i], sp.getOriginalRGBImage(), object_matcher_);
+      la.execute();
+    }
+    else
+    {
+      // Set an empty label
+      perceivedObjects[i].set_c_recognition_label_2d("");
+    }
   }
   //boost::this_thread::sleep(boost::posix_time::microseconds(1000));
   // wait for thread completion.

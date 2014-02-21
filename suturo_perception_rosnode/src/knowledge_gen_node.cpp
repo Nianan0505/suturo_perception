@@ -1,4 +1,5 @@
 #include "ros/ros.h"
+#include <ros/package.h>
 #include "suturo_perception_knowledge_rosnode.h"
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
@@ -25,7 +26,8 @@ int main (int argc, char** argv)
   string dest_arff = "/tmp/knowledge.arff";
   string cls = "baguette";
   vector<string> bag_files;
-  string topic = "/kinect_head/depth_registered/points";
+  string pctopic = "/kinect_head/depth_registered/points";
+  string imgtopic = "/kinect_head/rgb/image_color";
 
   po::options_description desc("Allowed options");
   desc.add_options()
@@ -33,7 +35,8 @@ int main (int argc, char** argv)
     ("dest,d", po::value<string>()->required(), "Destination directory for generated data")
     ("class,c", po::value<string>()->required(), "Class of input data")
     ("bag,b", po::value<vector<string> >()->required(), "Bag file(s) to process")
-    ("topic,t", po::value<std::string>()->required(), "PointCloud topic to process")
+    ("pctopic,p", po::value<string>()->required(), "PointCloud topic to process")
+    ("imgtopic,i", po::value<string>()->required(), "Image topic to process")
   ;
   
   try
@@ -61,9 +64,13 @@ int main (int argc, char** argv)
     {
       bag_files = vm["bag"].as<vector<string> >();
     }
-    if(vm.count("topic"))
+    if(vm.count("pctopic"))
     {
-      topic = vm["topic"].as<string>();
+      pctopic = vm["pctopic"].as<string>();
+    }
+    if(vm.count("imgtopic"))
+    {
+      imgtopic = vm["imgtopic"].as<string>();
     }
   }
   catch(std::exception& e)
@@ -79,7 +86,11 @@ int main (int argc, char** argv)
     return false;
   } 
 
-  SuturoPerceptionKnowledgeROSNode spr(nh, "");
+  std::string package_path = ros::package::getPath("suturo_perception_rosnode");
+  stringstream ss;
+  ss << package_path << "/data/milestone3_2d_db.yml";
+  
+  SuturoPerceptionKnowledgeROSNode spr(nh, ss.str());
 
   create_arff(dest_arff);
   
@@ -87,28 +98,60 @@ int main (int argc, char** argv)
   {
     cout << "processing bag file " << bag_file << endl;
     rosbag::Bag bag(bag_file.c_str());
-    rosbag::View view(bag, rosbag::TopicQuery(topic.c_str()));
+    vector<string> topics;
+    topics.push_back(pctopic);
+    topics.push_back(imgtopic);
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
     int i = 0;
+    sensor_msgs::PointCloud2::ConstPtr inputCloud;
+    sensor_msgs::Image::ConstPtr inputImg;
+    bool gotInputCloud = false;
+    bool gotInputImg = false;
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
     {
-      sensor_msgs::PointCloud2::ConstPtr inputCloud = m.instantiate<sensor_msgs::PointCloud2>();
-      if (inputCloud == NULL)
+      if (m.getTopic() == pctopic)
       {
-        cout << "x";
-        continue;
+        gotInputCloud = true;
+        inputCloud = m.instantiate<sensor_msgs::PointCloud2>();
+        if (inputCloud == NULL)
+        {
+          cout << "x";
+          gotInputCloud = false;
+          gotInputImg = false;
+          continue;
+        }
+      }
+      if (m.getTopic() == imgtopic)
+      {
+        inputImg = m.instantiate<sensor_msgs::Image>();
+        gotInputImg = true;
+        if (inputImg == NULL)
+        {
+          cout << "X";
+          gotInputCloud = false;
+          gotInputImg = false;
+          continue;
+        }
       }
 
-      std::vector<suturo_perception_msgs::PerceivedObject> percObjs = spr.receive_cloud(inputCloud);
+      if (gotInputCloud && gotInputImg) {
+        gotInputCloud = false;
+        gotInputImg = false;
+        
+        std::vector<suturo_perception_msgs::PerceivedObject> percObjs = spr.receive_image_and_cloud(inputImg, inputCloud);
 
-      BOOST_FOREACH(suturo_perception_msgs::PerceivedObject obj, percObjs)
-      {
-        add_to_arff(dest_arff, obj, cls);
+        BOOST_FOREACH(suturo_perception_msgs::PerceivedObject obj, percObjs)
+        {
+          add_to_arff(dest_arff, obj, cls);
+        }
+        i++;
+        cout << ".";
       }
-      i++;
-      cout << ".";
     }
   }
 
+  cout << endl << "done" << endl;
+  
   return (0);
 }
 
