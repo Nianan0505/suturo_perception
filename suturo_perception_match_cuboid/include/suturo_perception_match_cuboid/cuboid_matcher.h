@@ -30,10 +30,6 @@
 #define CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS 0 
 #define CUBOID_MATCHER_MODE_WITH_COEFFICIENTS 1
 
-// Constants for the different operation modes of this class
-#define CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS 0 
-#define CUBOID_MATCHER_MODE_WITH_COEFFICIENTS 1
-
 // This class implements the main functionality of the Cuboid
 // Matching process.
 // It finds the two dominant planes from a given PointCloud
