@@ -37,6 +37,7 @@ void CuboidMatcherAnnotator::execute(bool debug)
     if(cm.estimationSuccessful())
       perceived_object_.set_c_cuboid(cuboid);
 }
+
 void CuboidMatcherAnnotator::execute()
 {
   execute(false);

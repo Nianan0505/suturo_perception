@@ -100,7 +100,6 @@ void CuboidMatcher::segmentPlanes()
       }
     }
 
-
     // Create the filtering object
     pcl::ExtractIndices<pcl::PointXYZRGB> extract;
     // Extract the inliers
@@ -245,6 +244,38 @@ void CuboidMatcher::segmentPlanes()
 
 
   }
+  else
+  {
+    // std::cout << "Segmenting in NORMAL MODE" << std::endl;
+    // TODO check amount of extracted points
+    float angle = detected_planes_.at(0).angleBetween(
+        detected_planes_.at(1).getCoefficientsAsVector3f());
+    if(debug)
+    {
+      std::cout << "Angle between Normal of plane 0 and Normal of plane 1";
+      std::cout << ": " << angle << " RAD, " << ((angle * 180) / M_PI) << " DEG" << std::endl;
+    }
+
+    // check angle between planes. They should be near 0°, 90°, 180° or 270°
+    // for cuboids
+    // Exit instantly if the two biggest planes are not properly aligned
+    angle = ((angle * 180) / M_PI);
+
+    if( !( (angle >= 75 && angle <= 100) || 
+          (angle >= 260 && angle <= 280) ) ){
+      detected_planes_.clear();
+      return;
+    }
+
+    for (int i = 0; i < detected_planes_.size(); i++)
+    {
+      // fill the transformed_normals vector for the first time
+      transformed_normals_.push_back(detected_planes_.at(i).getCoefficientsAsVector3f());
+    }
+
+
+  }
+
 
 
 }

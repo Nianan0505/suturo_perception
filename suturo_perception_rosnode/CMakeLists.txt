@@ -25,6 +25,7 @@ suturo_perception_utils
 suturo_perception_vfh_estimation
 suturo_perception_match_cuboid
 suturo_perception_svm_classification
+suturo_perception_match_cuboid
 pcl
 pcl_ros
 )
@@ -157,19 +158,28 @@ include_directories(
 add_executable(segment_objects src/segment_objects.cpp)
 add_executable(pose_estimator src/pose_estimator.cpp)
 add_executable(suturo_perception_rosnode src/main.cpp src/suturo_perception_rosnode.cpp src/visualization_publisher.cpp)
+add_executable(suturo_perception_knowledge_rosnode src/knowledge_gen_node.cpp src/suturo_perception_knowledge_rosnode.cpp)
 add_executable(suturo_perception_dummynode src/dummy_node.cpp)
 add_executable(suturo_perception_rosclient src/client.cpp)
 add_executable(calc_pc_from_img_and_depth src/calc_pc_from_img_and_depth.cpp)
+add_executable(knowledge_gen src/knowledge_gen.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(suturo_perception_rosnode suturo_perception_lib suturo_perception_msgs ${PROJECT_NAME}_gencfg)
 add_dependencies(suturo_perception_dummynode suturo_perception_lib suturo_perception_msgs ${PROJECT_NAME}_gencfg)
 add_dependencies(suturo_perception_rosclient suturo_perception_lib suturo_perception_msgs)
+add_dependencies(knowledge_gen suturo_perception_lib suturo_perception_msgs)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(suturo_perception_rosnode
  ${OpenCV_LIBS} ${catkin_LIBRARIES}
+)
+
+target_link_libraries(suturo_perception_knowledge_rosnode
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES} 
 )
 
 target_link_libraries(suturo_perception_dummynode
@@ -177,6 +187,16 @@ target_link_libraries(suturo_perception_dummynode
 )
 
 target_link_libraries(suturo_perception_rosclient
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(knowledge_gen
+  ${Boost_LIBRARIES} 
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(segment_objects
+  ${Boost_LIBRARIES} 
   ${catkin_LIBRARIES}
 )
 

@@ -239,7 +239,6 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
       {
         logger.logError("UNSUPPORTED MIXTURE OF IMAGE AND POINTCLOUD DIMENSIONS");
       }
-
     }
   }
   
