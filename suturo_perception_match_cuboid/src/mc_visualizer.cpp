@@ -330,6 +330,17 @@ main (int argc, char** argv)
   viewer.addPointCloud<pcl::PointXYZRGB> (bb_at_origin, white_pts_bb, "bb", viewports.at(v_last_transform) );
   viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "bb");
 
+  // std::vector<DetectedPlane> *detected_planes = cm.getDetectedPlanes();
+  // for (int i = 0; i < detected_planes->size(); i++)
+  // {
+  //   for (int j = 0; j < detected_planes->size(); j++)
+  //   {
+  //     if(i==j) continue;
+  //     detected_planes->at(i).angleBetween(
+  //         detected_planes->at(j).getCoefficientsAsVector3f() );
+  //   }
+  // }
+  // detected_planes->at(0);
   viewer.spin();
 
 

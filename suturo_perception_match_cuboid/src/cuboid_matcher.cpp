@@ -213,7 +213,6 @@ void CuboidMatcher::segmentPlanes()
   {
     // Segmenting in NORMAL MODE
     // TODO check amount of extracted points
-    // TODO Check if there are 2 planes!
     if(detected_planes_.size() < 2)
     {
       std::cerr << "Tried to estimate angle between two planes. The algorithm just found 2, and the method did not exit properly before this statement! Critical error" << std::endl;
@@ -564,6 +563,14 @@ bool CuboidMatcher::execute(Cuboid &c)
     std::cout << "Cuboid statistics: ";
     std::cout << "Width: " << c.length1 << " Height: " << c.length2 << " Depth: " << c.length3 << " Volume: " << c.volume;
     std::cout << " m^3" << "O: " << c.orientation.w() << " " << c.orientation.x() << " " << c.orientation.y() << " " << c.orientation.z() << std::endl;
+    std::cout << "Angle between the first used normal and the reference planes after transformation: ";
+    std::cout << acos(transformed_normals_.at(0).dot( Eigen::Vector3f(0,0,1) ) ) * 180 << std::endl;
+    if(transformed_normals_.size() > 1)
+    {
+      std::cout << "Angle between the second used normal and the reference planes after transformation: ";
+      std::cout << acos(transformed_normals_.at(1).dot( Eigen::Vector3f(1,0,0) ) ) * 180 << std::endl;
+    }
+
   }
   estimation_succesful_ = true;
   return true;
