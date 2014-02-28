@@ -30,14 +30,14 @@
 #include "suturo_perception_utils.h"
 #include <sensor_msgs/Image.h>
 #include "suturo_perception_2d_capabilities/label_annotator_2d.h"
-#include "vfh_estimation.h"
-#include "svm_classification.h"
+//#include "vfh_estimation.h"
+//#include "svm_classification.h"
 #include "suturo_perception_3d_capabilities/cuboid_matcher_annotator.h"
 
 using namespace suturo_perception_ros_utils;
 using namespace suturo_perception_utils;
 using namespace suturo_perception_color_analysis;
-using namespace suturo_perception_svm_classification;
+//using namespace suturo_perception_svm_classification;
 
 class SuturoPerceptionROSNode
 {
@@ -69,7 +69,7 @@ private:
   //std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
   std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > perceivedObjects;
   ros::NodeHandle nh;
-  SVMClassification svm_classification;
+  //SVMClassification svm_classification;
   boost::signals2::mutex mutex;
   // ID counter for the perceived objects
   int objectID;
