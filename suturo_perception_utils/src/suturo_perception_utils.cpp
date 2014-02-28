@@ -6,6 +6,7 @@ Logger::Logger(std::string m) : module(m){}
 
 void Logger::log(level lvl, std::string s)
 { 
+#ifndef DISABLE_LOGGING
   #ifndef HAVE_NO_ROS
   switch(lvl)
   {
@@ -40,7 +41,7 @@ void Logger::log(level lvl, std::string s)
     break;
   }
   #endif
-
+#endif
 }
 
 void Logger::logDebug(const std::string& s)

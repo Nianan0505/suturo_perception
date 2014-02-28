@@ -1,3 +1,5 @@
+#define DISABLE_LOGGING 1
+
 #include "ros/ros.h"
 #include <boost/signals2/mutex.hpp>
 #include <boost/date_time.hpp>

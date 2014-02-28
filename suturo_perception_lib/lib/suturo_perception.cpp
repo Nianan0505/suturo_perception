@@ -301,6 +301,13 @@ void SuturoPerception::processCloudWithProjections(pcl::PointCloud<pcl::PointXYZ
       continue;
     }
 
+    if((*it)->points.size()<50)
+    {
+      logger.logError("Cluster cloud has less than 50 points. Skipping ...");
+      i++;
+      continue;
+    }
+    
     // Calculate the volume of each cluster
     // Create a convex hull around the cluster and calculate the total volume
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());

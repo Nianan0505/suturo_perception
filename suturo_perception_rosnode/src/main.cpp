@@ -1,4 +1,5 @@
 #include "ros/ros.h"
+#include <ros/package.h>
 #include "suturo_perception_rosnode.h"
 
 
@@ -10,9 +11,16 @@ int main (int argc, char** argv)
   if(argc > 0 && strcmp(argv[1], "_") != 0)
   {
     recognitionDir = argv[1];
-    ROS_INFO ("Dir for 2D recognition data set: %s", recognitionDir.c_str());
+    ROS_INFO ("Dir for 2D recognition data set by parameter: %s", recognitionDir.c_str());
   }
-  else ROS_INFO ("Dir for 2D recognition data not set. 2D Recognition will be disabled.");
+  else 
+  {
+    std::string package_path = ros::package::getPath("suturo_perception_rosnode");
+    stringstream ss;
+    ss << package_path << "/data/milestone3_2d_db.yml";
+    recognitionDir = ss.str();
+    ROS_INFO ("Dir for 2D recognition data set to milestone 3 database: %s", recognitionDir.c_str());
+  }
 
   // get parameters
   std::string pointTopic;
@@ -26,10 +34,12 @@ int main (int argc, char** argv)
   else frameId = "camera_rgb_optical_frame";
   if(ros::param::get("/suturo_perception/color_topic", colorTopic)) ROS_INFO("Using parameters from Parameter Server");
   else { colorTopic = "/camera/rgb/image_color"; ROS_INFO("Using default parameters");}
-
+  
+  // get recognition dir
   ROS_INFO("PointCloud topic is: %s", pointTopic.c_str());
   ROS_INFO("FrameID          is: %s", frameId.c_str());
   ROS_INFO("ColorTopic topic is: %s", colorTopic.c_str());
+  
 
   SuturoPerceptionROSNode spr(nh, pointTopic, colorTopic, frameId, recognitionDir);
 
