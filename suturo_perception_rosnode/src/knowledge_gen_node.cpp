@@ -7,6 +7,8 @@
 #include "rosbag/view.h"
 #include "perceived_object.h"
 #include <math.h>
+#include <string>
+#include <boost/algorithm/string.hpp>
 
 #define PI 3.14159265
 
@@ -15,7 +17,7 @@ using namespace std;
 using namespace suturo_perception_msgs;
 namespace po = boost::program_options;
 
-void create_arff(std::string filename);
+void create_arff(std::string filename, std::string classes);
 void add_to_arff(std::string filename, suturo_perception_msgs::PerceivedObject obj, std::string cls);
 
 int main (int argc, char** argv)
@@ -24,17 +26,17 @@ int main (int argc, char** argv)
   ros::NodeHandle nh;
 
   string dest_arff = "/tmp/knowledge.arff";
-  string cls = "baguette";
   vector<string> bag_files;
   string pctopic = "/kinect_head/depth_registered/points";
   string imgtopic = "/kinect_head/rgb/image_color";
+  vector<string> classes;
+  string classes_str;
 
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "produce help message")
     ("dest,d", po::value<string>()->required(), "Destination directory for generated data")
-    ("class,c", po::value<string>()->required(), "Class of input data")
-    ("bag,b", po::value<vector<string> >()->required(), "Bag file(s) to process")
+    ("bag,b", po::value<vector<string> >()->required(), "Bag file(s) to process with classname: CLASS:PATH_TO_BAG")
     ("pctopic,p", po::value<string>()->required(), "PointCloud topic to process")
     ("imgtopic,i", po::value<string>()->required(), "Image topic to process")
   ;
@@ -56,13 +58,31 @@ int main (int argc, char** argv)
     {
       dest_arff = vm["dest"].as<string>();
     }
-    if(vm.count("class"))
-    {
-      cls = vm["class"].as<string>();
-    }
     if(vm.count("bag"))
     {
-      bag_files = vm["bag"].as<vector<string> >();
+      vector<string> bags_parm = vm["bag"].as<vector<string> >();
+      bool nfirst = false;
+      BOOST_FOREACH(string bag_parm, bags_parm)
+      {
+        vector<string> parts;
+        split(parts, bag_parm, is_any_of(":"));
+        if (parts.size() != 2)
+        {
+          cerr << "bad bag parameter! more or less than one occurence of \":\"\n";
+          return -1;
+        }
+        classes.push_back(parts.at(0));
+        if (nfirst)
+        {
+          nfirst = true;
+        }
+        else
+        {
+          classes_str.append(",");
+        }
+        classes_str.append(parts.at(0));
+        bag_files.push_back(parts.at(1));
+      } 
     }
     if(vm.count("pctopic"))
     {
@@ -92,7 +112,7 @@ int main (int argc, char** argv)
   
   SuturoPerceptionKnowledgeROSNode spr(nh, ss.str());
 
-  create_arff(dest_arff);
+  create_arff(dest_arff, classes_str);
   
   BOOST_FOREACH(string bag_file, bag_files)
   {
@@ -140,9 +160,11 @@ int main (int argc, char** argv)
         
         std::vector<suturo_perception_msgs::PerceivedObject> percObjs = spr.receive_image_and_cloud(inputImg, inputCloud);
 
+        int i = 0;
         BOOST_FOREACH(suturo_perception_msgs::PerceivedObject obj, percObjs)
         {
-          add_to_arff(dest_arff, obj, cls);
+          add_to_arff(dest_arff, obj, classes.at(i));
+          i++;
         }
         i++;
         cout << ".";
@@ -157,7 +179,7 @@ int main (int argc, char** argv)
 
 
 
-void create_arff(std::string filename)
+void create_arff(std::string filename, std::string classes)
 {
   ofstream arff_sink;
   std::string arff_header = "@relation knowledge\n" \
@@ -176,8 +198,10 @@ void create_arff(std::string filename)
                             "@attribute cuboid_length_relation_2 numeric\n" \
                             "@attribute label_2d string\n" \
                             "@attribute shape numeric\n" \
-                            "@attribute class {baguette,corny,dlink}\n" \
-                            "@data\n";
+                            "@attribute class {";
+  arff_header.append(classes);
+  arff_header.append(       "}\n" \
+                            "@data\n");
   arff_sink.open (filename.c_str(), ios::out | ios::binary); 
   arff_sink << arff_header.c_str();
   arff_sink.close();

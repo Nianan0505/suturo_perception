@@ -27,9 +27,9 @@ SuturoPerceptionKnowledgeROSNode::SuturoPerceptionKnowledgeROSNode(ros::NodeHand
 
   // set default values for color_analysis if no reconfigure callback happens
   color_analysis_lower_s = 0.2;
-  color_analysis_upper_s = 0.8;
+  color_analysis_upper_s = 1.0;
   color_analysis_lower_v = 0.2;
-  color_analysis_upper_v = 0.8;
+  color_analysis_upper_v = 1.0;
 }
 
 /*
