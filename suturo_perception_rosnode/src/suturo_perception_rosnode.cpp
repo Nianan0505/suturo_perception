@@ -459,7 +459,7 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
     msgObj->matched_cuboid.pose.position.z   = c.center(2);
     msgObj->matched_cuboid.pose.orientation.x   = c.orientation.x();
     msgObj->matched_cuboid.pose.orientation.y   = c.orientation.y();
-    msgObj->matched_cuboid.pose.orientation.y   = c.orientation.z();
+    msgObj->matched_cuboid.pose.orientation.z   = c.orientation.z();
     msgObj->matched_cuboid.pose.orientation.w   = c.orientation.w();
 
     for (int i = 0; i < 308; i++) 

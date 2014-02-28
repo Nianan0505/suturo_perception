@@ -23,6 +23,7 @@
 #include <suturo_perception_match_cuboid/detected_plane.h>
 #include <suturo_perception_match_cuboid/cuboid_matcher.h>
 #include <suturo_perception_match_cuboid/cuboid.h>
+#include <pcl/ModelCoefficients.h>
 
 #define MIN_ANGLE 5 // the minimum angle offset between to norm vectors
                     // if this threshold is not reached, no rotation will be made on this axis
@@ -201,6 +202,23 @@ main (int argc, char** argv)
   cm.setInputCloud(input_cloud);
   cm.setDebug(true);
   cm.setSaveIntermediateResults(true);
+  /*
+   * Use this code if you want to use the algorithm
+   * with given table coefficients. The table coefficients
+   * should describe the plane, where the input cloud is
+   * standing on.
+   *
+   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients());
+  coefficients->values.resize(4);
+  coefficients->values.at(0) = 0.000624452;
+  coefficients->values.at(1) = -0.796438;
+  coefficients->values.at(2) = -0.60472;
+  coefficients->values.at(3) = 0.915019;
+  cm.setTableCoefficients(coefficients);
+  cm.setMode(CUBOID_MATCHER_MODE_WITH_COEFFICIENTS);
+  */
+
+
   Cuboid cuboid;
   cm.execute(cuboid);
   boost::posix_time::ptime t_algorithm_done = boost::posix_time::microsec_clock::local_time();
@@ -242,8 +260,8 @@ main (int argc, char** argv)
       double x_1 =  (column+1)*(1/items_per_row);
       if(c < viewport_count)
       {
-        std::cout << x_0 << " " << y_0 << " ";
-        std::cout << x_1 << " " << y_1 << " @" << viewports.at(c) <<std::endl;
+        // std::cout << x_0 << " " << y_0 << " ";
+        // std::cout << x_1 << " " << y_1 << " @" << viewports.at(c) <<std::endl;
         viewer.createViewPort(x_0, y_0, x_1, y_1, viewports.at(c) );
         viewer.addCoordinateSystem(0.7,viewports.at(c));
       }

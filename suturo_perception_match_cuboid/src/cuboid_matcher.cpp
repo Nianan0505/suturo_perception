@@ -89,7 +89,7 @@ void CuboidMatcher::segmentPlanes()
     seg.setInputCloud (cloud);
     seg.segment (*detected_planes_.at(planeIdx).getInliers(),
         *detected_planes_.at(planeIdx).getCoefficients());
-
+    std::cout << "Found " << detected_planes_.at(planeIdx).getInliers()->indices.size() << " Inliers" << std::endl;
     if(mode_ == CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS)
     {
       // Delete the latest DP instance if not enough inliers can be found and exit immediately
@@ -230,8 +230,9 @@ void CuboidMatcher::segmentPlanes()
     // Exit instantly if the two biggest planes are not properly aligned
     angle = ((angle * 180) / M_PI);
 
-    if( !( (angle >= 75 && angle <= 100) || 
-          (angle >= 260 && angle <= 280) ) ){
+    if( !( (angle >= 70 && angle <= 110) || 
+          (angle >= 255 && angle <= 290) ) ){
+      std::cerr << "The angles between both detected planes are rather odd. Skipping Iteration" << std::endl;
       detected_planes_.clear();
       return;
     }
