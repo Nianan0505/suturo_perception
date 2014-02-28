@@ -61,7 +61,7 @@ int main (int argc, char** argv)
     if(vm.count("bag"))
     {
       vector<string> bags_parm = vm["bag"].as<vector<string> >();
-      bool nfirst = false;
+      bool nfirst = true;
       BOOST_FOREACH(string bag_parm, bags_parm)
       {
         vector<string> parts;
@@ -71,16 +71,19 @@ int main (int argc, char** argv)
           cerr << "bad bag parameter! more or less than one occurence of \":\"\n";
           return -1;
         }
-        classes.push_back(parts.at(0));
-        if (nfirst)
+        if (!(std::find(classes.begin(), classes.end(), parts.at(0)) != classes.end()))
         {
-          nfirst = true;
+          classes.push_back(parts.at(0));
+          classes_str.append(parts.at(0));
+          if (nfirst)
+          {
+            nfirst = false;
+          }
+          else
+          {
+            classes_str.append(",");
+          }
         }
-        else
-        {
-          classes_str.append(",");
-        }
-        classes_str.append(parts.at(0));
         bag_files.push_back(parts.at(1));
       } 
     }
