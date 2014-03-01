@@ -11,16 +11,19 @@ using this service than to fumble in the code of this pile of dirt.
 '''
 
 def handle_refocus(req):
-  rospy.loginfo('executing focus call')
-  
-  # execute uvcdynctrl to adjust the focus on the given video device
-  # with the given focusValue
+  ''' 
+  execute uvcdynctrl to adjust the focus on the given video device
+  with the given focusValue
+  '''
+  dev_null = open('/dev/null', 'w') # push uvcdynctrl garbage to /dev/null
 
   # first: deactivate autofocus on cam
-  print ['uvcdynctrl', '-d', str(req.videoDevice), '-s', 'Focus, Auto', '0']
-  subprocess.call(['uvcdynctrl', '-d', str(req.videoDevice), '-s', 'Focus, Auto', '0'])
-  print ['uvcdynctrl', '-d', str(req.videoDevice), '-s', 'Focus (absolute)', str(req.focusValue)]
-  subprocess.call(['uvcdynctrl', '-d', str(req.videoDevice), '-s', 'Focus (absolute)', str(req.focusValue)])
+  subprocess.call(['uvcdynctrl', '-d', str(req.videoDevice), '-s', 'Focus, Auto', '0'], 
+    stdout=dev_null, stderr=dev_null)
+  # set the focusvalue from the request
+  subprocess.call(['uvcdynctrl', '-d', str(req.videoDevice), '-s', 'Focus (absolute)', str(req.focusValue)],
+    stdout=dev_null, stderr=dev_null)
+  rospy.loginfo('[focusdispatcher] Executed focus call. New focus value is: %s', str(req.focusValue))
   return suturo_perception_msgs.srv.ScannerFocusResponse()
       
 if __name__ == '__main__':
