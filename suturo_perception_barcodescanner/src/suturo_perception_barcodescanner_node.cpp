@@ -5,21 +5,23 @@ using namespace zbar;
 
 static const char WINDOW[] = "Suturo BarcodeScanner";
 
-SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::NodeHandle& n) : nh_(n)
+SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::NodeHandle& n, std::string ci, 
+                                                                       std::string vd, std::string ii) 
+  : nh_(n),
+    cameraImageTopic_(ci),
+    videoDevice_(vd),
+    infoImageTopic_(ii)
 {
   logger = Logger("perception_barcodescanner");
   
   barcodeService_ = nh_.advertiseService("/suturo/barcodescanner", 
     &SuturoPerceptionBarcodeScannerNode::getCode, this);
 
-  imageTopic_ = "/camera/image_raw";
   processing_ = false;
-  videoDevice_ = "/dev/video1";
   focusValue_ = 250;
   want_new_images_ = true;
 
   logger.logInfo("BarcodeScanner Service ready!");
-
 }
 
 void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageConstPtr& inputImage)
@@ -157,7 +159,7 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
   processing_ = true;
   want_new_images_ = true;
 
-  sub_image_ = nh_.subscribe(imageTopic_, 1, 
+  sub_image_ = nh_.subscribe(cameraImageTopic_, 1, 
           &SuturoPerceptionBarcodeScannerNode::receive_image, this);
   
   ros::Rate r(50); // 50 hz
@@ -189,8 +191,6 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
  */
 void SuturoPerceptionBarcodeScannerNode::refocus(uint8_t focusValue)
 {
-  boost::posix_time::ptime s = boost::posix_time::microsec_clock::local_time();
-
   ros::ServiceClient focusClient = nh_.serviceClient<suturo_perception_msgs::ScannerFocus>("/suturo/ScannerFocus");
   suturo_perception_msgs::ScannerFocus scannerFocus;
   scannerFocus.request.videoDevice = videoDevice_;
@@ -205,7 +205,17 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "suturo_perception_barcodescanner");
   ros::NodeHandle nh;
   cv::namedWindow(WINDOW, CV_WINDOW_AUTOSIZE);
-  SuturoPerceptionBarcodeScannerNode bsn(nh);
+
+  // get parameters
+  std::string cameraImageTopic, infoImageTopic, videoDevice;
+  if(ros::param::get("/suturo_perception/barcode_image_topic", cameraImageTopic)) ROS_INFO("Using parameters from Parameter Server");
+  else { cameraImageTopic = "/camera/image_raw"; ROS_INFO("Using default parameters");}
+  if(ros::param::get("/suturo_perception/barcode_video_device", videoDevice)) ROS_INFO("Using parameters from Parameter Server");
+  else { videoDevice = "/dev/video1"; ROS_INFO("Using default parameters");}
+  if(ros::param::get("/suturo_perception/barcode_info_image_topic", infoImageTopic)) ROS_INFO("Using parameters from Parameter Server");
+  else { infoImageTopic = "/suturo/barcode_info_image"; ROS_INFO("Using default parameters");}
+
+  SuturoPerceptionBarcodeScannerNode bsn(nh, cameraImageTopic, videoDevice, infoImageTopic);
   
   ros::MultiThreadedSpinner spinner(2);
   spinner.spin();

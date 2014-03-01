@@ -26,7 +26,7 @@ namespace suturo_perception_barcodescanner
   class SuturoPerceptionBarcodeScannerNode
   {
     public:
-      SuturoPerceptionBarcodeScannerNode(ros::NodeHandle& n);
+      SuturoPerceptionBarcodeScannerNode(ros::NodeHandle& n, std::string ci, std::string vd, std::string ii);
       void receive_image(const sensor_msgs::ImageConstPtr& inputImage);
       bool getCode(suturo_perception_msgs::GetBarcode::Request &req,
         suturo_perception_msgs::GetBarcode::Response &res);
@@ -36,8 +36,9 @@ namespace suturo_perception_barcodescanner
       ros::ServiceServer barcodeService_;
       Logger logger;
       ros::Subscriber sub_image_;
-      std::string imageTopic_;
+      std::string cameraImageTopic_;
       std::string videoDevice_;
+      std::string infoImageTopic_;
       std::vector<suturo_perception_msgs::Barcode> currentBarcodes_;
       boost::signals2::mutex mutex_;
       cv_bridge::CvImagePtr cv_bridge_;

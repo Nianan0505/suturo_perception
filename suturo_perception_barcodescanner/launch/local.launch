@@ -5,6 +5,8 @@
 
   <node pkg="suturo_perception_barcodescanner" name="suturo_perception_barcodescanner_node" type="suturo_perception_barcodescanner_node" output="screen"></node>
   <param name="suturo_perception/barcode_image_topic" type="string" value="/camera/image_raw" />
+  <param name="suturo_perception/barcode_info_image_topic" type="string" value="/suturo/barcode_info_image" />
+  <param name="suturo_perception/barcode_video_device" type="string" value="/dev/video1" />
 
 </launch>
 
