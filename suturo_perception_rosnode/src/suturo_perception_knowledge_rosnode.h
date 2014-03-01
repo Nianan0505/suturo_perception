@@ -65,10 +65,12 @@ private:
   double color_analysis_upper_s;
   double color_analysis_lower_v;
   double color_analysis_upper_v;
-
+  
   Logger logger;
 
   int numThreads;
+  boost::asio::io_service ioService;
+  boost::thread_group threadpool;
 
   /*
    * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list

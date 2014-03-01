@@ -61,9 +61,9 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     return;
   }
 
-  if(original_cloud->points.size() == 0)
+  if(original_cloud->points.size() < 50)
   {
-    logger.logError("clusterFromProjection: original_cloud is empty. Skipping ...");
+    logger.logError("clusterFromProjection: original_cloud has less than 50 points. Skipping ...");
     return;
   }
 
@@ -96,6 +96,11 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
   // Iterate over the found clusters and extract single pointclouds
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
   {
+    if (it->indices.size() < 10)
+    {
+      logger.logError("Cloud cluster has less than 10 points, skipping...");
+      continue;
+    }
     // Gather all points for a cluster into a single pointcloud
     boost::posix_time::ptime s1 = boost::posix_time::microsec_clock::local_time();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -106,9 +111,9 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
     logger.logInfo((boost::format("Cloud Cluster Size is %s") % cloud_cluster->points.size ()).str());
-    std::ostringstream fn;
-    fn << "2dcluster_" << i << ".pcd";
-    if(writer_pcd) writer.write(fn.str(), *cloud_cluster, false);
+    //std::ostringstream fn;
+    //fn << "2dcluster_" << i << ".pcd";
+    //if(writer_pcd) writer.write(fn.str(), *cloud_cluster, false);
 
   
     // Extract every point above the 2d cluster.
@@ -124,9 +129,9 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     boost::posix_time::ptime e1 = boost::posix_time::microsec_clock::local_time();
     logger.logTime(s1, e1, "Extracted Object Points");
 
-    std::ostringstream cl_file;
-    cl_file << "2d_Z_cluster_" << i << ".pcd";
-    if(writer_pcd) writer.write(cl_file.str(), *object_points, false);
+    //std::ostringstream cl_file;
+    //cl_file << "2d_Z_cluster_" << i << ".pcd";
+    //if(writer_pcd) writer.write(cl_file.str(), *object_points, false);
     // cout << "2d_Z_cluster_" << i << " has " << object_points->size() << " points" << endl;
 
     boost::posix_time::ptime s2 = boost::posix_time::microsec_clock::local_time();
@@ -170,8 +175,23 @@ void SuturoPerception::clusterFromProjection(pcl::PointCloud<pcl::PointXYZRGB>::
     roi.width = roi_width;
     roi.height = roi_height;
 
-    cv::Rect region_of_interest = cv::Rect(roi_topleft_x, roi_topleft_y, roi_width, roi_height);
-    cv::Mat image_roi = img(region_of_interest);
+    cv::Mat image_roi;
+    try 
+    {
+      cv::Rect region_of_interest = cv::Rect(roi.origin.x, roi.origin.y, roi.width, roi.height);
+      image_roi = img(region_of_interest);
+    }
+    catch (...)
+    {
+      logger.logError((boost::format("Creating ROI image failed (ROI: x = %d, y = %d, w = %d, h = %d)") % roi.origin.x % roi.origin.y % roi.width % roi.height).str());
+      
+      roi.origin.x = 0;
+      roi.origin.y = 0;
+      roi.width = 0;
+      roi.height = 0;
+      cv::Rect region_of_interest = cv::Rect(roi.origin.x, roi.origin.y, roi.width, roi.height);
+      image_roi = img(region_of_interest);
+    }
 
     extracted_images.push_back(image_roi);
     perceived_cluster_rois_.push_back(roi);
