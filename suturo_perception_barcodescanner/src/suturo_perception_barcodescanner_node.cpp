@@ -29,6 +29,10 @@ void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageC
   if(want_new_images_)
   {
     want_new_images_ = false;
+    // reset the info images
+    infoPoints_.clear();
+    infoBoxPairs_.clear();
+
     try
     {
       cv_bridge_ = cv_bridge::toCvCopy(inputImage, "mono8");  
@@ -65,7 +69,6 @@ void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageC
 
         // mark the found symbol in the input image
         computeInfoImage(*symbol);
-
         tmpBarcodes.push_back(barcode);
       }
     }
@@ -75,7 +78,8 @@ void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageC
       refocus(focusValue_);
       if (focusValue_ <= 0) focusValue_ = 250;
       else focusValue_-=10; // run through the focus values to find a code
-      want_new_images_ = true;
+      if(processing_ == true) want_new_images_ = true;
+      else want_new_images_ = false; // service callback timed out, probably no barcode there
       return; // focus reset, wait for new image
     }
 
@@ -90,9 +94,13 @@ void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageC
   }
 }
 
+/*
+ * For each symbol found, compute the registered location points and a bounding box.
+ * Since the original image is processed iteratively by zbar, the computed values are
+ * stored in containers, so the original image is not modified while zbar is still processing it.
+ */
 void SuturoPerceptionBarcodeScannerNode::computeInfoImage(const Symbol &symbol)
 {
-  // cv playground
   try
   {
     cv::cvtColor(cv_bridge_->image, cv_bridge_->image, CV_GRAY2BGR);  
@@ -107,16 +115,23 @@ void SuturoPerceptionBarcodeScannerNode::computeInfoImage(const Symbol &symbol)
     cv::Point point;
     point.x = symbol.get_location_x(i);
     point.y = symbol.get_location_y(i);
-    cv::ellipse(cv_bridge_->image, point, cv::Size(5,5), 0.0, 0.0, 0.0, cv::Scalar(0,255,0), 7, 8, 0);
+    infoPoints_.push_back(point);
   }
 
   cv::Point pointLeft = getTopLeftIndex(symbol);
   cv::Point pointRight = getBottomRightIndex(symbol);
-  cv::rectangle(cv_bridge_->image, pointRight, pointLeft, cv::Scalar(255,0,0), 2);
+  infoBoxPairs_.push_back(std::make_pair(pointLeft, pointRight));
 }
 
+/*
+ * Draw the computed points and bounding boxes and publish the info image.
+ */
 void SuturoPerceptionBarcodeScannerNode::publishInfoImage()
 {
+  for(std::vector<cv::Point>::iterator it = infoPoints_.begin(); it != infoPoints_.end(); ++ it)
+    cv::ellipse(cv_bridge_->image, *it, cv::Size(5,5), 0.0, 0.0, 0.0, cv::Scalar(0,255,0), 7, 8, 0);
+  for(std::vector<InfoBoxPair>::iterator it = infoBoxPairs_.begin(); it != infoBoxPairs_.end(); ++ it)
+    cv::rectangle(cv_bridge_->image, it->second, it->first, cv::Scalar(255,0,0), 2);
   cv::resize(cv_bridge_->image, cv_bridge_->image, cv::Size(848,480));
   cv::imshow(WINDOW, cv_bridge_->image);
   cv::waitKey(3); // wait 3ms  
@@ -186,7 +201,7 @@ bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarc
 }
 
 /*
- * Send an action goal to the focus server to adjust the focus
+ * Send a service call to the focus server to adjust the focus
  * of the camera, if no code is found.
  */
 void SuturoPerceptionBarcodeScannerNode::refocus(uint8_t focusValue)

@@ -43,8 +43,8 @@ int main(int argc, char **argv)
     }
     else
     {
-      ROS_ERROR("Failed to call service /suturo/GetBarcode");
-      return 1;
+      ROS_ERROR("Service call on /suturo/GetBarcode failed. Retrying");
+      continue;
     }
     boost::this_thread::sleep(boost::posix_time::seconds(1));
   }

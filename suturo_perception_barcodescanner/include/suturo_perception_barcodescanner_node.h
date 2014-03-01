@@ -2,6 +2,7 @@
 #define SUTURO_PERCEPTION_BARCODESCANNER_NODE_H
 
 #include "ros/ros.h"
+#include <utility>
 #include <sensor_msgs/Image.h>
 #include <boost/signals2/mutex.hpp>
 #include <cv_bridge/cv_bridge.h>
@@ -45,6 +46,9 @@ namespace suturo_perception_barcodescanner
       bool processing_;
       bool want_new_images_;
       int focusValue_;
+      typedef std::pair <cv::Point, cv::Point> InfoBoxPair; // Point pairs for box drawing
+      std::vector<InfoBoxPair> infoBoxPairs_; // vector for the box pairs
+      std::vector<cv::Point> infoPoints_;     // vector for the symbol points
       
       void computeInfoImage(const Symbol&);
       cv::Point getTopLeftIndex(const Symbol&);
