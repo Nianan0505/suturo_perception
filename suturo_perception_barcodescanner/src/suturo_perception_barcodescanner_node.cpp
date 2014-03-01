@@ -24,6 +24,9 @@ SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::Node
   logger.logInfo("BarcodeScanner Service ready!");
 }
 
+/*
+ * Callback receiving the webcam image
+ */
 void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageConstPtr& inputImage)
 {
   if(want_new_images_)
@@ -137,7 +140,9 @@ void SuturoPerceptionBarcodeScannerNode::publishInfoImage()
   cv::waitKey(3); // wait 3ms  
 }
 
-
+/*
+ * Get the top left index of a symbol to compute a bounding box
+ */
 cv::Point SuturoPerceptionBarcodeScannerNode::getTopLeftIndex(const Symbol &symbol)
 {
   int minX = 42000;
@@ -153,6 +158,9 @@ cv::Point SuturoPerceptionBarcodeScannerNode::getTopLeftIndex(const Symbol &symb
   return cv::Point(minX-20,minY-20);
 }
 
+/*
+ * Get the bottom right index of a symbol to compute a bounding box
+ */
 cv::Point SuturoPerceptionBarcodeScannerNode::getBottomRightIndex(const Symbol &symbol)
 {
   int maxX = 0;
@@ -167,6 +175,9 @@ cv::Point SuturoPerceptionBarcodeScannerNode::getBottomRightIndex(const Symbol &
   return cv::Point(maxX+20,maxY+20);
 }
 
+/*
+ * Service method called by clients of the barcode service
+ */
 bool SuturoPerceptionBarcodeScannerNode::getCode(suturo_perception_msgs::GetBarcode::Request &req,
         suturo_perception_msgs::GetBarcode::Response &res)
 {
