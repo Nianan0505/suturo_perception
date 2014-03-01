@@ -10,6 +10,7 @@
 #include <zbar.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
+#include <image_transport/image_transport.h>
 
 #include "suturo_perception_utils.h"
 #include "suturo_perception_msgs/GetBarcode.h"
@@ -43,6 +44,7 @@ namespace suturo_perception_barcodescanner
       std::vector<suturo_perception_msgs::Barcode> currentBarcodes_;
       boost::signals2::mutex mutex_;
       cv_bridge::CvImagePtr cv_bridge_;
+      ros::Publisher imagePub_;
       bool processing_;
       bool want_new_images_;
       int focusValue_;

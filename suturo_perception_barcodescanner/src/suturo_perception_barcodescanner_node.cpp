@@ -21,6 +21,8 @@ SuturoPerceptionBarcodeScannerNode::SuturoPerceptionBarcodeScannerNode(ros::Node
   focusValue_ = 250;
   want_new_images_ = true;
 
+  imagePub_ = nh_.advertise<sensor_msgs::Image>(infoImageTopic_, 1);
+
   logger.logInfo("BarcodeScanner Service ready!");
 }
 
@@ -38,7 +40,10 @@ void SuturoPerceptionBarcodeScannerNode::receive_image(const sensor_msgs::ImageC
 
     try
     {
-      cv_bridge_ = cv_bridge::toCvCopy(inputImage, "mono8");  
+      // do an extra gray scale conversion. copying to mono8 directly 
+      // will result in a distorted sensor_msgs image
+      cv_bridge_ = cv_bridge::toCvCopy(inputImage, "bgr8");
+      cv::cvtColor(cv_bridge_->image, cv_bridge_->image, CV_BGR2GRAY);
     }
     catch(cv_bridge::Exception& e)
     {
@@ -106,7 +111,7 @@ void SuturoPerceptionBarcodeScannerNode::computeInfoImage(const Symbol &symbol)
 {
   try
   {
-    cv::cvtColor(cv_bridge_->image, cv_bridge_->image, CV_GRAY2BGR);  
+    cv::cvtColor(cv_bridge_->image, cv_bridge_->image, CV_GRAY2BGR);
   }
   catch(cv::Exception& e)
   {
@@ -135,9 +140,9 @@ void SuturoPerceptionBarcodeScannerNode::publishInfoImage()
     cv::ellipse(cv_bridge_->image, *it, cv::Size(5,5), 0.0, 0.0, 0.0, cv::Scalar(0,255,0), 7, 8, 0);
   for(std::vector<InfoBoxPair>::iterator it = infoBoxPairs_.begin(); it != infoBoxPairs_.end(); ++ it)
     cv::rectangle(cv_bridge_->image, it->second, it->first, cv::Scalar(255,0,0), 2);
+  
   cv::resize(cv_bridge_->image, cv_bridge_->image, cv::Size(848,480));
-  cv::imshow(WINDOW, cv_bridge_->image);
-  cv::waitKey(3); // wait 3ms  
+  imagePub_.publish(cv_bridge_->toImageMsg());
 }
 
 /*
