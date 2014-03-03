@@ -31,13 +31,7 @@ SuturoPerceptionKnowledgeROSNode::SuturoPerceptionKnowledgeROSNode(ros::NodeHand
   color_analysis_lower_v = 0.2;
   color_analysis_upper_v = 1.0;
 
-  // Add worker threads to threadpool
-  for(int i = 0; i < numThreads; ++i)
-  {
-    threadpool.create_thread(
-      boost::bind(&boost::asio::io_service::run, &ioService)
-      );
-  }
+  
 }
 
 /*
@@ -116,7 +110,17 @@ std::vector<suturo_perception_msgs::PerceivedObject> SuturoPerceptionKnowledgeRO
   // returned PerceivedObject
   
   // initialize threadpool
+  boost::asio::io_service ioService;
+  boost::thread_group threadpool;
   std::auto_ptr<boost::asio::io_service::work> work(new boost::asio::io_service::work(ioService));
+  
+  // Add worker threads to threadpool
+  for(int i = 0; i < numThreads; ++i)
+  {
+    threadpool.create_thread(
+      boost::bind(&boost::asio::io_service::run, &ioService)
+      );
+  }
 
   for (int i = 0; i < perceivedObjects.size(); i++) 
   {

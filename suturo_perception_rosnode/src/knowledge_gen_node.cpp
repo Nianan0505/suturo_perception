@@ -30,8 +30,11 @@ int main (int argc, char** argv)
   string pctopic = "/kinect_head/depth_registered/points";
   string imgtopic = "/kinect_head/rgb/image_color";
   vector<string> classes;
+  vector<string> bags_parm;
   string classes_str;
 
+  stringstream debuginfo;
+  
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "produce help message")
@@ -60,8 +63,8 @@ int main (int argc, char** argv)
     }
     if(vm.count("bag"))
     {
-      vector<string> bags_parm = vm["bag"].as<vector<string> >();
-      bool nfirst = true;
+      bags_parm = vm["bag"].as<vector<string> >();
+      bool first = true;
       BOOST_FOREACH(string bag_parm, bags_parm)
       {
         vector<string> parts;
@@ -74,17 +77,18 @@ int main (int argc, char** argv)
         if (!(std::find(classes.begin(), classes.end(), parts.at(0)) != classes.end()))
         {
           classes.push_back(parts.at(0));
-          classes_str.append(parts.at(0));
-          if (nfirst)
+          if (first)
           {
-            nfirst = false;
+            first = false;
           }
           else
           {
             classes_str.append(",");
           }
+          classes_str.append(parts.at(0));
         }
         bag_files.push_back(parts.at(1));
+        debuginfo << parts.at(0) << " -> " << parts.at(1) << endl;
       } 
     }
     if(vm.count("pctopic"))
@@ -116,16 +120,20 @@ int main (int argc, char** argv)
   SuturoPerceptionKnowledgeROSNode spr(nh, ss.str());
 
   create_arff(dest_arff, classes_str);
-  
-  BOOST_FOREACH(string bag_file, bag_files)
+
+  int i = 0;
+  BOOST_FOREACH(string cls_bag_file, bags_parm)
   {
-    cout << "processing bag file " << bag_file << endl;
+    vector<string> parts;
+    split(parts, cls_bag_file, is_any_of(":"));
+    string cls = parts.at(0);
+    string bag_file = parts.at(1);
+    debuginfo << endl << "processing bag file " << bag_file << endl;
     rosbag::Bag bag(bag_file.c_str());
     vector<string> topics;
     topics.push_back(pctopic);
     topics.push_back(imgtopic);
     rosbag::View view(bag, rosbag::TopicQuery(topics));
-    int i = 0;
     sensor_msgs::PointCloud2::ConstPtr inputCloud;
     sensor_msgs::Image::ConstPtr inputImg;
     bool gotInputCloud = false;
@@ -138,7 +146,7 @@ int main (int argc, char** argv)
         inputCloud = m.instantiate<sensor_msgs::PointCloud2>();
         if (inputCloud == NULL)
         {
-          cout << "x";
+          debuginfo << "x";
           gotInputCloud = false;
           gotInputImg = false;
           continue;
@@ -150,7 +158,7 @@ int main (int argc, char** argv)
         gotInputImg = true;
         if (inputImg == NULL)
         {
-          cout << "X";
+          debuginfo << "X";
           gotInputCloud = false;
           gotInputImg = false;
           continue;
@@ -163,19 +171,23 @@ int main (int argc, char** argv)
         
         std::vector<suturo_perception_msgs::PerceivedObject> percObjs = spr.receive_image_and_cloud(inputImg, inputCloud);
 
-        int i = 0;
-        BOOST_FOREACH(suturo_perception_msgs::PerceivedObject obj, percObjs)
-        {
-          add_to_arff(dest_arff, obj, classes.at(i));
-          i++;
+        if (percObjs.size() != 1) {
+          debuginfo << "found more than one perceived object in one scene... skipping" << endl;
+          continue;
+        } else {
+          BOOST_FOREACH(suturo_perception_msgs::PerceivedObject obj, percObjs)
+          {
+            add_to_arff(dest_arff, obj, cls);
+          }
+          debuginfo << ".";
         }
-        i++;
-        cout << ".";
       }
     }
+    i++;
   }
 
-  cout << endl << "done" << endl;
+  debuginfo << endl << "done" << endl;
+  cout << debuginfo.str().c_str();
   
   return (0);
 }
@@ -199,7 +211,7 @@ void create_arff(std::string filename, std::string classes)
                             "@attribute length_3 numeric\n" \
                             "@attribute cuboid_length_relation_1 numeric\n" \
                             "@attribute cuboid_length_relation_2 numeric\n" \
-                            "@attribute label_2d string\n" \
+                            "@attribute label_2d {baguette,corny,wlanadapter,dlink,cafetfilter}\n" \
                             "@attribute shape numeric\n" \
                             "@attribute class {";
   arff_header.append(classes);
@@ -233,11 +245,18 @@ void add_to_arff(std::string filename, suturo_perception_msgs::PerceivedObject o
   arff_sink << obj.c_color_average_s  << ",";
   arff_sink << obj.c_color_average_v  << ",";
   arff_sink << obj.matched_cuboid.volume  << ",";
-  arff_sink << maxl << ",";
-  arff_sink << midl << ",";
-  arff_sink << minl << ",";
-  arff_sink << (maxl / midl) << ",";
-  arff_sink << (maxl / minl) << ",";
+  if (isnan(l1) || isnan(l2) || isnan(l3) || isnan(maxl) || isnan(midl) || isnan(minl) || isnan(maxl / minl) || isnan(maxl / midl)) 
+  {
+    arff_sink << "?,?,?,?,?,";
+  }
+  else
+  {
+    arff_sink << maxl << ",";
+    arff_sink << midl << ",";
+    arff_sink << minl << ",";
+    arff_sink << (maxl / midl) << ",";
+    arff_sink << (maxl / minl) << ",";
+  }
   arff_sink << label_2d.c_str() << ",";
   arff_sink << obj.c_shape << ",";
   arff_sink << cls << "\n";

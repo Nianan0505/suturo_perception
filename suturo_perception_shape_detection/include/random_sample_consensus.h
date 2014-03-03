@@ -7,7 +7,7 @@
 
 namespace suturo_perception_shape_detection
 {
-    enum Shape {None, Box, Cylinder, Sphere}; 
+    enum Shape {None = 0, Box = 1, Cylinder = 2, Sphere = 3}; 
     class RandomSampleConsensus : public suturo_perception_lib::Capability
     {
         public:
