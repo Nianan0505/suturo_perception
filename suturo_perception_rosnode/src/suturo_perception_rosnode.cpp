@@ -159,12 +159,68 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
 
   processing = true;
 
+  bool process_color;
+  bool process_shape;
+  bool process_vfh;
+  bool process_cuboid;
+  bool process_2dlabel;
+
   // signal failed call, if request string does not match
+  /*
   if (req.s.compare("get") != 0)
   {
     return false;
   }
-
+  */
+  std::vector<std::string> req_parts;
+  split(req_parts, req.s, boost::algorithm::is_any_of(",()"));
+  if (req_parts.size() < 1)
+  {
+    return false;
+  }
+  if (req_parts.at(0).compare("get") != 0)
+  {
+    return false;
+  }
+  if (req_parts.size() == 1)
+  {
+    process_color = true;
+    process_shape = true;
+    process_vfh = false;
+    process_cuboid = true;
+    process_2dlabel = true;
+  }
+  else
+  {
+    BOOST_FOREACH(std::string req_part, req_parts)
+    {
+      process_color = false;
+      process_shape = false;
+      process_vfh = false;
+      process_cuboid = false;
+      process_2dlabel = false;
+      if (req_part.compare("color") == 0)
+      {
+        process_color = true;
+      }
+      if (req_part.compare("shape") == 0)
+      {
+        process_shape = true;
+      }
+      if (req_part.compare("vfh") == 0)
+      {
+        process_vfh = true;
+      }
+      if (req_part.compare("cuboid") == 0)
+      {
+        process_cuboid = true;
+      }
+      if (req_part.compare("2dlabel") == 0)
+      {
+        process_2dlabel = true;
+      }
+    }
+  }
   message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, colorTopic, 1);
   message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub(nh, pointTopic, 1);
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::PointCloud2> MySyncPolicy;
@@ -269,19 +325,31 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
     ca.setLowerVThreshold(color_analysis_lower_v);
     ca.setUpperVThreshold(color_analysis_upper_v);
     suturo_perception_shape_detection::RandomSampleConsensus sd(perceivedObjects[i]);
-    //suturo_perception_vfh_estimation::VFHEstimation vfhe(perceivedObjects[i]);
+    suturo_perception_vfh_estimation::VFHEstimation vfhe(perceivedObjects[i]);
     // suturo_perception_3d_capabilities::CuboidMatcherAnnotator cma(perceivedObjects[i]);
     // Init the cuboid matcher with the table coefficients
     suturo_perception_3d_capabilities::CuboidMatcherAnnotator cma(perceivedObjects[i], sp.getTableCoefficients() );
 
     // post work to threadpool
-    ioService.post(boost::bind(&ColorAnalysis::execute, ca));
-    ioService.post(boost::bind(&suturo_perception_shape_detection::RandomSampleConsensus::execute, sd));
-    //ioService.post(boost::bind(&suturo_perception_vfh_estimation::VFHEstimation::execute, vfhe));
-    ioService.post(boost::bind(&suturo_perception_3d_capabilities::CuboidMatcherAnnotator::execute, cma, true));
+    if (process_color)
+    {
+      ioService.post(boost::bind(&ColorAnalysis::execute, ca));
+    }
+    if (process_shape)
+    {
+      ioService.post(boost::bind(&suturo_perception_shape_detection::RandomSampleConsensus::execute, sd));
+    }
+    if (process_vfh)
+    {
+      ioService.post(boost::bind(&suturo_perception_vfh_estimation::VFHEstimation::execute, vfhe));
+    }
+    if (process_cuboid)
+    {
+      ioService.post(boost::bind(&suturo_perception_3d_capabilities::CuboidMatcherAnnotator::execute, cma, true));
+    }
 
     // Is 2d recognition enabled?
-    if(!recognitionDir.empty() && !fallback_enabled)
+    if(!recognitionDir.empty() && !fallback_enabled && process_2dlabel)
     {
       // perceivedObjects[i].c_recognition_label_2d="";
       suturo_perception_2d_capabilities::LabelAnnotator2D la(perceivedObjects[i], sp.getOriginalRGBImage(), object_matcher_);
@@ -332,13 +400,16 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
 
   // publish histograms
-  for (int i = 0; i < perceivedObjects.size(); i++)
+  if (process_color)
   {
-    if (i <= 6 && perceivedObjects.at(i).get_c_hue_histogram_image() != NULL)
+    for (int i = 0; i < perceivedObjects.size(); i++)
     {
-      std::stringstream ss;
-      ss << i;
-      ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + ss.str(), *(perceivedObjects.at(i).get_c_hue_histogram_image()), frameId);
+      if (i <= 6 && perceivedObjects.at(i).get_c_hue_histogram_image() != NULL)
+      {
+        std::stringstream ss;
+        ss << i;
+        ph.publish_cv_mat(HISTOGRAM_PREFIX_TOPIC + ss.str(), *(perceivedObjects.at(i).get_c_hue_histogram_image()), frameId);
+      }
     }
   }
 

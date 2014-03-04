@@ -14,7 +14,34 @@ namespace suturo_perception_lib
   class PerceivedObject
   {
     public:
-      PerceivedObject() : mutex(new boost::signals2::mutex()) {};
+      PerceivedObject() : mutex(new boost::signals2::mutex()) {
+        c_id = -1;
+        c_centroid.x = -1;
+        c_centroid.y = -1;
+        c_centroid.z = -1;
+        c_volume = -1.0;
+        c_shape = 0;
+        c_color_average_r = 0;
+        c_color_average_g = 0;
+        c_color_average_b = 0;
+        c_color_average_h = 0;
+        c_color_average_s = -1;
+        c_color_average_v = -1;
+        c_color_average_qh = 0;
+        c_color_average_qs = -1;
+        c_color_average_qv = -1;
+        c_recognition_label_2d = "";
+        c_hue_histogram_quality = 0;
+        c_roi.origin.x = 0;
+        c_roi.origin.y = 0;
+        c_roi.width = 0;
+        c_roi.height = 0;
+        c_cuboid.length1 = -1;
+        c_cuboid.length2 = -1;
+        c_cuboid.length3 = -1;
+        c_cuboid.volume = -1;
+
+      };
 
       // Threadsafe getters      
       int get_c_id() const
