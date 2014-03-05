@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
   ros::ServiceClient clusterClient = n.serviceClient<suturo_perception_msgs::GetClusters>("/suturo/GetClusters");
   suturo_perception_msgs::GetClusters clusterSrv;
-  clusterSrv.request.s = "get(color,cuboid)";
+  clusterSrv.request.s = "get";
   ROS_INFO_STREAM("ServiceClient initialized");
   // run until service gets shut down
   while(true)
