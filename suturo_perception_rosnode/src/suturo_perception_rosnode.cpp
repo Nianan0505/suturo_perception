@@ -192,13 +192,13 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   }
   else
   {
+    process_color = false;
+    process_shape = false;
+    process_vfh = false;
+    process_cuboid = false;
+    process_2dlabel = false;
     BOOST_FOREACH(std::string req_part, req_parts)
     {
-      process_color = false;
-      process_shape = false;
-      process_vfh = false;
-      process_cuboid = false;
-      process_2dlabel = false;
       if (req_part.compare("color") == 0)
       {
         process_color = true;
