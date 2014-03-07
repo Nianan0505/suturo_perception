@@ -14,54 +14,30 @@
 #include "tf/message_filter.h"
 #include "message_filters/subscriber.h"
 #include <pcl/io/pcd_io.h>
+#include <pcl/filters/voxel_grid.h>
 
 namespace po = boost::program_options;
 using namespace boost;
 using namespace std;
 
-// class RegistrationWithTransformations
-// {
-//   public:
-//     RegistrationWithTransformations(std::string cloud_topic) : tf_(), target_frame_("base_link")
-//     {
-//       pc_sub_.subscribe (n_, cloud_topic, 10);
-//       tf_filter_ = new tf::MessageFilter<sensor_msgs::PointCloud2>(pc_sub_, tf_, target_frame_, 10);
-//       tf_filter_->registerCallback( boost::bind(&RegistrationWithTransformations::msgCallback, this, _1) );
-//     };
-//   private:
-//     message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub_;
-//     tf::TransformListener tf_;
-//     tf::MessageFilter<sensor_msgs::PointCloud2> * tf_filter_;
-//     ros::NodeHandle n_;
-//     std::string target_frame_;
-// 
-//   // Callback to register with tf::MessageFilter to be called when transforms are available
-//   void msgCallback(const boost::shared_ptr<const sensor_msgs::PointCloud2>& point_ptr) 
-//   {
-//     try 
-//     {
-//       std::cout << "foo";
-//     }
-//     catch (tf::TransformException &ex) 
-//     {
-//       printf ("Failure %s\n", ex.what()); //Print exception which was caught
-//     }
-//   };
-// 
-// };
 
 class RegistrationWithTransformations
 {
   public:
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr registered_cloud_;
     tf::TransformListener tf_;
-    RegistrationWithTransformations(std::string cloud_topic) : tf_(ros::Duration(20) ), target_frame_("base_link")
+    RegistrationWithTransformations(std::string cloud_topic, std::string frame_id_from,
+        std::string frame_id_to) : tf_( ros::Duration(20) ), frame_id_from_(frame_id_from), frame_id_to_(frame_id_to)
     {
+      registered_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+
       std::cout << "Waiting for first transform" << std::endl;
-      tf_.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
+      tf_.waitForTransform(frame_id_from_, frame_id_to_,
           ros::Time(), ros::Duration(5.0));
       std::cout << "Waiting done" << std::endl;
       ros::Duration d(1); // Fill the TF buffer
       d.sleep();
+
 
 
       sub_ = n_.subscribe (cloud_topic, 1, &RegistrationWithTransformations::cloud_cb, this);
@@ -69,71 +45,66 @@ class RegistrationWithTransformations
     };
   private:
     ros::NodeHandle n_;
-    std::string target_frame_;
+    std::string frame_id_to_;
+    std::string frame_id_from_;
     ros::Subscriber sub_;
 
     void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& input)
     {
-      ROS_INFO("FOO ");
       std::cout << "Cloud received @t=" << input->header.stamp;
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZRGB>());
       pcl::fromROSMsg(*input,*cloud_in);
       ros::Time inputTime = input->header.stamp;
+      std::string frame_id = input->header.frame_id;
 
       tf::StampedTransform transform;
       try{
         // TODO make the frames variables
-        tf_.lookupTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
+        tf_.lookupTransform(frame_id_to_, frame_id_from_,
             inputTime, transform);
         pcl_ros::transformPointCloud(*cloud_in, *cloud_out, transform);
+
+        std::cout.precision(3);
+        std::cout.setf(std::ios::fixed,std::ios::floatfield);
+        std::cout << " Transform time " << transform.stamp_.toSec() << std::endl;
+        // double yaw, pitch, roll;
+        // transform.getBasis().getRPY(roll, pitch, yaw);
+        // tf::Quaternion q = transform.getRotation();
+        // tf::Vector3 v = transform.getOrigin();
+        // std::cout << "- Translation: [" << v.getX() << ", " << v.getY() << ", " << v.getZ() << "]" << std::endl;
+        // std::cout << "- Rotation: in Quaternion [" << q.getX() << ", " << q.getY() << ", " 
+        //   << q.getZ() << ", " << q.getW() << "]" << std::endl
+        //   << "            in RPY [" <<  roll << ", " << pitch << ", " << yaw << "]" << std::endl;
 
         pcl::PCDWriter writer;
         std::stringstream ss;
         ss << "/tmp/transformed_pc.pcd" << inputTime << ".pcd";
         writer.write(ss.str(), *cloud_out);
         std::cout << "File: " << ss.str() << " written." << std::endl;
+
+        (*registered_cloud_) += (*cloud_out);
+
+        // Create the filtering object
+        pcl::VoxelGrid<pcl::PointXYZRGB> sor;
+        sor.setInputCloud (registered_cloud_);
+        sor.setLeafSize (0.01f, 0.01f, 0.01f);
+        sor.filter (*registered_cloud_);
+
       }
       catch (tf::TransformException ex){
         ROS_ERROR("%s",ex.what());
       }
     }
 };
-// 
-// void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& input)
-// {
-//   ROS_INFO("FOO");
-//   // std::cout << "Cloud received @t=" << input->header.stamp;
-//   // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
-//   // pcl::fromROSMsg(*input,*cloud_in);
-//   // ros::Time inputTime = input->header.stamp;
-// 
-//   tf::TransformListener listener(ros::Duration(15));
-//   tf::StampedTransform transform;
-// 
-//   // ros::Time nao = ros::Time::now();
-//   // std::cout << "FIGHT: " << nao << " vs . " << inputTime << std::endl;
-//   try{
-//     // TODO make the frames variables
-//     std::cout << "Waiting for transform";
-//     listener.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-//                               ros::Time::now(), ros::Duration(10));
-//     // wtf.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-//                               // ros::Time::now(), ros::Duration(10));
-//     listener.lookupTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-//                               ros::Time::now(), transform);
-//   }
-//   catch (tf::TransformException ex){
-//     ROS_ERROR("%s",ex.what());
-//   }
-//   std::cout << "CB end" << std::endl;
-// }
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "registration_w_transformations");
   ros::NodeHandle node;
 
-  std::string cloud_topic="";
+  std::string cloud_topic   = "";
+  std::string frame_id_from = "";
+  std::string frame_id_to   = "";
 
   // "HashMap" for program parameters
   po::variables_map vm;
@@ -144,6 +115,8 @@ int main(int argc, char** argv){
     desc.add_options()
       ("help", "produce help message")
       ("topic,t", po::value<std::string>(&cloud_topic), "The ROS topic this node should listen to")
+      ("frame_from,f", po::value<std::string>(&frame_id_from)->required(), "The frame id of the incoming sensor data")
+      ("frame_to,r", po::value<std::string>(&frame_id_to)->required(), "The reference frame where the sensor data will be mapped to. This should be /map or any other global reference frame.")
     ;
 
     po::positional_options_description p;
@@ -176,31 +149,7 @@ int main(int argc, char** argv){
   if(cloud_topic.empty())
       cloud_topic = "/camera/depth_registered/points";
 
-
-  // tf::TransformListener wtf(ros::Duration(15)); 
-
-  // std::cout << "Waiting for first transformation" << std::endl;
-  // wtf.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-  //                             ros::Time::now(), ros::Duration(10));
-  // wtf.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-  //                             ros::Time::now(), ros::Duration(10));
-  // wtf.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-  //                             ros::Time::now(), ros::Duration(10));
-  // wtf.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-  //                             ros::Time::now(), ros::Duration(10));
-  // wtf.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-  //                             ros::Time::now(), ros::Duration(10));
-  // wtf.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-  //                             ros::Time::now(), ros::Duration(10));
-  // wtf.waitForTransform("/head_mount_kinect_rgb_optical_frame", "/base_link",
-  //                             ros::Time::now(), ros::Duration(10));
-  // std::cout << "Fuck yeah at"<< ros::Time::now() << std::endl;
-
-  // // Create a ROS subscriber for the input point cloud
-  // ros::Subscriber sub = node.subscribe (cloud_topic, 1, cloud_cb);
-  // ROS_INFO("Subscribed to %s", cloud_topic.c_str() );
-  
-  RegistrationWithTransformations r(cloud_topic);
+  RegistrationWithTransformations r(cloud_topic, frame_id_from, frame_id_to);
   // Spin
   ros::spin ();
 
