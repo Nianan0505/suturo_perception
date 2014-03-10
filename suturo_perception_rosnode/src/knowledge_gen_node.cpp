@@ -3,6 +3,7 @@
 #include "suturo_perception_knowledge_rosnode.h"
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
+#include <boost/filesystem.hpp>
 #include "rosbag/bag.h"
 #include "rosbag/view.h"
 #include "perceived_object.h"
@@ -13,6 +14,7 @@
 #define PI 3.14159265
 
 using namespace boost;
+using namespace boost::filesystem;
 using namespace std;
 using namespace suturo_perception_msgs;
 namespace po = boost::program_options;
@@ -26,11 +28,11 @@ int main (int argc, char** argv)
   ros::NodeHandle nh;
 
   string dest_arff = "/tmp/knowledge.arff";
-  vector<string> bag_files;
+  string bag_directory;
+  vector<string> bags_parm;
   string pctopic = "/kinect_head/depth_registered/points";
   string imgtopic = "/kinect_head/rgb/image_color";
   vector<string> classes;
-  vector<string> bags_parm;
   string classes_str;
 
   stringstream debuginfo;
@@ -39,7 +41,7 @@ int main (int argc, char** argv)
   desc.add_options()
     ("help", "produce help message")
     ("dest,d", po::value<string>()->required(), "Destination directory for generated data")
-    ("bag,b", po::value<vector<string> >()->required(), "Bag file(s) to process with classname: CLASS:PATH_TO_BAG")
+    ("bag,b", po::value<string>()->required(), "Directory structure containing bag files. Each subdirectory in this given path represents one class and has to contain bag files that correspond to that class. All bag files must supply the data on the same topic")
     ("pctopic,p", po::value<string>()->required(), "PointCloud topic to process")
     ("imgtopic,i", po::value<string>()->required(), "Image topic to process")
   ;
@@ -63,7 +65,74 @@ int main (int argc, char** argv)
     }
     if(vm.count("bag"))
     {
-      bags_parm = vm["bag"].as<vector<string> >();
+      bag_directory = vm["bag"].as<string>();
+      path main_path(bag_directory.c_str());
+      try
+      {
+        if (!exists(main_path))
+        {
+          cout << "Directory doesn't exist: " << bag_directory.c_str() << endl;
+          return -1;
+        }
+        if (!is_directory(main_path))
+        {
+          cout << bag_directory.c_str() << " is not a directory" << endl;
+          return -1;
+        }
+
+        vector<path> subdirs;
+        copy(directory_iterator(main_path), directory_iterator(), back_inserter(subdirs));
+
+        bool first = true;
+        for (vector<path>::const_iterator it (subdirs.begin()); it != subdirs.end(); ++it)
+        {
+          if (is_directory(*it))
+          {
+            cout << "Entering " << *it << endl;
+            vector<path> subfiles;
+            string cls = (*it).filename().string(); 
+            if (!(std::find(classes.begin(), classes.end(), cls) != classes.end()))
+            {
+              classes.push_back(cls);
+              if (first)
+              {
+                first = false;
+              }
+              else
+              {
+                classes_str.append(",");
+              }
+              classes_str.append(cls);
+            }
+            copy(directory_iterator(*it), directory_iterator(), back_inserter(subfiles));
+            for (vector<path>::const_iterator bagfile (subfiles.begin()); bagfile != subfiles.end(); ++bagfile)
+            {
+              if (is_regular_file(*bagfile))
+              {
+                string bag_parm = "";
+                bag_parm.append(cls);
+                bag_parm.append(":");
+                bag_parm.append((*bagfile).c_str()); 
+                bags_parm.push_back(bag_parm);
+              }
+              else 
+              {
+                cout << *it << " is not a regular file, skipping" << endl;
+              }
+            }
+          }
+          else
+          {
+            cout << "Not a directory, skipping: " << *it << endl;
+          } 
+        }
+      }
+      catch (const filesystem_error& ex)
+      {
+        cout << ex.what() << endl;
+        return -1;
+      }
+      /*
       bool first = true;
       BOOST_FOREACH(string bag_parm, bags_parm)
       {
@@ -90,6 +159,7 @@ int main (int argc, char** argv)
         bag_files.push_back(parts.at(1));
         debuginfo << parts.at(0) << " -> " << parts.at(1) << endl;
       } 
+      */
     }
     if(vm.count("pctopic"))
     {
