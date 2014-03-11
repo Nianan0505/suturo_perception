@@ -24,9 +24,11 @@ void add_to_arff(std::string filename, suturo_perception_msgs::PerceivedObject o
 
 int main (int argc, char** argv)
 {
+  // init ros
   ros::init(argc, argv, "suturo_perception_knowledge");
   ros::NodeHandle nh;
 
+  // variables
   string dest_arff = "/tmp/knowledge.arff";
   string bag_directory;
   vector<string> bags_parm;
@@ -36,14 +38,23 @@ int main (int argc, char** argv)
   string classes_str;
 
   stringstream debuginfo;
+
+  // known topics to look for in bag files
+  vector<string> known_pctopics;
+  vector<string> known_imgtopics;
+
+  known_pctopics.push_back("/kinect_head/depth_registered/points");
+  known_pctopics.push_back("/camera/depth_registered/points");
+
+  known_imgtopics.push_back("/kinect_head/rgb/image_color");
+  known_imgtopics.push_back("/camera/rgb/image_color");
   
+  // option parsing
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "produce help message")
     ("dest,d", po::value<string>()->required(), "Destination directory for generated data")
     ("bag,b", po::value<string>()->required(), "Directory structure containing bag files. Each subdirectory in this given path represents one class and has to contain bag files that correspond to that class. All bag files must supply the data on the same topic")
-    ("pctopic,p", po::value<string>()->required(), "PointCloud topic to process")
-    ("imgtopic,i", po::value<string>()->required(), "Image topic to process")
   ;
   
   try
@@ -132,42 +143,6 @@ int main (int argc, char** argv)
         cout << ex.what() << endl;
         return -1;
       }
-      /*
-      bool first = true;
-      BOOST_FOREACH(string bag_parm, bags_parm)
-      {
-        vector<string> parts;
-        split(parts, bag_parm, is_any_of(":"));
-        if (parts.size() != 2)
-        {
-          cerr << "bad bag parameter! more or less than one occurence of \":\"\n";
-          return -1;
-        }
-        if (!(std::find(classes.begin(), classes.end(), parts.at(0)) != classes.end()))
-        {
-          classes.push_back(parts.at(0));
-          if (first)
-          {
-            first = false;
-          }
-          else
-          {
-            classes_str.append(",");
-          }
-          classes_str.append(parts.at(0));
-        }
-        bag_files.push_back(parts.at(1));
-        debuginfo << parts.at(0) << " -> " << parts.at(1) << endl;
-      } 
-      */
-    }
-    if(vm.count("pctopic"))
-    {
-      pctopic = vm["pctopic"].as<string>();
-    }
-    if(vm.count("imgtopic"))
-    {
-      imgtopic = vm["imgtopic"].as<string>();
     }
   }
   catch(std::exception& e)
@@ -199,13 +174,56 @@ int main (int argc, char** argv)
     string cls = parts.at(0);
     string bag_file = parts.at(1);
     debuginfo << endl << "processing bag file " << bag_file << endl;
+
     rosbag::Bag bag(bag_file.c_str());
+    rosbag::View topicView(bag);
+    vector<const rosbag::ConnectionInfo *> connection_infos = topicView.getConnections();
+    set<string> available_topics;
+    BOOST_FOREACH(const rosbag::ConnectionInfo *info, connection_infos)
+    {
+      if ( available_topics.find(info->topic) == available_topics.end() )
+      {
+        available_topics.insert(info->topic);
+      }
+    }
+    bool found_topic = false;
+    BOOST_FOREACH(string pctpc, known_pctopics)
+    {
+      if ( available_topics.find(pctpc) != available_topics.end() )
+      {
+        pctopic = pctpc;
+        found_topic = true;
+        break;
+      }
+    }
+    if (!found_topic)
+    {
+      cerr << "Couldn't find pointcloud topic in bag file" << endl;
+      return -1;
+    }
+    found_topic = false;
+    BOOST_FOREACH(string imgtpc, known_imgtopics)
+    {
+      if ( available_topics.find(imgtpc) != available_topics.end() )
+      {
+        imgtopic = imgtpc;
+        found_topic = true;
+        break;
+      }
+    }
+    if (!found_topic)
+    {
+      cerr << "Couldn't find pointcloud topic in bag file" << endl;
+      return -1;
+    }
+
     vector<string> topics;
     topics.push_back(pctopic);
     topics.push_back(imgtopic);
     rosbag::View view(bag, rosbag::TopicQuery(topics));
     sensor_msgs::PointCloud2::ConstPtr inputCloud;
     sensor_msgs::Image::ConstPtr inputImg;
+
     bool gotInputCloud = false;
     bool gotInputImg = false;
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
