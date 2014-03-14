@@ -100,6 +100,7 @@ private:
   int numThreads;
 
   std::string add_to_arff(suturo_perception_msgs::PerceivedObject obj);
+  std::string arff_header();
 
   /*
    * Convert suturo_perception_lib::PerceivedObject list to suturo_perception_msgs:PerceivedObject list
