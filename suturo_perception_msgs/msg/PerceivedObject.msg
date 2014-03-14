@@ -37,3 +37,6 @@ uint32 c_pose
 # The algorithm was unable to find a proper cuboid,
 # if all the given lengths in this cuboid are 0
 Cuboid matched_cuboid
+
+string arff_header
+string arff

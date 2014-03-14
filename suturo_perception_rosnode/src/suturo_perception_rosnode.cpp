@@ -9,6 +9,8 @@ const std::string SuturoPerceptionROSNode::HISTOGRAM_PREFIX_TOPIC= "/suturo/clus
 
 namespace enc = sensor_msgs::image_encodings;
 
+#define PI 3.14159265
+
 /*
  * Constructor
  */
@@ -429,6 +431,49 @@ bool SuturoPerceptionROSNode::getClusters(suturo_perception_msgs::GetClusters::R
   return true;
 }
 
+// generates an arff string for weka. TODO: move to capability
+std::string SuturoPerceptionROSNode::add_to_arff(suturo_perception_msgs::PerceivedObject obj) {
+  std::stringstream arff_sink;
+
+  int hue = obj.c_color_average_h;
+  double l1 = obj.matched_cuboid.length1;
+  double l2 = obj.matched_cuboid.length2;
+  double l3 = obj.matched_cuboid.length3;
+  double maxl = std::max(l1, std::max(l2, l3));
+  double midl = std::max(l1, std::min(l2, l3));
+  double minl = std::min(l1, std::min(l2, l3));
+  std::string label_2d = obj.recognition_label_2d;
+  if (label_2d.empty()) {
+    label_2d = "?";
+  }
+  arff_sink << (int) obj.c_color_average_r  << ",";
+  arff_sink << (int) obj.c_color_average_g  << ",";
+  arff_sink << (int) obj.c_color_average_b  << ",";
+  arff_sink << sin(hue * PI / 180) << ",";
+  arff_sink << cos(hue * PI / 180) << ",";
+  arff_sink << obj.c_color_average_s  << ",";
+  arff_sink << obj.c_color_average_v  << ",";
+  arff_sink << obj.matched_cuboid.volume  << ",";
+  if (isnan(l1) || isnan(l2) || isnan(l3) || isnan(maxl) || isnan(midl) || isnan(minl) || isnan(maxl / minl) || isnan(maxl / midl)) 
+  {
+    arff_sink << "?,?,?,?,?,";
+  }
+  else
+  {
+    arff_sink << maxl << ",";
+    arff_sink << midl << ",";
+    arff_sink << minl << ",";
+    arff_sink << (maxl / midl) << ",";
+    arff_sink << (maxl / minl) << ",";
+  }
+  arff_sink << label_2d.c_str() << ",";
+  arff_sink << obj.c_shape << ",";
+  arff_sink << "?\n";
+
+  return arff_sink.str();
+}
+
+
 /*
  * Callback for the dynamic reconfigure service
  */
@@ -542,6 +587,9 @@ std::vector<suturo_perception_msgs::PerceivedObject> *SuturoPerceptionROSNode::c
 
     // these are not set for now
     msgObj->recognition_label_3d = "";
+
+    // add arff data
+    msgObj->arff = add_to_arff(*msgObj);
     
     result->push_back(*msgObj);
   }

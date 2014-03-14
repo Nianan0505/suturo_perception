@@ -79,6 +79,7 @@ int main(int argc, char **argv)
           clusterSrv.response.perceivedObjs[i].matched_cuboid.length2,
           clusterSrv.response.perceivedObjs[i].matched_cuboid.length3,
           clusterSrv.response.perceivedObjs[i].matched_cuboid.volume);
+        ROS_INFO("arff string: %s", clusterSrv.response.perceivedObjs[i].arff.c_str());
       }
       ROS_INFO_STREAM("------------------------------------------------------------");
     }
