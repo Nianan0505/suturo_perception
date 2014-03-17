@@ -5,7 +5,7 @@
 
   <node pkg="suturo_perception_barcodescanner" name="suturo_perception_barcodescanner_node" type="suturo_perception_barcodescanner_node" output="screen"></node>
 
-  <node pkg="image_view" name="suturo_barcodescanner_viewer" type="image_view" output="screen" args="image:=/suturo/barcode_info_image autosize:=True"></node>
+  <node pkg="image_view" name="suturo_barcodescanner_viewer" type="image_view" output="screen" args="image:=/suturo/barcode_info_image _autosize:=True _window_name:='SUTURO barcode scanner'"></node>
 
   <node pkg="suturo_perception_barcodescanner" name="suturo_perception_barcodescanner_focusdispatcher" type="suturo_perception_barcodescanner_focusdispatcher.py" output="screen"></node>
   <param name="suturo_perception/barcode_image_topic" type="string" value="/camera/image_raw" />
