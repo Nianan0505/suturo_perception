@@ -1,0 +1,8 @@
+<launch>
+<node pkg="suturo_perception_barcodescanner" name="suturo_perception_barcodescanner_node" type="suturo_perception_barcodescanner_node" output="screen"></node>
+
+<node pkg="image_view" name="suturo_barcodescanner_viewer" type="image_view" output="screen" args="image:=/suturo/barcode_info_image _autosize:=True _window_name:='SUTURO barcode scanner'"></node>
+
+<param name="suturo_perception/barcode_image_topic" type="string" value="/suturo/shoulder_cam/image_raw" />
+<param name="suturo_perception/barcode_info_image_topic" type="string" value="/suturo/barcode_info_image" />
+</launch>
