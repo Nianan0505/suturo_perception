@@ -11,20 +11,20 @@ android app and returns a status to it.
 If a valid command was found, it will be sent via ros.
 '''
 
-HOST_NAME = 'localhost' # !!!REMEMBER TO CHANGE THIS!!!
+HOST_NAME = 'localhost'
 PORT_NUMBER = 8000
 COMMAND_WORDS = set(['cleanup', 'remove'])
 OBJECT_WORDS = set(['corny', 'cafetfilter'])
 
-def publish_command(command, object):
+def publish_command(command, obj):
     ''' publish the recognized command '''
     pub = rospy.Publisher('/suturo/SpeechRecognitionCommand', suturo_perception_msgs.msg.SpeechRecognitionCommand)
     rospy.init_node('talker', anonymous=True)
     r = rospy.Rate(10) # 10hz
     rospy.loginfo('publishing...')
     s = suturo_perception_msgs.msg.SpeechRecognitionCommand()
-    s.object = 'corny'    #placeholder
-    s.command = 'cleanup' #placeholder
+    s.object = obj
+    s.command = command
     pub.publish(s)
     r.sleep()
 
@@ -35,7 +35,7 @@ class HttpHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     s.end_headers()
   
   def do_GET(s):
-    """Respond to a GET request."""
+    ''' Respond to a HTTP GET request. '''
     s.send_response(200)
     s.send_header("Content-type", "text/plain")
     s.end_headers()
