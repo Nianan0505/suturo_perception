@@ -45,12 +45,13 @@ class HttpHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     
     if request.intersection(COMMAND_WORDS) and request.intersection(OBJECT_WORDS):
       s.wfile.write("OK")
+      try:
+        publish_command(request.intersection(COMMAND_WORDS).pop(), 
+                        request.intersection(OBJECT_WORDS).pop()) # use one command and object from the set
+      except rospy.ROSInterruptException: pass
     else: s.wfile.write("NOK")
 
-    try:
-      publish_command(request.intersection(COMMAND_WORDS).pop(), 
-                      request.intersection(OBJECT_WORDS).pop()) # use one command and object from the set
-    except rospy.ROSInterruptException: pass
+    
       
 if __name__ == '__main__':
   server_class = BaseHTTPServer.HTTPServer
