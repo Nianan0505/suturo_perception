@@ -1,0 +1,5 @@
+<launch>
+  <param name="use_sim_time" value="true" />
+  <node pkg="rosbag" type="play" name="player" output="screen" args="--clock $(find suturo_perception_registration)/fut.bag"/>
+  <node pkg="suturo_perception_registration" type="registration_w_transformations" name="registration_w_transformations" output="screen" args="-t /kinect_head/depth_registered/points -f /head_mount_kinect_rgb_optical_frame -r /base_link"/>
+</launch>
