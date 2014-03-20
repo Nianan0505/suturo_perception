@@ -15,6 +15,7 @@
 #include "message_filters/subscriber.h"
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/voxel_grid.h>
+#include <publisher_helper.h>
 
 namespace po = boost::program_options;
 using namespace boost;
@@ -27,7 +28,7 @@ class RegistrationWithTransformations
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr registered_cloud_;
     tf::TransformListener tf_;
     RegistrationWithTransformations(std::string cloud_topic, std::string frame_id_from,
-        std::string frame_id_to) : tf_( ros::Duration(20) ), frame_id_from_(frame_id_from), frame_id_to_(frame_id_to)
+        std::string frame_id_to) : tf_( ros::Duration(20) ), frame_id_from_(frame_id_from), frame_id_to_(frame_id_to), ph_(n_)
     {
       registered_cloud_ = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
 
@@ -41,6 +42,8 @@ class RegistrationWithTransformations
 
 
       sub_ = n_.subscribe (cloud_topic, 1, &RegistrationWithTransformations::cloud_cb, this);
+      // pub_ = n_.advertise<sensor_msgs::PointCloud2>("/suturo/registration/registered_cloud",1);
+      ph_.advertise<sensor_msgs::PointCloud2>("/suturo/registration/registered_cloud");
 
     };
   private:
@@ -48,6 +51,8 @@ class RegistrationWithTransformations
     std::string frame_id_to_;
     std::string frame_id_from_;
     ros::Subscriber sub_;
+    ros::Publisher pub_;
+    suturo_perception_ros_utils::PublisherHelper ph_;
 
     void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& input)
     {
@@ -77,20 +82,23 @@ class RegistrationWithTransformations
         //   << q.getZ() << ", " << q.getW() << "]" << std::endl
         //   << "            in RPY [" <<  roll << ", " << pitch << ", " << yaw << "]" << std::endl;
 
+        // Write transformed pointclouds to disk.
+        // Open all of them with pcd_viewer / pcl_viewer to see
+        // the combined result
         pcl::PCDWriter writer;
         std::stringstream ss;
-        ss << "/tmp/transformed_pc.pcd" << inputTime << ".pcd";
-        writer.write(ss.str(), *cloud_out);
-        std::cout << "File: " << ss.str() << " written." << std::endl;
+        // ss << "/tmp/transformed_pc.pcd" << inputTime << ".pcd";
+        // writer.write(ss.str(), *cloud_out);
+        // std::cout << "File: " << ss.str() << " written." << std::endl;
 
         (*registered_cloud_) += (*cloud_out);
 
         // Create the filtering object
         pcl::VoxelGrid<pcl::PointXYZRGB> sor;
         sor.setInputCloud (registered_cloud_);
-        sor.setLeafSize (0.01f, 0.01f, 0.01f);
+        sor.setLeafSize (0.04f, 0.04f, 0.04f);
         sor.filter (*registered_cloud_);
-
+        ph_.publish_pointcloud("/suturo/registration/registered_cloud", registered_cloud_, frame_id_to_);
       }
       catch (tf::TransformException ex){
         ROS_ERROR("%s",ex.what());
