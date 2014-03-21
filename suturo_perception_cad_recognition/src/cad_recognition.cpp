@@ -18,6 +18,8 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/registration/icp.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/common/common_headers.h>
 #include <suturo_perception_utils.h>
 
 namespace po = boost::program_options;
@@ -92,13 +94,34 @@ int main(int argc, char** argv){
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
   icp.setInputCloud(model_cloud);
   icp.setInputTarget(input_cloud);
-  pcl::PointCloud<pcl::PointXYZ> Final;
-  icp.align(Final);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr Final(new pcl::PointCloud<pcl::PointXYZ>);
+  icp.align(*Final);
   std::cout << "has converged:" << icp.hasConverged() << " score: " <<
   icp.getFitnessScore() << std::endl;
   std::cout << icp.getFinalTransformation() << std::endl;
   boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
   l.logTime(start,end,"ICP");
+
+
+  pcl::visualization::PCLVisualizer viewer;
+  int v1,v2,v3;
+  viewer.createViewPort(0.0,0, 0.3,1, v1 );
+  viewer.addText("Input Cloud", 0.1, 0.1 , "input_cloud_text_id", v1 );
+  viewer.createViewPort(0.3,0, 0.6,1, v2 );
+  viewer.addText("Model Cloud", 0.1, 0.1 , "model_cloud_text_id", v2 );
+  viewer.createViewPort(0.6,0, 1  ,1, v3 );
+  viewer.addText("Aligned Cloud", 0.1, 0.1 , "aligned_cloud_text_id", v3 );
+
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> green_color(input_cloud, 0, 255, 0);
+  viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id",v1);
+
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color(model_cloud, 255, 0, 0);
+  viewer.addPointCloud<pcl::PointXYZ> (model_cloud, red_color, "model_cloud_id",v2);
+
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color2(Final, 255, 0, 0);
+  viewer.addPointCloud<pcl::PointXYZ> (Final, red_color2,"aligned_cloud_id",v3);
+  viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color,"original_cloud_vs_aligned_id",v3);
+  viewer.spin();
   // Spin
   // ros::spin ();
 
