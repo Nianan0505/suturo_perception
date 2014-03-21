@@ -17,10 +17,13 @@
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/registration/icp.h>
+#include <suturo_perception_utils.h>
 
 namespace po = boost::program_options;
 using namespace boost;
 using namespace std;
+
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "cad_recognition");
@@ -46,7 +49,7 @@ int main(int argc, char** argv){
     options(desc).positional(p).run(), vm); 
 
     if (vm.count("help")) {
-      std::cout << "Usage: registration_w_transformations [-t topic]" << endl << endl;
+      std::cout << "Usage: cad_recognition [-t topic]" << endl << endl;
       std::cout << desc << "\n";
       return 1;
     }
@@ -67,10 +70,37 @@ int main(int argc, char** argv){
     std::cerr << "Unknown error!" << "\n";
     return false;
   } 
+  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
-  // RegistrationWithTransformations r(cloud_topic, frame_id_from, frame_id_to);
+  boost::posix_time::ptime file_load_start = boost::posix_time::microsec_clock::local_time();
+  if (pcl::io::loadPCDFile<pcl::PointXYZ> (input_pc_filename, *input_cloud) == -1) //* load the file
+  {
+    PCL_ERROR ("Couldn't read input file\n");
+    exit (-1);
+  }
+  if (pcl::io::loadPCDFile<pcl::PointXYZ> (cad_model_pc_filename, *model_cloud) == -1) //* load the file
+  {
+    PCL_ERROR ("Couldn't read cad model file\n");
+    exit (-1);
+  }
+  boost::posix_time::ptime file_load_end = boost::posix_time::microsec_clock::local_time();
+  suturo_perception_utils::Logger l("cad_recognition");
+  l.logTime(file_load_start,file_load_end,"File loading");
+
+  boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
+  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  icp.setInputCloud(model_cloud);
+  icp.setInputTarget(input_cloud);
+  pcl::PointCloud<pcl::PointXYZ> Final;
+  icp.align(Final);
+  std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+  icp.getFitnessScore() << std::endl;
+  std::cout << icp.getFinalTransformation() << std::endl;
+  boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
+  l.logTime(start,end,"ICP");
   // Spin
-  ros::spin ();
+  // ros::spin ();
 
   return 0;
 };
