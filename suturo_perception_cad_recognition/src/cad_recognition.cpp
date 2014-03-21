@@ -86,6 +86,21 @@ int main(int argc, char** argv){
     PCL_ERROR ("Couldn't read cad model file\n");
     exit (-1);
   }
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_voxeled (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud_voxeled (new pcl::PointCloud<pcl::PointXYZ>);
+
+  pcl::VoxelGrid<pcl::PointXYZ> sor;
+  sor.setInputCloud (input_cloud);
+  sor.setLeafSize (0.02f, 0.02f, 0.02f);
+  sor.filter (*input_cloud_voxeled);
+
+  sor.setInputCloud (model_cloud);
+  sor.filter (*model_cloud_voxeled);
+
+  input_cloud = input_cloud_voxeled;
+  model_cloud = model_cloud_voxeled;
+
   boost::posix_time::ptime file_load_end = boost::posix_time::microsec_clock::local_time();
   suturo_perception_utils::Logger l("cad_recognition");
   l.logTime(file_load_start,file_load_end,"File loading");
