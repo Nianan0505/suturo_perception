@@ -90,9 +90,10 @@ int main(int argc, char** argv){
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud_voxeled (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud_voxeled (new pcl::PointCloud<pcl::PointXYZ>);
 
+  // Downsample both clouds
   pcl::VoxelGrid<pcl::PointXYZ> sor;
   sor.setInputCloud (input_cloud);
-  sor.setLeafSize (0.02f, 0.02f, 0.02f);
+  sor.setLeafSize (0.01f, 0.01f, 0.01f);
   sor.filter (*input_cloud_voxeled);
 
   sor.setInputCloud (model_cloud);
@@ -101,29 +102,41 @@ int main(int argc, char** argv){
   input_cloud = input_cloud_voxeled;
   model_cloud = model_cloud_voxeled;
 
+  boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
+  // Compute the centroids of both clouds and bring them closer together
+  // for an rough initial alignment.
+  Eigen::Vector4f input_cloud_centroid, model_cloud_centroid, diff_of_centroids;
+  pcl::compute3DCentroid(*input_cloud,input_cloud_centroid); 
+  pcl::compute3DCentroid(*model_cloud,model_cloud_centroid); 
+  // diff_of_centroids = model_cloud_centroid - input_cloud_centroid;
+  diff_of_centroids = input_cloud_centroid - model_cloud_centroid;
+  Eigen::Affine3f transform = pcl::getTransformation(diff_of_centroids[0],
+      diff_of_centroids[1], diff_of_centroids[2],0,0,0);
+  pcl::transformPointCloud(*model_cloud, *model_cloud,transform);
+
   boost::posix_time::ptime file_load_end = boost::posix_time::microsec_clock::local_time();
   suturo_perception_utils::Logger l("cad_recognition");
   l.logTime(file_load_start,file_load_end,"File loading");
 
-  boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
   icp.setInputCloud(model_cloud);
   icp.setInputTarget(input_cloud);
+  // icp.setEuclideanFitnessEpsilon (0.00001);
+  // icp.setMaxCorrespondenceDistance (0.55);
   pcl::PointCloud<pcl::PointXYZ>::Ptr Final(new pcl::PointCloud<pcl::PointXYZ>);
   icp.align(*Final);
   std::cout << "has converged:" << icp.hasConverged() << " score: " <<
   icp.getFitnessScore() << std::endl;
   std::cout << icp.getFinalTransformation() << std::endl;
   boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
-  l.logTime(start,end,"ICP");
-
+  l.logTime(start,end,"Initial Alignment and ICP");
 
   pcl::visualization::PCLVisualizer viewer;
   int v1,v2,v3;
   viewer.createViewPort(0.0,0, 0.3,1, v1 );
   viewer.addText("Input Cloud", 0.1, 0.1 , "input_cloud_text_id", v1 );
   viewer.createViewPort(0.3,0, 0.6,1, v2 );
-  viewer.addText("Model Cloud", 0.1, 0.1 , "model_cloud_text_id", v2 );
+  viewer.addText("Model vs. Input Cloud", 0.1, 0.1 , "model_cloud_text_id", v2 );
   viewer.createViewPort(0.6,0, 1  ,1, v3 );
   viewer.addText("Aligned Cloud", 0.1, 0.1 , "aligned_cloud_text_id", v3 );
 
@@ -131,6 +144,7 @@ int main(int argc, char** argv){
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id",v1);
 
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color(model_cloud, 255, 0, 0);
+  viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id2",v2);
   viewer.addPointCloud<pcl::PointXYZ> (model_cloud, red_color, "model_cloud_id",v2);
 
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color2(Final, 255, 0, 0);
