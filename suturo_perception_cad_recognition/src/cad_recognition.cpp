@@ -165,13 +165,14 @@ int main(int argc, char** argv){
 
   // Refine the result with ICP
 
-  pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> icp;
-  // pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  // pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> icp;
+  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
   icp.setInputCloud(input_cloud);
+  icp.setRANSACOutlierRejectionThreshold(0.10f);
   // icp.setInputCloud(model_initial_aligned);
   icp.setInputTarget(model_initial_aligned);
   // icp.setInputTarget(input_cloud);
-  // icp.setEuclideanFitnessEpsilon (0.00001);
+  // icp.setEuclideanFitnessEpsilon (0.00001f);
   // icp.setMaxCorrespondenceDistance (0.55);
   pcl::PointCloud<pcl::PointXYZ>::Ptr Final(new pcl::PointCloud<pcl::PointXYZ>);
   icp.align(*Final);
