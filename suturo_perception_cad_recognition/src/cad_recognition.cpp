@@ -25,21 +25,29 @@
 #include <suturo_perception_utils.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/fpfh.h>
+#include <pcl/features/shot.h>
 
 namespace po = boost::program_options;
 using namespace boost;
 using namespace std;
 
-// Take a input cloud (param: cloud)
-// and compute the corresponding normals and features (in this case, FPFH).
-void estimateFeaturesAndNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals,pcl::PointCloud<pcl::FPFHSignature33>::Ptr output_features  ){
+typedef pcl::FPFHSignature33 EstimationFeature;
+
+void estimateNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals){
   pcl::search::KdTree<pcl::PointXYZ>::Ptr searchMethod(new pcl::search::KdTree<pcl::PointXYZ>);
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> norm_est;
   norm_est.setInputCloud(cloud);
   norm_est.setSearchMethod(searchMethod);
   norm_est.setRadiusSearch(0.02);
   norm_est.compute(*output_normals); 
+}
 
+// Take a input cloud (param: cloud)
+// and compute the corresponding normals and features (in this case, FPFH).
+void estimateFeaturesAndNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals,pcl::PointCloud<pcl::FPFHSignature33>::Ptr output_features  ){
+  estimateNormals(cloud,output_normals);
+
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr searchMethod(new pcl::search::KdTree<pcl::PointXYZ>);
   pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fpfh_est;
   fpfh_est.setInputCloud(cloud);
   fpfh_est.setInputNormals(output_normals);
@@ -115,7 +123,8 @@ int main(int argc, char** argv){
   // Downsample both clouds
   pcl::VoxelGrid<pcl::PointXYZ> sor;
   sor.setInputCloud (input_cloud);
-  sor.setLeafSize (0.01f, 0.01f, 0.01f);
+  #define LEAF_SIZE 0.01f
+  sor.setLeafSize (LEAF_SIZE, LEAF_SIZE, LEAF_SIZE);
   sor.filter (*input_cloud_voxeled);
 
   sor.setInputCloud (model_cloud);
@@ -124,8 +133,8 @@ int main(int argc, char** argv){
   // Estimate the normals and features for the initial estimate that will be done later
   pcl::PointCloud<pcl::Normal>::Ptr normals1(new pcl::PointCloud<pcl::Normal>);
   pcl::PointCloud<pcl::Normal>::Ptr normals2(new pcl::PointCloud<pcl::Normal>);
-  pcl::PointCloud<pcl::FPFHSignature33>::Ptr features1(new pcl::PointCloud<pcl::FPFHSignature33>);
-  pcl::PointCloud<pcl::FPFHSignature33>::Ptr features2(new pcl::PointCloud<pcl::FPFHSignature33>);
+  pcl::PointCloud<EstimationFeature>::Ptr features1(new pcl::PointCloud<EstimationFeature>);
+  pcl::PointCloud<EstimationFeature>::Ptr features2(new pcl::PointCloud<EstimationFeature>);
 
   estimateFeaturesAndNormals(input_cloud, normals1, features1);
   estimateFeaturesAndNormals(model_cloud, normals2, features2);
@@ -150,7 +159,7 @@ int main(int argc, char** argv){
   l.logTime(file_load_start,file_load_end,"File loading");
 
   // Compute a rough alignment
-  pcl::SampleConsensusInitialAlignment<pcl::PointXYZ, pcl::PointXYZ, pcl::FPFHSignature33> sac_ia;
+  pcl::SampleConsensusInitialAlignment<pcl::PointXYZ, pcl::PointXYZ, EstimationFeature> sac_ia;
   sac_ia.setMinSampleDistance(0.05f);
   sac_ia.setMaxCorrespondenceDistance(0.01f*0.01f);
   sac_ia.setMaximumIterations(1500);
@@ -165,10 +174,10 @@ int main(int argc, char** argv){
 
   // Refine the result with ICP
 
-  // pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> icp;
-  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> icp;
+  // pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
   icp.setInputCloud(input_cloud);
-  icp.setRANSACOutlierRejectionThreshold(0.10f);
+  // icp.setRANSACOutlierRejectionThreshold(0.10f);
   // icp.setInputCloud(model_initial_aligned);
   icp.setInputTarget(model_initial_aligned);
   // icp.setInputTarget(input_cloud);
