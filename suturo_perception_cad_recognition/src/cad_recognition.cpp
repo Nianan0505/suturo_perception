@@ -18,14 +18,44 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/registration/icp.h>
+#include <pcl/registration/icp_nl.h>
+#include <pcl/registration/ia_ransac.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/common_headers.h>
 #include <suturo_perception_utils.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/features/fpfh.h>
+#include <pcl/features/shot.h>
 
 namespace po = boost::program_options;
 using namespace boost;
 using namespace std;
 
+typedef pcl::FPFHSignature33 EstimationFeature;
+
+void estimateNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals){
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr searchMethod(new pcl::search::KdTree<pcl::PointXYZ>);
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> norm_est;
+  norm_est.setInputCloud(cloud);
+  norm_est.setSearchMethod(searchMethod);
+  norm_est.setRadiusSearch(0.02);
+  norm_est.compute(*output_normals); 
+}
+
+// Take a input cloud (param: cloud)
+// and compute the corresponding normals and features (in this case, FPFH).
+void estimateFeaturesAndNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals,pcl::PointCloud<pcl::FPFHSignature33>::Ptr output_features  ){
+  estimateNormals(cloud,output_normals);
+
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr searchMethod(new pcl::search::KdTree<pcl::PointXYZ>);
+  pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fpfh_est;
+  fpfh_est.setInputCloud(cloud);
+  fpfh_est.setInputNormals(output_normals);
+  fpfh_est.setSearchMethod(searchMethod);
+  fpfh_est.setRadiusSearch(0.02);
+  fpfh_est.compute(*output_features);
+
+}
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "cad_recognition");
@@ -93,11 +123,21 @@ int main(int argc, char** argv){
   // Downsample both clouds
   pcl::VoxelGrid<pcl::PointXYZ> sor;
   sor.setInputCloud (input_cloud);
-  sor.setLeafSize (0.01f, 0.01f, 0.01f);
+  #define LEAF_SIZE 0.01f
+  sor.setLeafSize (LEAF_SIZE, LEAF_SIZE, LEAF_SIZE);
   sor.filter (*input_cloud_voxeled);
 
   sor.setInputCloud (model_cloud);
   sor.filter (*model_cloud_voxeled);
+
+  // Estimate the normals and features for the initial estimate that will be done later
+  pcl::PointCloud<pcl::Normal>::Ptr normals1(new pcl::PointCloud<pcl::Normal>);
+  pcl::PointCloud<pcl::Normal>::Ptr normals2(new pcl::PointCloud<pcl::Normal>);
+  pcl::PointCloud<EstimationFeature>::Ptr features1(new pcl::PointCloud<EstimationFeature>);
+  pcl::PointCloud<EstimationFeature>::Ptr features2(new pcl::PointCloud<EstimationFeature>);
+
+  estimateFeaturesAndNormals(input_cloud, normals1, features1);
+  estimateFeaturesAndNormals(model_cloud, normals2, features2);
 
   input_cloud = input_cloud_voxeled;
   model_cloud = model_cloud_voxeled;
@@ -118,10 +158,30 @@ int main(int argc, char** argv){
   suturo_perception_utils::Logger l("cad_recognition");
   l.logTime(file_load_start,file_load_end,"File loading");
 
-  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-  icp.setInputCloud(model_cloud);
-  icp.setInputTarget(input_cloud);
-  // icp.setEuclideanFitnessEpsilon (0.00001);
+  // Compute a rough alignment
+  pcl::SampleConsensusInitialAlignment<pcl::PointXYZ, pcl::PointXYZ, EstimationFeature> sac_ia;
+  sac_ia.setMinSampleDistance(0.05f);
+  sac_ia.setMaxCorrespondenceDistance(0.01f*0.01f);
+  sac_ia.setMaximumIterations(1500);
+
+  sac_ia.setInputCloud(model_cloud);
+  sac_ia.setSourceFeatures(features2);
+  sac_ia.setInputTarget(input_cloud);
+  sac_ia.setTargetFeatures(features1);
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr model_initial_aligned (new pcl::PointCloud<pcl::PointXYZ>);
+  sac_ia.align(*model_initial_aligned);
+
+  // Refine the result with ICP
+
+  pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> icp;
+  // pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  icp.setInputCloud(input_cloud);
+  // icp.setRANSACOutlierRejectionThreshold(0.10f);
+  // icp.setInputCloud(model_initial_aligned);
+  icp.setInputTarget(model_initial_aligned);
+  // icp.setInputTarget(input_cloud);
+  // icp.setEuclideanFitnessEpsilon (0.00001f);
   // icp.setMaxCorrespondenceDistance (0.55);
   pcl::PointCloud<pcl::PointXYZ>::Ptr Final(new pcl::PointCloud<pcl::PointXYZ>);
   icp.align(*Final);
@@ -132,13 +192,15 @@ int main(int argc, char** argv){
   l.logTime(start,end,"Initial Alignment and ICP");
 
   pcl::visualization::PCLVisualizer viewer;
-  int v1,v2,v3;
-  viewer.createViewPort(0.0,0, 0.3,1, v1 );
+  int v1,v2,v3,v4;
+  viewer.createViewPort(0.0,0, 0.25,1, v1 );
   viewer.addText("Input Cloud", 0.1, 0.1 , "input_cloud_text_id", v1 );
-  viewer.createViewPort(0.3,0, 0.6,1, v2 );
+  viewer.createViewPort(0.25,0, 0.5,1, v2 );
   viewer.addText("Model vs. Input Cloud", 0.1, 0.1 , "model_cloud_text_id", v2 );
-  viewer.createViewPort(0.6,0, 1  ,1, v3 );
-  viewer.addText("Aligned Cloud", 0.1, 0.1 , "aligned_cloud_text_id", v3 );
+  viewer.createViewPort(0.5,0, 0.75  ,1, v3 );
+  viewer.addText("Initial Aligned Cloud", 0.1, 0.1 , "initial_aligned_cloud_text_id", v3 );
+  viewer.createViewPort(0.75,0, 1  ,1, v4 );
+  viewer.addText("Refined Aligned Cloud", 0.1, 0.1 , "refined_aligned_cloud_text_id", v4 );
 
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> green_color(input_cloud, 0, 255, 0);
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id",v1);
@@ -147,9 +209,18 @@ int main(int argc, char** argv){
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id2",v2);
   viewer.addPointCloud<pcl::PointXYZ> (model_cloud, red_color, "model_cloud_id",v2);
 
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color2(Final, 255, 0, 0);
-  viewer.addPointCloud<pcl::PointXYZ> (Final, red_color2,"aligned_cloud_id",v3);
-  viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color,"original_cloud_vs_aligned_id",v3);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color2(model_initial_aligned, 255, 0, 0);
+  viewer.addPointCloud<pcl::PointXYZ> (model_initial_aligned, red_color2,"initial_aligned_cloud_id",v3);
+  viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color,"original_cloud_vs_initial_aligned_id",v3);
+
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color3(model_initial_aligned, 255, 0, 0);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> blue_color(Final, 0, 0, 255);
+  viewer.addPointCloud<pcl::PointXYZ> (Final, blue_color,"refined_aligned_cloud_id",v4);
+  viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color,"original_cloud_vs_refined_aligned_id",v4);
+  viewer.addPointCloud<pcl::PointXYZ> (model_initial_aligned, red_color3, "initial_aligned_vs_refined_aligned_id",v4);
+
+
+
   viewer.spin();
   // Spin
   // ros::spin ();

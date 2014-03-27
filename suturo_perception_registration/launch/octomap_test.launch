@@ -1,0 +1,25 @@
+<!-- 
+This file can be used to test the octomap_server node:
+  http://wiki.ros.org/octomap_server
+
+You will need to clone the following repository:
+  https://github.com/OctoMap/octomap_mapping
+to a rosbuild workspace and switch to the groovy-devel branch.
+After that you've cloned the repo, source your .bashrc
+and try to rosmake octomap_mapping
+
+Requirements:
+ - A bag file of a fully localized Robot. You should have the frame /map connected to your robot.
+   You should symlink the bag file to suturo_perception_registration/octomap.bag
+ - ros-groovy-arm-navigation ROS package
+-->
+
+<launch>
+  <param name="use_sim_time" value="true" />
+  <node pkg="rosbag" type="play" name="player" output="screen" args="--clock $(find suturo_perception_registration)/octomap.bag"/>
+  <node pkg="rviz" type="rviz" name="rviz" output="screen"/>
+	<node name="octomap_server_node" pkg="octomap_server" type="octomap_server_node">
+	<param name="resolution" value="0.01" />
+	  <remap from="cloud_in" to="/kinect_head/depth_registered/points"/>
+	</node>
+</launch>
