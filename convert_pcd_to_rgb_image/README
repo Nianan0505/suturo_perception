@@ -1,7 +1,0 @@
-== Dependencies ==
-OpenCV and PCL(http://pointclouds.org/) must be installed
-
-== Instructions ==
-- cd to build/ # create it, if it isn't there
-- execute 'cmake ..'
-- execute 'make'
