@@ -24,7 +24,6 @@ suturo_perception_ros_utils
 suturo_perception_utils 
 suturo_perception_vfh_estimation
 suturo_perception_match_cuboid
-suturo_perception_svm_classification
 suturo_perception_match_cuboid
 pcl
 pcl_ros
