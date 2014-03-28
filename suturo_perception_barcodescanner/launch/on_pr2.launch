@@ -1,8 +1,10 @@
 <launch>
   <arg name="cam_name" value="suturo/shoulder_cam" />
+  <arg name="frame" value="/webcam" />
   <env name="GSCAM_CONFIG" value="v4l2src device=/dev/video0 ! video/x-raw-rgb,framerate=30/1 ! ffmpegcolorspace" />
   <node pkg="gscam" name="gscam" type="gscam" output="screen">
     <param name="camera_name" value="$(arg cam_name)" />
+    <param name="frame_id" value="$(arg frame)" />
     <remap from="camera/image_raw" to="$(arg cam_name)/image_raw" />
   </node>
   <node pkg="suturo_perception_barcodescanner" name="suturo_perception_barcodescanner_focusdispatcher" type="suturo_perception_barcodescanner_focusdispatcher.py" output="screen"></node>
