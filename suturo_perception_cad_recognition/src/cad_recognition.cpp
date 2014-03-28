@@ -56,6 +56,19 @@ void estimateFeaturesAndNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::
   fpfh_est.compute(*output_features);
 
 }
+// 
+// void estimateFeaturesAndNormalsSHOT(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals,pcl::PointCloud<pcl::FPFHSignature33>::Ptr output_features  ){
+//   estimateNormals(cloud,output_normals);
+// 
+//   pcl::search::KdTree<pcl::PointXYZ>::Ptr searchMethod(new pcl::search::KdTree<pcl::PointXYZ>);
+//   pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fpfh_est;
+//   fpfh_est.setInputCloud(cloud);
+//   fpfh_est.setInputNormals(output_normals);
+//   fpfh_est.setSearchMethod(searchMethod);
+//   fpfh_est.setRadiusSearch(0.02);
+//   fpfh_est.compute(*output_features);
+// 
+// }
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "cad_recognition");
@@ -161,7 +174,9 @@ int main(int argc, char** argv){
   // Compute a rough alignment
   pcl::SampleConsensusInitialAlignment<pcl::PointXYZ, pcl::PointXYZ, EstimationFeature> sac_ia;
   sac_ia.setMinSampleDistance(0.05f);
-  sac_ia.setMaxCorrespondenceDistance(0.01f*0.01f);
+  // sac_ia.setMaxCorrespondenceDistance(0.01f*0.01f);
+  sac_ia.setMaxCorrespondenceDistance(0.03f*0.03f); // works pretty well
+  // sac_ia.setMaxCorrespondenceDistance(0.08f*0.08f);
   sac_ia.setMaximumIterations(1500);
 
   sac_ia.setInputCloud(model_cloud);
