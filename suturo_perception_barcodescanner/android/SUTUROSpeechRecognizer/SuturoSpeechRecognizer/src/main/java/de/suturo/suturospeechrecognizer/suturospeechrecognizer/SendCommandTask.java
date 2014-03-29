@@ -21,10 +21,19 @@ import java.net.URL;
  * Created by andre on 28.03.14.
  */
 
-public class SendCommandTask extends AsyncTask<URL, Void, Void> {
+/**
+ * Async Task to send the text recognized by the speech recognition via http
+ * to the ros node that takes care of the parsing and publishing into the ros network
+ */
+public class SendCommandTask extends AsyncTask<URL, Void, Boolean> {
+    private OnTaskCompleted listener;
+
+    public SendCommandTask(OnTaskCompleted listener){
+        this.listener = listener;
+    }
 
     @Override
-    protected Void doInBackground(URL... urls) {
+    protected Boolean doInBackground(URL... urls) {
         HttpClient client = new DefaultHttpClient();
         StringBuilder builder = new StringBuilder();
         HttpGet httpGet = new HttpGet(String.valueOf(urls[0]));
@@ -41,26 +50,28 @@ public class SendCommandTask extends AsyncTask<URL, Void, Void> {
                 while ((line = reader.readLine()) != null) {
                     builder.append(line);
                 }
-                Log.v("Getter", "Your data: " + builder.toString()); //response data
+
+                if (builder.toString().contains("NOK")) {
+                    Log.v("HTTP", "OK: Text recognized" + builder.toString()); //response data
+                    return Boolean.TRUE;
+                }
+                else {
+                    Log.v("HTTP", "NOK: Text not recognized  " + builder.toString()); //response data
+                    return Boolean.FALSE;
+                }
             } else {
-                Log.e("Getter", "Failed to download file");
+                Log.e("HTTP", "Failed to download file");
             }
         } catch (ClientProtocolException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+        return Boolean.FALSE;
     }
 
-    protected void onProgressUpdate(Integer... progress) {
-        //setProgressPercent(progress[0]);
-        Log.v("debug", "progress called");
-    }
-
-    protected void onPostExecute(Long result) {
-        //showDialog("Downloaded " + result + " bytes");
-        Log.v("debug", "onPostExecute called");
+    protected void onPostExecute(Boolean result) {
+        listener.onTaskCompleted(result);
     }
 
 

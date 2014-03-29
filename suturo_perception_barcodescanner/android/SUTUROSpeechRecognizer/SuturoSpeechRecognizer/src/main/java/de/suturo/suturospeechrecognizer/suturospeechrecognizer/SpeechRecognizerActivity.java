@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,6 +18,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -31,13 +33,14 @@ import java.util.List;
 import java.lang.String;
 
 
-public class SpeechRecognizerActivity extends Activity {
+public class SpeechRecognizerActivity extends Activity implements OnTaskCompleted {
 
     private static final int VOICE_RECOGNITION_REQUEST_CODE = 1001;
 
     private Button btnSpeak;
     private TextView textMatcheTextView;
     private EditText IPEditText;
+    private ImageView statusImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +49,8 @@ public class SpeechRecognizerActivity extends Activity {
         btnSpeak = (Button) findViewById(R.id.btSpeak);
         textMatcheTextView = (TextView) findViewById(R.id.textMatcheTextView);
         IPEditText = (EditText) findViewById(R.id.IPeditText);
+        statusImageView = (ImageView) findViewById(R.id.statusImageView);
+
         checkVoiceRecognitionAvailability();
         IPEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
 
@@ -132,10 +137,21 @@ public class SpeechRecognizerActivity extends Activity {
     }
 
     public void sendCommand(View view) {
-        Toast.makeText(this, "send Command", Toast.LENGTH_SHORT).show();
-        SendCommandTask sender = new SendCommandTask();
+        String[] ipAddrPort = IPEditText.getText().toString().split(":");
         try {
-            sender.execute(new URL("http", "134.102.71.165", 8000, "/"));
+            Log.v("debug", "ipAddr: " + ipAddrPort[0]);
+            Log.v("debug", "port: "   + ipAddrPort[1]);
+        } catch (ArrayIndexOutOfBoundsException e)
+        {
+            Toast.makeText(this,"Not a valid ip:port combination",Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String ipAddr = ipAddrPort[0];
+        int portNumber = Integer.parseInt(ipAddrPort[1]);
+        SendCommandTask sender = new SendCommandTask(this);
+        try {
+            sender.execute(new URL("http", ipAddr, portNumber, "/"));
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -161,4 +177,19 @@ public class SpeechRecognizerActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onTaskCompleted(Boolean result) {
+        if(result == Boolean.TRUE) {
+            Log.v("debug", "HTTP Task completed! Text recognized by rosnode.");
+            Toast.makeText(this, "Text recognized by node!", Toast.LENGTH_SHORT).show();
+            statusImageView.setImageResource(R.drawable.checked_green_256);
+        }
+        else {
+            Log.v("debug", "HTTP Task completed! Text NOT recognized by rosnode!");
+            Toast.makeText(this, "Text NOT recognized by node!", Toast.LENGTH_SHORT).show();
+            statusImageView.setImageResource(R.drawable.checked_red_256);
+        }
+
+    }
 }
+
