@@ -1,7 +1,6 @@
 package de.suturo.suturospeechrecognizer.suturospeechrecognizer;
 
 import android.app.Activity;
-import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -14,17 +13,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import org.w3c.dom.Text;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,7 +31,7 @@ public class SpeechRecognizerActivity extends Activity implements OnTaskComplete
     private static final int VOICE_RECOGNITION_REQUEST_CODE = 1001;
 
     private Button btnSpeak;
-    private TextView textMatcheTextView;
+    private TextView textMatchesTextView;
     private EditText IPEditText;
     private ImageView statusImageView;
 
@@ -47,7 +40,7 @@ public class SpeechRecognizerActivity extends Activity implements OnTaskComplete
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_speech_recognizer);
         btnSpeak = (Button) findViewById(R.id.btSpeak);
-        textMatcheTextView = (TextView) findViewById(R.id.textMatcheTextView);
+        textMatchesTextView = (TextView) findViewById(R.id.textMatcheTextView);
         IPEditText = (EditText) findViewById(R.id.IPeditText);
         statusImageView = (ImageView) findViewById(R.id.statusImageView);
 
@@ -117,7 +110,7 @@ public class SpeechRecognizerActivity extends Activity implements OnTaskComplete
             assert textMatchList != null; // googles recognizer takes care of this
             if (!textMatchList.isEmpty()) {
                 // populate the Matches
-                textMatcheTextView.setText(textMatchList.get(0));
+                textMatchesTextView.setText(textMatchList.get(0));
 
             // catch a few errors
             } else if (resultCode == RecognizerIntent.RESULT_AUDIO_ERROR) {
@@ -150,8 +143,10 @@ public class SpeechRecognizerActivity extends Activity implements OnTaskComplete
         String ipAddr = ipAddrPort[0];
         int portNumber = Integer.parseInt(ipAddrPort[1]);
         SendCommandTask sender = new SendCommandTask(this);
+        String requestString = "/" + textMatchesTextView.getText().toString().replace(" ", "_").toLowerCase();
+        Log.v("debug", "requestString: " + requestString);
         try {
-            sender.execute(new URL("http", ipAddr, portNumber, "/"));
+            sender.execute(new URL("http", ipAddr, portNumber, requestString));
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

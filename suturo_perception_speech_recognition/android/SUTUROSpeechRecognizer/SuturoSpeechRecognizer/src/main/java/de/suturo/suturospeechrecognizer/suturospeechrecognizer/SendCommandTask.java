@@ -51,7 +51,7 @@ public class SendCommandTask extends AsyncTask<URL, Void, Boolean> {
                     builder.append(line);
                 }
 
-                if (builder.toString().contains("NOK")) {
+                if (builder.toString().equals("OK")) {
                     Log.v("HTTP", "OK: Text recognized" + builder.toString()); //response data
                     return Boolean.TRUE;
                 }
