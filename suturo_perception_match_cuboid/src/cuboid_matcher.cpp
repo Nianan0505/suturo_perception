@@ -250,20 +250,8 @@ void CuboidMatcher::segmentPlanes()
 }
 void CuboidMatcher::computeCentroid(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, Eigen::Vector4f &centroid)
 {
-  boost::mutex::scoped_lock scoped_lock(mx); // Lock this method, since libqull is NOT threadsafe
-
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_points (new pcl::PointCloud<pcl::PointXYZRGB> ());
-
-  if(cloud_in == NULL || cloud_in->points.size() == 0)
-  {
-    std::cerr << "computeCentroid with empty cloud called" << std::endl;
-    return;
-  }
-
-  pcl::ConvexHull<pcl::PointXYZRGB> hull;
-  hull.setInputCloud(cloud_in);
-  hull.setDimension(3);
-  hull.reconstruct (*hull_points);
+  suturo_perception_utils::ThreadsafeHull::computeConvexHull(cloud_in, hull_points);
 
   // Centroid calulcation
   pcl::compute3DCentroid (*hull_points, centroid);  

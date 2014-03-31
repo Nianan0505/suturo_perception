@@ -25,6 +25,7 @@
 #include <suturo_perception_match_cuboid/detected_plane.h>
 #include <suturo_perception_match_cuboid/cuboid.h>
 #include <boost/thread.hpp>
+#include <threadsafe_hull.h>
 
 // Constants for the different operation modes of this class
 #define CUBOID_MATCHER_MODE_WITHOUT_COEFFICIENTS 0 
