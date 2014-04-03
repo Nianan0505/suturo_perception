@@ -33,6 +33,91 @@ using namespace std;
 
 typedef pcl::FPFHSignature33 EstimationFeature;
 
+class InitialAlignment
+{
+  public:
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud_in;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr _model_cloud;
+
+    InitialAlignment(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud)
+    {
+    }
+    pcl::PointCloud<pcl::PointXYZ>::Ptr execute(); // Return an initially aligned cloud
+    Eigen::Matrix<float, 4, 4>  getTransformation(); // Available after execution
+};
+
+class RANSACInitialAlignment : public InitialAlignment
+{
+
+  protected:
+      pcl::PointCloud<pcl::Normal>::Ptr _normals1;
+      pcl::PointCloud<pcl::Normal>::Ptr _normals2;
+      pcl::PointCloud<EstimationFeature>::Ptr _features1;
+      pcl::PointCloud<EstimationFeature>::Ptr _features2;
+
+      void estimateNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals){
+        pcl::search::KdTree<pcl::PointXYZ>::Ptr searchMethod(new pcl::search::KdTree<pcl::PointXYZ>);
+        pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> norm_est;
+        norm_est.setInputCloud(cloud);
+        norm_est.setSearchMethod(searchMethod);
+        norm_est.setRadiusSearch(0.02);
+        norm_est.compute(*output_normals); 
+      }
+
+      // Take a input cloud (param: cloud)
+      // and compute the corresponding normals and features (in this case, FPFH).
+      void estimateFeaturesAndNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals,pcl::PointCloud<pcl::FPFHSignature33>::Ptr output_features  ){
+        estimateNormals(cloud,output_normals);
+
+        pcl::search::KdTree<pcl::PointXYZ>::Ptr searchMethod(new pcl::search::KdTree<pcl::PointXYZ>);
+        pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fpfh_est;
+        fpfh_est.setInputCloud(cloud);
+        fpfh_est.setInputNormals(output_normals);
+        fpfh_est.setSearchMethod(searchMethod);
+        fpfh_est.setRadiusSearch(0.02);
+        fpfh_est.compute(*output_features);
+      }
+
+  public:
+    RANSACInitialAlignment(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud) : InitialAlignment(cloud_in,model_cloud)
+    {
+      // Estimate the normals and features for the initial estimate that will be done later
+      _normals1 = pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
+      _normals2 = pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>);
+      _features1 = pcl::PointCloud<EstimationFeature>::Ptr (new pcl::PointCloud<EstimationFeature>);
+      _features2 = pcl::PointCloud<EstimationFeature>::Ptr (new pcl::PointCloud<EstimationFeature>);
+    }
+
+    // You MUST call this function to compute the necessary features first
+    void computeFeatures(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud)
+    {
+      estimateFeaturesAndNormals(cloud_in, _normals1, _features1);
+      estimateFeaturesAndNormals(model_cloud, _normals2, _features2);
+    }
+
+    // @override
+    pcl::PointCloud<pcl::PointXYZ>::Ptr execute()
+    {
+      // Compute a rough alignment
+      pcl::SampleConsensusInitialAlignment<pcl::PointXYZ, pcl::PointXYZ, EstimationFeature> sac_ia;
+      sac_ia.setMinSampleDistance(0.05f);
+      // sac_ia.setMaxCorrespondenceDistance(0.01f*0.01f);
+      sac_ia.setMaxCorrespondenceDistance(0.03f*0.03f); // works pretty well
+      // sac_ia.setMaxCorrespondenceDistance(0.08f*0.08f);
+      sac_ia.setMaximumIterations(1500);
+
+      sac_ia.setInputCloud(_model_cloud);
+      sac_ia.setSourceFeatures(_features2);
+      sac_ia.setInputTarget(_cloud_in);
+      sac_ia.setTargetFeatures(_features1);
+
+      pcl::PointCloud<pcl::PointXYZ>::Ptr model_initial_aligned (new pcl::PointCloud<pcl::PointXYZ>);
+      sac_ia.align(*model_initial_aligned);
+      return model_initial_aligned;
+    }
+};
+
+
 void estimateNormals(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr output_normals){
   pcl::search::KdTree<pcl::PointXYZ>::Ptr searchMethod(new pcl::search::KdTree<pcl::PointXYZ>);
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> norm_est;
@@ -156,6 +241,7 @@ int main(int argc, char** argv){
   model_cloud = model_cloud_voxeled;
 
   boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
+
   // Compute the centroids of both clouds and bring them closer together
   // for an rough initial alignment.
   Eigen::Vector4f input_cloud_centroid, model_cloud_centroid, diff_of_centroids;
@@ -205,6 +291,10 @@ int main(int argc, char** argv){
   std::cout << icp.getFinalTransformation() << std::endl;
   boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
   l.logTime(start,end,"Initial Alignment and ICP");
+
+
+
+
 
   pcl::visualization::PCLVisualizer viewer;
   int v1,v2,v3,v4;
