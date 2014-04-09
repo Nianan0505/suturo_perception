@@ -26,6 +26,7 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/fpfh.h>
 #include <pcl/features/shot.h>
+#include <suturo_perception_match_cuboid/cuboid_matcher.h>
 
 namespace po = boost::program_options;
 using namespace boost;
@@ -127,7 +128,11 @@ class TableInitialAlignment : public InitialAlignment
   {
 
   }
+  
+  // Attributes
+  pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_model;
 
+  // Methods
   Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
       Eigen::Vector3f base_normal,
       Eigen::Vector3f normal_to_rotate)
@@ -177,8 +182,85 @@ class TableInitialAlignment : public InitialAlignment
     return rotationBox;
   }
 
+  Cuboid computeCuboidFromBorderPoints(pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points)
+  {
+    Cuboid c;
+
+    // Get the "width": (minx,miny) -> (maxx,miny)
+    c.length1 = pcl::distances::l2(corner_points->points.at(0).getVector4fMap(),corner_points->points.at(2).getVector4fMap());
+    // Get the "height": (minx,miny) -> (minx,maxy)
+    c.length2 = pcl::distances::l2(corner_points->points.at(0).getVector4fMap(),corner_points->points.at(3).getVector4fMap());
+    // Get the "depth": (minx,miny,minz) -> (minx,maxy,maxz)
+    c.length3 = pcl::distances::l2(corner_points->points.at(0).getVector4fMap(),corner_points->points.at(4).getVector4fMap());
+
+    c.volume = c.length1 * c.length2 * c.length3;
+    // Eigen::Vector4f centroid;
+    // CuboidMatcher::computeCentroid(corner_points, centroid);
+    // c.center = getVector3fFromVector4f(centroid);
+    c.corner_points = corner_points;
+    return c;
+  }
+
+  void computeCuboidCornersWithMinMax3D(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points)
+  {
+    pcl::PointXYZ min_pt, max_pt;
+    pcl::getMinMax3D(*cloud_in, min_pt, max_pt);
+    // Compute the bounding box edge points
+    pcl::PointXYZRGB pt1;
+    pt1.x = min_pt.x; pt1.y = min_pt.y; pt1.z = min_pt.z;
+
+    pcl::PointXYZRGB pt2;
+    pt2.x = max_pt.x; pt2.y = max_pt.y; pt2.z = max_pt.z;
+    pcl::PointXYZRGB pt3;
+    pt3.x = max_pt.x,pt3.y = min_pt.y,pt3.z = min_pt.z;
+    pcl::PointXYZRGB pt4;
+    pt4.x = min_pt.x,pt4.y = max_pt.y,pt4.z = min_pt.z;
+    pcl::PointXYZRGB pt5;
+    pt5.x = min_pt.x,pt5.y = min_pt.y,pt5.z = max_pt.z;
+
+    pcl::PointXYZRGB pt6;
+    pt6.x = min_pt.x,pt6.y = max_pt.y,pt6.z = max_pt.z;
+    pcl::PointXYZRGB pt7;
+    pt7.x = max_pt.x,pt7.y = max_pt.y,pt7.z = min_pt.z;
+    pcl::PointXYZRGB pt8;
+    pt8.x = max_pt.x,pt8.y = min_pt.y,pt8.z = max_pt.z;
+
+    corner_points->push_back(pt1);
+    corner_points->push_back(pt2);
+    corner_points->push_back(pt3);
+    corner_points->push_back(pt4);
+    corner_points->push_back(pt5);
+    corner_points->push_back(pt6);
+    corner_points->push_back(pt7);
+    corner_points->push_back(pt8);
+  }
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr execute()
   {
+    // Get the dimensions of the object
+    // Rotate the model upwards, to get the proper dimensions
+    _upwards_model = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>);
+
+    Eigen::Matrix< float, 4, 4 > upwardRotationBox = 
+      rotateAroundCrossProductOfNormals(Eigen::Vector3f(0,-1,0), Eigen::Vector3f(0,0,1));
+
+    pcl::transformPointCloud (*_model_cloud, *_upwards_model, upwardRotationBox);
+    // Get the (square) dimensions with min max 3d
+    pcl::PointXYZ min_pt, max_pt;
+    // pcl::getMinMax3D(*_upwards_model, min_pt, max_pt);
+    // CuboidMatcher cm;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points (new pcl::PointCloud<pcl::PointXYZRGB>);
+    computeCuboidCornersWithMinMax3D(_upwards_model, corner_points);
+    Cuboid c = 
+      computeCuboidFromBorderPoints(corner_points);
+    float model_height = c.length2;
+    float model_width  = c.length1;
+    float model_depth  = c.length3;
+    std::cout << "Dimensions of the object: ";
+    std::cout << model_height << " "; 
+    std::cout << model_width << " "; 
+    std::cout << model_depth << std::endl; 
+
     // Rotate the object first
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud (new pcl::PointCloud<pcl::PointXYZ>);
     Eigen::Vector3f table_normal(
@@ -360,7 +442,7 @@ int main(int argc, char** argv){
   // icp.setInputCloud(model_initial_aligned);
   icp.setInputTarget(model_initial_aligned);
   // icp.setInputTarget(input_cloud);
-  // icp.setEuclideanFitnessEpsilon (0.00001f);
+  icp.setEuclideanFitnessEpsilon (0.000001f);
   // icp.setMaxCorrespondenceDistance (0.55);
   pcl::PointCloud<pcl::PointXYZ>::Ptr Final(new pcl::PointCloud<pcl::PointXYZ>);
   icp.align(*Final);
@@ -389,8 +471,10 @@ int main(int argc, char** argv){
   // viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id",v1);
 
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color(model_cloud, 255, 0, 0);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> upwards_color(ria._upwards_model, 255, 125, 0);
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id2",v2);
   viewer.addPointCloud<pcl::PointXYZ> (model_cloud, red_color, "model_cloud_id",v2);
+  viewer.addPointCloud<pcl::PointXYZ> (ria._upwards_model, upwards_color, "upwards_color",v2);
   drawNormalizedVector(viewer, Eigen::Vector3f(0,0,0), Eigen::Vector3f(0,0,1), "norm_at_origin", v2);
   drawNormalizedVector(viewer, Eigen::Vector3f(0,0,0),
       Eigen::Vector3f(table_normal[0],table_normal[1],table_normal[2])
@@ -402,8 +486,8 @@ int main(int argc, char** argv){
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color,"original_cloud_vs_initial_aligned_id",v3);
 
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color3(model_initial_aligned, 255, 0, 0);
-  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> blue_color(Final, 0, 0, 255);
-  viewer.addPointCloud<pcl::PointXYZ> (Final, blue_color,"refined_aligned_cloud_id",v4);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> yellow_color(Final, 255, 255, 0);
+  viewer.addPointCloud<pcl::PointXYZ> (Final, yellow_color,"refined_aligned_cloud_id",v4);
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color,"original_cloud_vs_refined_aligned_id",v4);
   viewer.addPointCloud<pcl::PointXYZ> (model_initial_aligned, red_color3, "initial_aligned_vs_refined_aligned_id",v4);
 
