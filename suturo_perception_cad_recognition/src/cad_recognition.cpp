@@ -131,6 +131,7 @@ class TableInitialAlignment : public InitialAlignment
   
   // Attributes
   pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_model;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object;
 
   // Methods
   Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
@@ -237,9 +238,10 @@ class TableInitialAlignment : public InitialAlignment
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr execute()
   {
-    // Get the dimensions of the object
+    // Get the dimensions of the model
     // Rotate the model upwards, to get the proper dimensions
     _upwards_model = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>);
+    _upwards_object = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>);
 
     Eigen::Matrix< float, 4, 4 > upwardRotationBox = 
       rotateAroundCrossProductOfNormals(Eigen::Vector3f(0,-1,0), Eigen::Vector3f(0,0,1));
@@ -261,7 +263,18 @@ class TableInitialAlignment : public InitialAlignment
     std::cout << model_width << " "; 
     std::cout << model_depth << std::endl; 
 
-    // Rotate the object first
+    // Rotate the object and try to get the dimensions
+    Eigen::Vector4f input_cloud_centroid, model_cloud_centroid, diff_of_centroids;
+    pcl::compute3DCentroid(*_cloud_in, input_cloud_centroid); 
+    diff_of_centroids = input_cloud_centroid - Eigen::Vector4f(0,0,0,0);
+    Eigen::Affine3f transform = pcl::getTransformation(diff_of_centroids[0],
+        diff_of_centroids[1], diff_of_centroids[2],0,0,0);
+    pcl::transformPointCloud(*_cloud_in, *_upwards_object,transform);
+
+
+
+
+    // Rotate the model first
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud (new pcl::PointCloud<pcl::PointXYZ>);
     Eigen::Vector3f table_normal(
         _table_normal[0],
@@ -276,12 +289,12 @@ class TableInitialAlignment : public InitialAlignment
 
     // Compute the centroids of both clouds and bring them closer together
     // for an rough initial alignment.
-    
-    Eigen::Vector4f input_cloud_centroid, model_cloud_centroid, diff_of_centroids;
-    pcl::compute3DCentroid(*_cloud_in, input_cloud_centroid); 
+    // Eigen::Vector4f input_cloud_centroid, model_cloud_centroid, diff_of_centroids;
+    // pcl::compute3DCentroid(*_cloud_in, input_cloud_centroid); 
     pcl::compute3DCentroid(*transformed_cloud, model_cloud_centroid); 
     diff_of_centroids = input_cloud_centroid - model_cloud_centroid;
-    Eigen::Affine3f transform = pcl::getTransformation(diff_of_centroids[0],
+    // Eigen::Affine3f
+    transform = pcl::getTransformation(diff_of_centroids[0],
         diff_of_centroids[1], diff_of_centroids[2],0,0,0);
 
     pcl::transformPointCloud(*transformed_cloud, *transformed_cloud,transform);
@@ -472,6 +485,7 @@ int main(int argc, char** argv){
 
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color(model_cloud, 255, 0, 0);
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> upwards_color(ria._upwards_model, 255, 125, 0);
+  viewer.addCoordinateSystem(0.5,v2);
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id2",v2);
   viewer.addPointCloud<pcl::PointXYZ> (model_cloud, red_color, "model_cloud_id",v2);
   viewer.addPointCloud<pcl::PointXYZ> (ria._upwards_model, upwards_color, "upwards_color",v2);
@@ -479,7 +493,6 @@ int main(int argc, char** argv){
   drawNormalizedVector(viewer, Eigen::Vector3f(0,0,0),
       Eigen::Vector3f(table_normal[0],table_normal[1],table_normal[2])
       ,"table_normal", v2);
-  viewer.addCoordinateSystem(0.5,v2);
 
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color2(model_initial_aligned, 255, 0, 0);
   viewer.addPointCloud<pcl::PointXYZ> (model_initial_aligned, red_color2,"initial_aligned_cloud_id",v3);
