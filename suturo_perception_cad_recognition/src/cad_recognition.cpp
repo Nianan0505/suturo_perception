@@ -258,31 +258,57 @@ class TableInitialAlignment : public InitialAlignment
     float model_height = c.length2;
     float model_width  = c.length1;
     float model_depth  = c.length3;
-    std::cout << "Dimensions of the object: ";
+    std::cout << "Dimensions of the model: ";
     std::cout << model_height << " "; 
     std::cout << model_width << " "; 
     std::cout << model_depth << std::endl; 
 
     // Rotate the object and try to get the dimensions
-    Eigen::Vector4f input_cloud_centroid, model_cloud_centroid, diff_of_centroids;
+    Eigen::Vector3f table_normal(
+        _table_normal[0],
+        _table_normal[1],
+        _table_normal[2]);
+
+    Eigen::Matrix< float, 4, 4 > rotationObjectBox = 
+      rotateAroundCrossProductOfNormals(Eigen::Vector3f(0,1,0), table_normal);
+
+    pcl::transformPointCloud (*_cloud_in, *_upwards_object, rotationObjectBox);   
+
+
+    Eigen::Vector4f input_cloud_centroid, rotated_input_cloud_centroid, 
+      model_cloud_centroid, diff_of_centroids;
     pcl::compute3DCentroid(*_cloud_in, input_cloud_centroid); 
-    diff_of_centroids = input_cloud_centroid - Eigen::Vector4f(0,0,0,0);
+    pcl::compute3DCentroid(*_upwards_object, rotated_input_cloud_centroid); 
+    diff_of_centroids = Eigen::Vector4f(0,0,0,0) - rotated_input_cloud_centroid;
     Eigen::Affine3f transform = pcl::getTransformation(diff_of_centroids[0],
         diff_of_centroids[1], diff_of_centroids[2],0,0,0);
-    pcl::transformPointCloud(*_cloud_in, *_upwards_object,transform);
+    pcl::transformPointCloud(*_upwards_object, *_upwards_object,transform);
+
+    // Estimate the dimensions of the object
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points_object (new pcl::PointCloud<pcl::PointXYZRGB>);
+    computeCuboidCornersWithMinMax3D(_upwards_object, corner_points_object);
+    Cuboid oc = 
+      computeCuboidFromBorderPoints(corner_points_object);
+    float object_height = oc.length2;
+    float object_width  = oc.length1;
+    float object_depth  = oc.length3;
+    std::cout << "Dimensions of the object: ";
+    std::cout << object_height << " "; 
+    std::cout << object_width << " "; 
+    std::cout << object_depth << std::endl; 
+
+    // Translate the object to align it with the top of the model
+    float translate_upwards = model_height - object_height;
+    Eigen::Affine3f transformUpwards = pcl::getTransformation( 0,
+        translate_upwards,0,0,0,0);
+    pcl::transformPointCloud(*_upwards_object, *_upwards_object, transformUpwards);
 
 
 
 
     // Rotate the model first
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-    Eigen::Vector3f table_normal(
-        _table_normal[0],
-        _table_normal[1],
-        _table_normal[2]);
-
     Eigen::Matrix< float, 4, 4 > rotationBox = 
-      // rotateAroundCrossProductOfNormals( Eigen::Vector3f(0,0,1), table_normal );
       rotateAroundCrossProductOfNormals(table_normal, Eigen::Vector3f(0,0,1));
 
     pcl::transformPointCloud (*_model_cloud, *transformed_cloud, rotationBox);   
@@ -485,10 +511,12 @@ int main(int argc, char** argv){
 
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red_color(model_cloud, 255, 0, 0);
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> upwards_color(ria._upwards_model, 255, 125, 0);
+  pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> upwards_object(ria._upwards_object, 128, 255, 0);
   viewer.addCoordinateSystem(0.5,v2);
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color, "input_cloud_id2",v2);
   viewer.addPointCloud<pcl::PointXYZ> (model_cloud, red_color, "model_cloud_id",v2);
   viewer.addPointCloud<pcl::PointXYZ> (ria._upwards_model, upwards_color, "upwards_color",v2);
+  viewer.addPointCloud<pcl::PointXYZ> (ria._upwards_object, upwards_object, "upwards_object",v2);
   drawNormalizedVector(viewer, Eigen::Vector3f(0,0,0), Eigen::Vector3f(0,0,1), "norm_at_origin", v2);
   drawNormalizedVector(viewer, Eigen::Vector3f(0,0,0),
       Eigen::Vector3f(table_normal[0],table_normal[1],table_normal[2])
