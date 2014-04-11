@@ -476,6 +476,25 @@ int main(int argc, char** argv){
 
   pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> icp;
   // pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  icp.setInputCloud(ria._upwards_object);
+  // icp.setRANSACOutlierRejectionThreshold(0.10f);
+  // icp.setInputCloud(model_initial_aligned);
+  icp.setInputTarget(ria._upwards_model);
+  // icp.setInputTarget(input_cloud);
+  icp.setEuclideanFitnessEpsilon (0.000001f);
+  // icp.setMaxCorrespondenceDistance (0.55);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr Final(new pcl::PointCloud<pcl::PointXYZ>);
+  icp.align(*Final);
+  std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+  icp.getFitnessScore() << std::endl;
+  std::cout << icp.getFinalTransformation() << std::endl;
+  boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
+  l.logTime(start,end,"Initial Alignment and ICP");
+
+
+  /*
+  pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> icp;
+  // pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
   icp.setInputCloud(input_cloud);
   // icp.setRANSACOutlierRejectionThreshold(0.10f);
   // icp.setInputCloud(model_initial_aligned);
@@ -490,7 +509,7 @@ int main(int argc, char** argv){
   std::cout << icp.getFinalTransformation() << std::endl;
   boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
   l.logTime(start,end,"Initial Alignment and ICP");
-
+  */
 
 
 
@@ -531,6 +550,7 @@ int main(int argc, char** argv){
   viewer.addPointCloud<pcl::PointXYZ> (Final, yellow_color,"refined_aligned_cloud_id",v4);
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color,"original_cloud_vs_refined_aligned_id",v4);
   viewer.addPointCloud<pcl::PointXYZ> (model_initial_aligned, red_color3, "initial_aligned_vs_refined_aligned_id",v4);
+  viewer.addPointCloud<pcl::PointXYZ> (ria._upwards_model, upwards_color, "upwards_model_vs_refined_cloud",v4);
 
 
 
