@@ -1,7 +1,7 @@
 /*
  * This node tries is part of a pipeline
  * to align a CAD model to a (partial) pointcloud
- * of an segmented object
+ * of a segmented object
  *
  * The CAD model has to be subsampled as a Pointcloud and be
  * passed to this node.
@@ -132,11 +132,13 @@ class TableInitialAlignment : public InitialAlignment
   // Attributes
   pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_model;
   pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object;
+  std::vector<Eigen::Matrix< float, 4, 4 >, Eigen::aligned_allocator<Eigen::Matrix< float, 4, 4> > > transformations_;
 
   // Methods
   Eigen::Matrix< float, 4, 4 > rotateAroundCrossProductOfNormals(
       Eigen::Vector3f base_normal,
-      Eigen::Vector3f normal_to_rotate)
+      Eigen::Vector3f normal_to_rotate,
+      bool store_transformation=false)
   {
     normal_to_rotate *= -1; // The model is standing upside down, rotate the normal by 180 DEG
     float costheta = normal_to_rotate.dot(base_normal) / (normal_to_rotate.norm() * base_normal.norm() );
@@ -177,8 +179,8 @@ class TableInitialAlignment : public InitialAlignment
     rotationBox(3,2) = 0;
     rotationBox(3,3) = 1;
 
-    // if(store_transformation)
-    //   transformations_.push_back(rotationBox);
+    if(store_transformation)
+       transformations_.push_back(rotationBox);
 
     return rotationBox;
   }
@@ -247,10 +249,11 @@ class TableInitialAlignment : public InitialAlignment
       rotateAroundCrossProductOfNormals(Eigen::Vector3f(0,-1,0), Eigen::Vector3f(0,0,1));
 
     pcl::transformPointCloud (*_model_cloud, *_upwards_model, upwardRotationBox);
+    // Store the first transformation of the model
+    transformations_.push_back(upwardRotationBox);
+
+
     // Get the (square) dimensions with min max 3d
-    pcl::PointXYZ min_pt, max_pt;
-    // pcl::getMinMax3D(*_upwards_model, min_pt, max_pt);
-    // CuboidMatcher cm;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr corner_points (new pcl::PointCloud<pcl::PointXYZRGB>);
     computeCuboidCornersWithMinMax3D(_upwards_model, corner_points);
     Cuboid c = 
@@ -269,12 +272,10 @@ class TableInitialAlignment : public InitialAlignment
         _table_normal[1],
         _table_normal[2]);
 
-    Eigen::Matrix< float, 4, 4 > rotationObjectBox = 
+    Eigen::Matrix< float, 4, 4 > transformationRotateObject = 
       rotateAroundCrossProductOfNormals(Eigen::Vector3f(0,1,0), table_normal);
 
-    pcl::transformPointCloud (*_cloud_in, *_upwards_object, rotationObjectBox);   
-
-
+    pcl::transformPointCloud (*_cloud_in, *_upwards_object, transformationRotateObject);   
     Eigen::Vector4f input_cloud_centroid, rotated_input_cloud_centroid, 
       model_cloud_centroid, diff_of_centroids;
     pcl::compute3DCentroid(*_cloud_in, input_cloud_centroid); 
@@ -303,6 +304,12 @@ class TableInitialAlignment : public InitialAlignment
         translate_upwards,0,0,0,0);
     pcl::transformPointCloud(*_upwards_object, *_upwards_object, transformUpwards);
 
+    // Store the transposed matrix of the height-fitting transformation
+    // transformations_.push_back(transformUpwards.transpose() ); // TODO convert Affine3f to Eigen::Matrix< float, 4, 4 >
+    // Store the transposed matrix of the centroid alignment
+    // transformations_.push_back(transform.transpose() ); // TODO convert Affine3f to Eigen::Matrix< float, 4, 4 >
+    // Store the transposed matrix of the rotation to fit the table normal
+    transformations_.push_back(transformationRotateObject.transpose() ); 
 
 
 
@@ -457,19 +464,16 @@ int main(int argc, char** argv){
   boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
   // Initial Alignment
   // RANSACInitialAlignment ria(input_cloud_voxeled, model_cloud_voxeled);
-  Eigen::Vector4f table_normal(0.0118185, 0.612902, 0.79007, -0.917831);
-  TableInitialAlignment ria(input_cloud_voxeled, model_cloud_voxeled, table_normal);
-  // 0.0118185 0.612902 0.79007 -0.917831  // pancake normal
   // ria.computeFeatures(input_cloud, model_cloud);
+  
+  Eigen::Vector4f table_normal(0.0118185, 0.612902, 0.79007, -0.917831); // pancake 
+  // Eigen::Vector4f table_normal(0.00924593, 0.697689, 0.716341, -0.914689); // pancake 0deg moved
+  // Eigen::Vector4f table_normal(0.0102382,0.6985,0.715537,-0.914034); // pancake 0deg moved
+  TableInitialAlignment ria(input_cloud_voxeled, model_cloud_voxeled, table_normal);
   pcl::PointCloud<pcl::PointXYZ>::Ptr model_initial_aligned = ria.execute();
 
   input_cloud = input_cloud_voxeled;
   model_cloud = model_cloud_voxeled;
-
-
-  // TODO
-  // - Use the table normal to fit the rotation
-  // - Use the highest and lowest point to align the Pointcloud better in height
 
 
   // Refine the result with ICP
