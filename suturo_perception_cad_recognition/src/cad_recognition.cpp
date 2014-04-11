@@ -238,6 +238,36 @@ class TableInitialAlignment : public InitialAlignment
     corner_points->push_back(pt8);
   }
 
+  Eigen::Matrix< float, 4, 4> getTranslationMatrix(
+    float x, float y, float z)
+  {
+    Eigen::Matrix< float, 4, 4> translation;
+
+    translation(0,0) = 1;
+    translation(1,0) = 0;
+    translation(2,0) = 0;
+
+    translation(0,1) = 0;
+    translation(1,1) = 1;
+    translation(2,1) = 0;
+
+    translation(0,2) = 0;
+    translation(1,2) = 0;
+    translation(2,2) = 1;
+    // Translation vector
+    translation(0,3) = x;
+    translation(1,3) = y;
+    translation(2,3) = z;
+
+    // The rest of the 4x4 matrix
+    translation(3,0) = 0;
+    translation(3,1) = 0;
+    translation(3,2) = 0;
+    translation(3,3) = 1;
+
+    return translation;
+  }
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr execute()
   {
     // Get the dimensions of the model
@@ -281,8 +311,13 @@ class TableInitialAlignment : public InitialAlignment
     pcl::compute3DCentroid(*_cloud_in, input_cloud_centroid); 
     pcl::compute3DCentroid(*_upwards_object, rotated_input_cloud_centroid); 
     diff_of_centroids = Eigen::Vector4f(0,0,0,0) - rotated_input_cloud_centroid;
-    Eigen::Affine3f transform = pcl::getTransformation(diff_of_centroids[0],
-        diff_of_centroids[1], diff_of_centroids[2],0,0,0);
+    // Eigen::Affine3f transform = pcl::getTransformation(diff_of_centroids[0],
+    //     diff_of_centroids[1], diff_of_centroids[2],0,0,0);
+    Eigen::Matrix< float, 4, 4 > transform = 
+      getTranslationMatrix(
+          diff_of_centroids[0],
+          diff_of_centroids[1],
+          diff_of_centroids[2]);
     pcl::transformPointCloud(*_upwards_object, *_upwards_object,transform);
 
     // Estimate the dimensions of the object
@@ -300,14 +335,16 @@ class TableInitialAlignment : public InitialAlignment
 
     // Translate the object to align it with the top of the model
     float translate_upwards = model_height - object_height;
-    Eigen::Affine3f transformUpwards = pcl::getTransformation( 0,
-        translate_upwards,0,0,0,0);
+    // Eigen::Affine3f transformUpwards = pcl::getTransformation( 0,
+    //     translate_upwards,0,0,0,0);
+    Eigen::Matrix< float, 4, 4 > transformUpwards = 
+      getTranslationMatrix(0,translate_upwards,0);
     pcl::transformPointCloud(*_upwards_object, *_upwards_object, transformUpwards);
 
     // Store the transposed matrix of the height-fitting transformation
-    // transformations_.push_back(transformUpwards.transpose() ); // TODO convert Affine3f to Eigen::Matrix< float, 4, 4 >
+    transformations_.push_back(transformUpwards.transpose() ); 
     // Store the transposed matrix of the centroid alignment
-    // transformations_.push_back(transform.transpose() ); // TODO convert Affine3f to Eigen::Matrix< float, 4, 4 >
+    transformations_.push_back(transform.transpose() );
     // Store the transposed matrix of the rotation to fit the table normal
     transformations_.push_back(transformationRotateObject.transpose() ); 
 
@@ -326,11 +363,10 @@ class TableInitialAlignment : public InitialAlignment
     // pcl::compute3DCentroid(*_cloud_in, input_cloud_centroid); 
     pcl::compute3DCentroid(*transformed_cloud, model_cloud_centroid); 
     diff_of_centroids = input_cloud_centroid - model_cloud_centroid;
-    // Eigen::Affine3f
-    transform = pcl::getTransformation(diff_of_centroids[0],
+    Eigen::Affine3f transformC = pcl::getTransformation(diff_of_centroids[0],
         diff_of_centroids[1], diff_of_centroids[2],0,0,0);
 
-    pcl::transformPointCloud(*transformed_cloud, *transformed_cloud,transform);
+    pcl::transformPointCloud(*transformed_cloud, *transformed_cloud,transformC);
 
     return transformed_cloud;
   }
