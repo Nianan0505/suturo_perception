@@ -571,10 +571,10 @@ int main(int argc, char** argv){
   // icp.setInputCloud(model_initial_aligned);
   
   
-  icp.setInputCloud(input_cloud);
-  icp.setInputTarget(model_initial_transformed);
-  // icp.setInputCloud(ria._upwards_object);
-  // icp.setInputTarget(ria._upwards_model);
+  // icp.setInputCloud(input_cloud);
+  // icp.setInputTarget(model_initial_transformed);
+  icp.setInputCloud(ria._upwards_object);
+  icp.setInputTarget(ria._upwards_model);
   icp.setEuclideanFitnessEpsilon (0.000001f);
   // icp.setMaxCorrespondenceDistance (0.55);
   // icp.setRANSACOutlierRejectionThreshold(0.10f);
@@ -656,8 +656,8 @@ int main(int argc, char** argv){
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> yellow_color(Final, 255, 255, 0);
   viewer.addPointCloud<pcl::PointXYZ> (Final, yellow_color,"refined_aligned_cloud_id",v4);
   viewer.addPointCloud<pcl::PointXYZ> (input_cloud, green_color,"original_cloud_vs_refined_aligned_id",v4);
-  // viewer.addPointCloud<pcl::PointXYZ> (model_initial_aligned, red_color3, "initial_aligned_vs_refined_aligned_id",v4);
-  viewer.addPointCloud<pcl::PointXYZ> (model_initial_transformed, red_color4,"initial_transformed_cloud_id2",v4); // VIEWPORT 2 TEMP
+  viewer.addPointCloud<pcl::PointXYZ> (model_initial_aligned, red_color3, "initial_aligned_vs_refined_aligned_id",v4);
+  // viewer.addPointCloud<pcl::PointXYZ> (model_initial_transformed, red_color4,"initial_transformed_cloud_id2",v4); // VIEWPORT 2 TEMP
   viewer.addPointCloud<pcl::PointXYZ> (ria._upwards_model, upwards_color, "upwards_model_vs_refined_cloud",v4);
 
 
