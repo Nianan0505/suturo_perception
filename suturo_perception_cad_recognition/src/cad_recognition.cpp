@@ -16,6 +16,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/io/vtk_lib_io.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/registration/icp.h>
 #include <pcl/registration/icp_nl.h>
@@ -371,7 +372,14 @@ class TableInitialAlignment : public InitialAlignment
     return transformed_cloud;
   }
 
-  // Eigen::Matrix<float, 4, 4>  getTransformation(); // TO IMPLEMENT
+  Eigen::Matrix<float, 4, 4>  getTransformation()
+  {
+    Eigen::Matrix<float, 4, 4> result;
+    for (int i = 0; i < transformations_.size(); i++) {
+      result *= transformations_.at(i);
+    }
+    return result;
+  }
 };
 
 
@@ -466,6 +474,7 @@ int main(int argc, char** argv){
   } 
   pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PolygonMesh::Ptr model_mesh (new pcl::PolygonMesh);
 
   boost::posix_time::ptime file_load_start = boost::posix_time::microsec_clock::local_time();
   if (pcl::io::loadPCDFile<pcl::PointXYZ> (input_pc_filename, *input_cloud) == -1) //* load the file
@@ -475,7 +484,13 @@ int main(int argc, char** argv){
   }
   if (pcl::io::loadPCDFile<pcl::PointXYZ> (cad_model_pc_filename, *model_cloud) == -1) //* load the file
   {
-    PCL_ERROR ("Couldn't read cad model file\n");
+    PCL_ERROR ("Couldn't read cad model file (points)\n");
+    exit (-1);
+  }
+
+  if (pcl::io::loadPolygonFileSTL("test_data/pancake_mix.stl", *model_mesh) == -1) //* load the CAD model file
+  {
+    PCL_ERROR ("Couldn't read cad model file (mesh)\n");
     exit (-1);
   }
 
