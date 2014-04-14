@@ -619,7 +619,15 @@ int main(int argc, char** argv){
       ria.translations_.at(1) * ria.translations_.at(0) * icp_transform_inverse );
   viewer.addPointCloud<pcl::PointXYZ> (model_icp_transformed_s4, "model_transformed_s4",v4);
 
-  viewer.addPolygonMesh(*model_mesh, "poly",v4);
+  // Transform object center
+  pcl::PointXYZ a(0,0,0);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr origin (new pcl::PointCloud<pcl::PointXYZ>);
+  origin->push_back(a);
+  pcl::transformPointCloud(*origin, *origin, 
+      ria.rotations_.at(1) *
+      ria.translations_.at(1) * ria.translations_.at(0) * icp_transform_inverse );
+  viewer.addSphere(origin->at(0),0.03,"sphere2",v4);
+  // viewer.addPointCloud<pcl::PointXYZ> (origin, "origin_v4",v4);
 
   viewer.spin();
   // Spin
