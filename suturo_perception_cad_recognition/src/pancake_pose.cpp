@@ -223,6 +223,21 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr PancakePose::execute()
   // Store the transposed matrix of the rotation to fit the table normal
   rotations_.push_back(transformationRotateObject.transpose() ); 
 
+  // Use ICP for the final alignment
+  pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ> icp;
+  icp.setInputCloud(_upwards_object);
+  icp.setInputTarget(_upwards_model);
+  icp.setEuclideanFitnessEpsilon (0.000001f);
+  // icp.setMaxCorrespondenceDistance (0.55);
+  // icp.setRANSACOutlierRejectionThreshold(0.10f);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr Final(new pcl::PointCloud<pcl::PointXYZ>);
+  icp.align(*Final);
+  std::cout << "has converged:" << icp.hasConverged() << " score: " <<
+  icp.getFitnessScore() << std::endl;
+  std::cout << icp.getFinalTransformation() << std::endl;
+  // boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time();
+  _icp_transform = icp.getFinalTransformation();
+  _icp_transform_inverse = icp.getFinalTransformation().inverse();
 
 
   // Rotate the model first
@@ -273,7 +288,42 @@ Eigen::Matrix<float, 4, 4>  PancakePose::getTranslation()
   return result;
 }
 
+Eigen::Matrix< float, 3, 3 > PancakePose::removeTranslationVectorFromMatrix(Eigen::Matrix<float,4,4> m)
+{
+  Eigen::Matrix< float, 3, 3 > result;
+  result.setZero();
+  result(0,0) = m(0,0);
+  result(1,0) = m(1,0);
+  result(2,0) = m(2,0);
+
+  result(0,1) = m(0,1);
+  result(1,1) = m(1,1);
+  result(2,1) = m(2,1);
+
+  result(0,2) = m(0,2);
+  result(1,2) = m(1,2);
+  result(2,2) = m(2,2);
+  return result;
+}
+
 Eigen::Quaternionf PancakePose::getOrientation()
 {
-  return Eigen::Quaternionf(0,0,0,1); 
+  Eigen::Matrix<float, 4, 4> final_transform =
+    rotations_.at(1) * translations_.at(1) * translations_.at(0) * _icp_transform_inverse ;
+  Eigen::Quaternionf q(removeTranslationVectorFromMatrix( final_transform ) );
+  return q;
+}
+
+pcl::PointXYZ PancakePose::getOrigin()
+{
+
+  // Transform object center
+  pcl::PointXYZ a(0,0,0);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr origin (new pcl::PointCloud<pcl::PointXYZ>);
+  origin->push_back(a);
+  pcl::transformPointCloud(*origin, *origin, 
+      rotations_.at(1) *
+      translations_.at(1) * translations_.at(0) * _icp_transform_inverse );
+  return origin->points.at(0);
+
 }

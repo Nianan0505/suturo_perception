@@ -50,10 +50,12 @@ class PancakePose
     pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object_s1;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object_s2;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object_s3;
+    Eigen::Matrix<float, 4, 4> _icp_transform;
+    Eigen::Matrix<float, 4, 4> _icp_transform_inverse;
     std::vector<Eigen::Matrix< float, 4, 4 >, Eigen::aligned_allocator<Eigen::Matrix< float, 4, 4> > > rotations_;
     std::vector<Eigen::Matrix< float, 4, 4 >, Eigen::aligned_allocator<Eigen::Matrix< float, 4, 4> > > translations_;
 
-    PancakePose(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud, Eigen::Vector4f table_normal)
+    PancakePose(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud, Eigen::Vector4f table_normal) : _cloud_in(cloud_in), _model_cloud(model_cloud), _table_normal(table_normal)
     {
     }
     // Eigen::Matrix<float, 4, 4>  getTransformation(); // Available after execution
@@ -76,8 +78,10 @@ class PancakePose
     Eigen::Matrix<float, 4, 4>  getRotation();
 
     Eigen::Matrix<float, 4, 4>  getTranslation();
+    Eigen::Matrix< float, 3, 3 > removeTranslationVectorFromMatrix(Eigen::Matrix<float,4,4> m);
 
     Eigen::Quaternionf getOrientation(); 
+    pcl::PointXYZ getOrigin(); 
 };
 #endif
 
