@@ -88,7 +88,7 @@ find_package(Boost REQUIRED COMPONENTS system program_options thread)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES suturo_perception_cad_recognition
 #  CATKIN_DEPENDS pcl pcl_ros roscpp
 #  DEPENDS system_lib
@@ -100,15 +100,15 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
+include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(suturo_perception_cad_recognition
-#   src/${PROJECT_NAME}/suturo_perception_cad_recognition.cpp
-# )
+add_library(suturo_perception_pancake_pose
+   src/pancake_pose.cpp
+)
 
 ## Declare a cpp executable
 add_executable(cad_recognition src/cad_recognition.cpp)
@@ -118,10 +118,17 @@ add_executable(cad_recognition src/cad_recognition.cpp)
 # add_dependencies(suturo_perception_cad_recognition_node suturo_perception_cad_recognition_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(cad_recognition
+target_link_libraries(suturo_perception_pancake_pose
    ${catkin_LIBRARIES}
    ${Boost_LIBRARIES}
 )
+
+target_link_libraries(cad_recognition
+   ${catkin_LIBRARIES}
+   ${Boost_LIBRARIES}
+	 suturo_perception_pancake_pose
+)
+
 
 #############
 ## Install ##
