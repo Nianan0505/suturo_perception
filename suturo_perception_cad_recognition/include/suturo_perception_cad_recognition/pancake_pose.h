@@ -76,6 +76,8 @@ class PancakePose
     Eigen::Matrix<float, 4, 4>  getRotation();
 
     Eigen::Matrix<float, 4, 4>  getTranslation();
+
+    Eigen::Quaternionf getOrientation(); 
 };
 #endif
 

@@ -272,3 +272,8 @@ Eigen::Matrix<float, 4, 4>  PancakePose::getTranslation()
   }
   return result;
 }
+
+Eigen::Quaternionf PancakePose::getOrientation()
+{
+  return Eigen::Quaternionf(0,0,0,1); 
+}
