@@ -28,6 +28,7 @@ suturo_perception_match_cuboid
 suturo_perception_cad_recognition
 pcl
 pcl_ros
+moveit_ros_planning_interface
 )
 
 find_package(OpenCV REQUIRED)

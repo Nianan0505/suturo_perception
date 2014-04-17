@@ -309,7 +309,7 @@ Eigen::Matrix< float, 3, 3 > PancakePose::removeTranslationVectorFromMatrix(Eige
 Eigen::Quaternionf PancakePose::getOrientation()
 {
   Eigen::Matrix<float, 4, 4> final_transform =
-    rotations_.at(1) * translations_.at(1) * translations_.at(0) * _icp_transform_inverse ;
+    rotations_.at(1) * translations_.at(1) * translations_.at(0) * _icp_transform_inverse * rotations_.at(0);
   Eigen::Quaternionf q(removeTranslationVectorFromMatrix( final_transform ) );
   return q;
 }
@@ -323,7 +323,7 @@ pcl::PointXYZ PancakePose::getOrigin()
   origin->push_back(a);
   pcl::transformPointCloud(*origin, *origin, 
       rotations_.at(1) *
-      translations_.at(1) * translations_.at(0) * _icp_transform_inverse );
+      translations_.at(1) * translations_.at(0) * _icp_transform_inverse * rotations_.at(0) );
   return origin->points.at(0);
 
 }

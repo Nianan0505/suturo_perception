@@ -6,6 +6,15 @@
  *
  * The node assumes, that the pointcloud topic is already
  * advertised by your RGBD software.
+ * You can specify the PointCloud Topic with the parameter -t.
+ *   Regular topics:
+ *     Default Kinect: /camera/depth_registered/points
+ *     Kinect on PR2: /kinect_head/depth_registered/points
+ *     Gazebo with PR2: /head_mount_kinect/depth_registered/points
+ *
+ * REQUIREMENTS:
+ *   - You need a running moveit instance, to publish the CAD model to the planning scene
+ *
  *
  */
 #include "ros/ros.h"
@@ -19,6 +28,11 @@
 #include <visualization_msgs/Marker.h>
 #include <ros/console.h>
 
+// #include <suturo_manipulation_planning_scene_interface.h>
+#include <moveit/move_group_interface/move_group.h>
+#include <shape_tools/solid_primitive_dims.h>
+#include <geometric_shapes/shape_operations.h>
+
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -27,11 +41,19 @@ using namespace boost;
 suturo_perception_lib::SuturoPerception sp;
 typedef pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_pc_ptr;
 pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud;
+const std::string PANCAKE_MODEL_PATH = "package://suturo_perception_cad_recognition/test_data/pancake_mix.stl";
 
 ros::Publisher vis_pub;
-// ros::Publisher first_t_pub;
-// ros::Publisher second_t_pub;
+ros::Publisher pub_co;
 
+shape_msgs::Mesh load_mesh_msg(std::string resource)
+{
+    shape_msgs::Mesh mesh_msg;
+    shapes::ShapeMsg mesh;
+    shapes::constructMsgFromShape( shapes::createMeshFromResource(resource), mesh);
+    mesh_msg = boost::get<shape_msgs::Mesh>(mesh);
+    return mesh_msg;
+}
 void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
 
@@ -71,7 +93,7 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     meshMarker.header.stamp = ros::Time();
     meshMarker.ns = "pancake_pose";
     meshMarker.id = 1;
-    meshMarker.lifetime = ros::Duration(4);
+    // meshMarker.lifetime = ros::Duration(4);
     meshMarker.type = visualization_msgs::Marker::MESH_RESOURCE;
     meshMarker.action = visualization_msgs::Marker::ADD;
     meshMarker.mesh_resource = "package://suturo_perception_cad_recognition/test_data/pancake_mix.stl";
@@ -85,12 +107,31 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
     meshMarker.scale.x = 1.0;
     meshMarker.scale.y = 1.0;
     meshMarker.scale.z = 1.0;
-    meshMarker.color.r = 1.0;
+    meshMarker.color.r = 0;
     meshMarker.color.g = 1.0;
-    meshMarker.color.b = 1.0;
+    meshMarker.color.b = 0;
     meshMarker.color.a = 1.0;
     vis_pub.publish(meshMarker);
 
+    // Publish moveit CollisionObject
+    moveit_msgs::CollisionObject co;
+    co.header.stamp = ros::Time::now();
+    co.header.frame_id = inputCloud->header.frame_id;
+    co.id = "pancake_mix";
+    co.operation = moveit_msgs::CollisionObject::ADD;
+
+    co.meshes.resize(1);
+    co.meshes[0] = load_mesh_msg(PANCAKE_MODEL_PATH);
+    co.mesh_poses.resize(1);
+    co.mesh_poses[0].position.x = origin.x;
+    co.mesh_poses[0].position.y = origin.y;
+    co.mesh_poses[0].position.z = origin.z;
+    co.mesh_poses[0].orientation.x = orientation.x();
+    co.mesh_poses[0].orientation.y = orientation.y();
+    co.mesh_poses[0].orientation.z = orientation.z();
+    co.mesh_poses[0].orientation.w = orientation.w();
+    ros::WallDuration(1.0).sleep();
+    pub_co.publish(co);
   }
 
 }
@@ -153,8 +194,8 @@ int main (int argc, char** argv)
   }
 
   vis_pub = nh.advertise<visualization_msgs::Marker>("/suturo/pancake_marker", 0);  
-  // first_t_pub = nh.advertise<sensor_msgs::PointCloud2>("/suturo/pose/first_transform", 1000); 
-  // second_t_pub = nh.advertise<sensor_msgs::PointCloud2>("/suturo/pose/second_transform", 1000); 
+  pub_co = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 10);
+  ros::WallDuration(1.0).sleep();
 
   std::cout << "Subscribing to " << pointcloud_topic << std::endl;
   sub = nh.subscribe(pointcloud_topic, 1, 
