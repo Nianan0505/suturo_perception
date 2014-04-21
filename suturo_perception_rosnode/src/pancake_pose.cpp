@@ -27,6 +27,7 @@
 #include <suturo_perception_cad_recognition/pancake_pose.h>
 #include <visualization_msgs/Marker.h>
 #include <ros/console.h>
+#include <iostream>
 
 // #include <suturo_manipulation_planning_scene_interface.h>
 #include <moveit/move_group_interface/move_group.h>
@@ -45,6 +46,7 @@ const std::string PANCAKE_MODEL_PATH = "package://suturo_perception_cad_recognit
 
 ros::Publisher vis_pub;
 ros::Publisher pub_co;
+bool processOneCloud = true;
 
 shape_msgs::Mesh load_mesh_msg(std::string resource)
 {
@@ -56,84 +58,86 @@ shape_msgs::Mesh load_mesh_msg(std::string resource)
 }
 void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
 {
-
   rgb_pc_ptr cloud_in (new pcl::PointCloud<pcl::PointXYZRGB>());
   pcl::fromROSMsg(*inputCloud,*cloud_in);
-  // ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
-  sp.setOriginalCloud(cloud_in);
-  sp.setCalculateHullVolume(false);
-  sp.setEcMinClusterSize(4000);
-  sp.processCloudWithProjections(cloud_in);
-  pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
+  ROS_INFO("Received a new point cloud: size = %lu",cloud_in->points.size());
+  if(processOneCloud)
+  {
+    sp.setOriginalCloud(cloud_in);
+    sp.setCalculateHullVolume(false);
+    sp.setEcMinClusterSize(4000);
+    sp.processCloudWithProjections(cloud_in);
+    pcl::ModelCoefficients::Ptr table_coefficients = sp.getTableCoefficients();
 
-  //std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
-  std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > perceivedObjects;
+    //std::vector<suturo_perception_lib::PerceivedObject> perceivedObjects;
+    std::vector<suturo_perception_lib::PerceivedObject, Eigen::aligned_allocator<suturo_perception_lib::PerceivedObject> > perceivedObjects;
 
-  perceivedObjects = sp.getPerceivedObjects();
+    perceivedObjects = sp.getPerceivedObjects();
 
-  ROS_INFO("Received perceived Objects %lu", perceivedObjects.size());
-  for (int i = 0; i < perceivedObjects.size(); i++) {
-    rgb_pc_ptr object_cloud = perceivedObjects.at(i).get_pointCloud();
-    // pcl::PointCloud<pcl::PointXYZ> object_cloud_xyz;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr object_cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::copyPointCloud(*object_cloud, *object_cloud_xyz);
-    Eigen::Vector4f table_coefficients_eigen(
-        table_coefficients->values.at(0),
-        table_coefficients->values.at(1),
-        table_coefficients->values.at(2),
-        table_coefficients->values.at(3));
-    PancakePose pp(object_cloud_xyz, model_cloud, table_coefficients_eigen);
-    pp.execute();
-    pcl::PointXYZ origin = pp.getOrigin();
-    Eigen::Quaternionf orientation = pp.getOrientation();
+    ROS_INFO("Received perceived Objects %lu", perceivedObjects.size());
+    for (int i = 0; i < perceivedObjects.size(); i++) {
+      rgb_pc_ptr object_cloud = perceivedObjects.at(i).get_pointCloud();
+      // pcl::PointCloud<pcl::PointXYZ> object_cloud_xyz;
+      pcl::PointCloud<pcl::PointXYZ>::Ptr object_cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+      pcl::copyPointCloud(*object_cloud, *object_cloud_xyz);
+      Eigen::Vector4f table_coefficients_eigen(
+          table_coefficients->values.at(0),
+          table_coefficients->values.at(1),
+          table_coefficients->values.at(2),
+          table_coefficients->values.at(3));
+      PancakePose pp(object_cloud_xyz, model_cloud, table_coefficients_eigen);
+      pp.execute();
+      pcl::PointXYZ origin = pp.getOrigin();
+      Eigen::Quaternionf orientation = pp.getOrientation();
 
-    // // Publish cad model
-    visualization_msgs::Marker meshMarker;
-    meshMarker.header.frame_id = inputCloud->header.frame_id;
-    meshMarker.header.stamp = ros::Time();
-    meshMarker.ns = "pancake_pose";
-    meshMarker.id = 1;
-    // meshMarker.lifetime = ros::Duration(4);
-    meshMarker.type = visualization_msgs::Marker::MESH_RESOURCE;
-    meshMarker.action = visualization_msgs::Marker::ADD;
-    meshMarker.mesh_resource = "package://suturo_perception_cad_recognition/test_data/pancake_mix.stl";
-    meshMarker.pose.position.x = origin.x;
-    meshMarker.pose.position.y = origin.y;
-    meshMarker.pose.position.z = origin.z;
-    meshMarker.pose.orientation.x = orientation.x(); 
-    meshMarker.pose.orientation.y = orientation.y(); 
-    meshMarker.pose.orientation.z = orientation.z(); 
-    meshMarker.pose.orientation.w = orientation.w(); 
-    meshMarker.scale.x = 1.0;
-    meshMarker.scale.y = 1.0;
-    meshMarker.scale.z = 1.0;
-    meshMarker.color.r = 0;
-    meshMarker.color.g = 1.0;
-    meshMarker.color.b = 0;
-    meshMarker.color.a = 1.0;
-    vis_pub.publish(meshMarker);
+      // // Publish cad model
+      visualization_msgs::Marker meshMarker;
+      meshMarker.header.frame_id = inputCloud->header.frame_id;
+      meshMarker.header.stamp = ros::Time();
+      meshMarker.ns = "pancake_pose";
+      meshMarker.id = 1;
+      // meshMarker.lifetime = ros::Duration(4);
+      meshMarker.type = visualization_msgs::Marker::MESH_RESOURCE;
+      meshMarker.action = visualization_msgs::Marker::ADD;
+      meshMarker.mesh_resource = "package://suturo_perception_cad_recognition/test_data/pancake_mix.stl";
+      meshMarker.pose.position.x = origin.x;
+      meshMarker.pose.position.y = origin.y;
+      meshMarker.pose.position.z = origin.z;
+      meshMarker.pose.orientation.x = orientation.x(); 
+      meshMarker.pose.orientation.y = orientation.y(); 
+      meshMarker.pose.orientation.z = orientation.z(); 
+      meshMarker.pose.orientation.w = orientation.w(); 
+      meshMarker.scale.x = 1.0;
+      meshMarker.scale.y = 1.0;
+      meshMarker.scale.z = 1.0;
+      meshMarker.color.r = 0;
+      meshMarker.color.g = 1.0;
+      meshMarker.color.b = 0;
+      meshMarker.color.a = 1.0;
+      vis_pub.publish(meshMarker);
 
-    // Publish moveit CollisionObject
-    moveit_msgs::CollisionObject co;
-    co.header.stamp = ros::Time::now();
-    co.header.frame_id = inputCloud->header.frame_id;
-    co.id = "pancake_mix";
-    co.operation = moveit_msgs::CollisionObject::ADD;
+      // Publish moveit CollisionObject
+      moveit_msgs::CollisionObject co;
+      co.header.stamp = ros::Time::now();
+      co.header.frame_id = inputCloud->header.frame_id;
+      co.id = "pancake_mix";
+      co.operation = moveit_msgs::CollisionObject::ADD;
 
-    co.meshes.resize(1);
-    co.meshes[0] = load_mesh_msg(PANCAKE_MODEL_PATH);
-    co.mesh_poses.resize(1);
-    co.mesh_poses[0].position.x = origin.x;
-    co.mesh_poses[0].position.y = origin.y;
-    co.mesh_poses[0].position.z = origin.z;
-    co.mesh_poses[0].orientation.x = orientation.x();
-    co.mesh_poses[0].orientation.y = orientation.y();
-    co.mesh_poses[0].orientation.z = orientation.z();
-    co.mesh_poses[0].orientation.w = orientation.w();
-    ros::WallDuration(1.0).sleep();
-    pub_co.publish(co);
+      co.meshes.resize(1);
+      co.meshes[0] = load_mesh_msg(PANCAKE_MODEL_PATH);
+      co.mesh_poses.resize(1);
+      co.mesh_poses[0].position.x = origin.x;
+      co.mesh_poses[0].position.y = origin.y;
+      co.mesh_poses[0].position.z = origin.z;
+      co.mesh_poses[0].orientation.x = orientation.x();
+      co.mesh_poses[0].orientation.y = orientation.y();
+      co.mesh_poses[0].orientation.z = orientation.z();
+      co.mesh_poses[0].orientation.w = orientation.w();
+      ros::WallDuration(1.0).sleep();
+      pub_co.publish(co);
+      processOneCloud = false;
+    }
   }
-
 }
 
 int main (int argc, char** argv)
@@ -203,8 +207,32 @@ int main (int argc, char** argv)
 
   ros::Rate r(0.5);
   while(ros::ok()){
-    ros::spinOnce();
-    r.sleep();
+    if(processOneCloud)
+    {
+      ros::spinOnce();
+      r.sleep();
+    }else
+    {
+      std::cout << "Would you like to run the pose estimation again? [y/q]. Enter \"q\" to quit." << std::endl;
+      std::string input;
+      std::cin >> input;
+      if(input.compare("y") == 0)
+      {
+        processOneCloud = true;
+      }
+      else
+      {
+        if(input.compare("q") == 0)
+        {
+          return 0;
+        }
+        else
+        {
+          std::cout << "Please answer with \"y\" if you want to run the pose estimation again" << std::endl;
+        }
+      }
+    }
+      
   }
   return 0;
 }
