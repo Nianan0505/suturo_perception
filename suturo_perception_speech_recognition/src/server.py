@@ -11,16 +11,17 @@ android app and returns a status to it.
 If a valid command was found, it will be sent via ros.
 '''
 
-HOST_NAME = 'localhost'
+HOST_NAME = '0.0.0.0'
 PORT_NUMBER = 8000
-COMMAND_WORDS = set(['cleanup', 'remove'])
+COMMAND_WORDS = set(['cleanup', 'clean', 'remove'])
 OBJECT_WORDS = set(['corny', 'cafetfilter'])
 
+pub = rospy.Publisher('/suturo/SpeechRecognitionCommand', suturo_perception_msgs.msg.SpeechRecognitionCommand)
+rospy.init_node('talker', anonymous=True)
+r = rospy.Rate(10) # 10hz
+
 def publish_command(command, obj):
-    ''' publish the recognized command '''
-    pub = rospy.Publisher('/suturo/SpeechRecognitionCommand', suturo_perception_msgs.msg.SpeechRecognitionCommand)
-    rospy.init_node('talker', anonymous=True)
-    r = rospy.Rate(10) # 10hz
+    ''' publish the recognized command '''    
     rospy.loginfo('publishing...')
     s = suturo_perception_msgs.msg.SpeechRecognitionCommand()
     s.object = obj
