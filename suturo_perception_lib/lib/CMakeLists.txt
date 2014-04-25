@@ -21,4 +21,5 @@ find_package(Boost 1.48.0 COMPONENTS thread)
 include_directories(${Boost_INCLUDE_DIRS}) 
 link_directories(${Boost_LIBRARY_DIRS})
 # Link library against PCL and boost
-target_link_libraries(suturo_perception_lib ${OpenCV_LIBS} ${PCL_LIBRARIES} ${Boost_LIBRARIES})                                                                                                                                                                                                                            
+target_link_libraries(suturo_perception_lib suturo_perception_utils ${OpenCV_LIBS} ${PCL_LIBRARIES} ${Boost_LIBRARIES})
+
