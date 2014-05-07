@@ -1,7 +1,10 @@
 /*
- * This node tries is part of a pipeline
- * to align a CAD model to a (partial) pointcloud
- * of a segmented object
+ * This node uses the PancakePose library to estimate
+ * the pose of a segmented, partial pointcloud against a 
+ * CAD Model. The results will be visualized as follows:
+ *   1) The input cloud and the cloud of the CAD model
+ *   2) The input cloud against the ICP-fitted model (after the initial alignment)
+ *   3) Visualization of each step during the pose estimation process.
  *
  * The CAD model has to be subsampled as a Pointcloud and be
  * passed to this node.

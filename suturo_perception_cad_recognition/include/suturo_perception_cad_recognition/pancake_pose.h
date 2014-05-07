@@ -2,14 +2,22 @@
 #define SUTURO_PERCEPTION_PANCAKE_POSE
 
 /*
- * This node tries is part of a pipeline
+ * This node is part of a pipeline
  * to align a CAD model to a (partial) pointcloud
- * of a segmented object
+ * of a segmented object. Right now, this class is limited
+ * to estimate the Pose of a "Mondamin Pancake Mix". A CAD model of it
+ * can be found in this package under test_data/pancake_mix.stl.
  *
  * The CAD model has to be subsampled as a Pointcloud and be
  * passed to this node.
  * You can subsample a CAD model with CloudCompare (http://www.danielgm.net/cc/)
  * Future releases of this software may automate this step.
+ *
+ * The estimation will be done as follows:
+ *   1) Estimate the rough orientation of the partial pointcloud and transform it in a way, that it is standing straight up in the origin
+ *   2) Run ICP, to get a refined Pose
+ *   3) Calculate the original orientation of the object, by calculating the inverse of every
+ *      necessary transformation that has been done.
  */
 
 #include <ros/ros.h>
