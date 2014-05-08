@@ -108,6 +108,12 @@ void VisualizationPublisher::publishCuboids(std::vector<suturo_perception_msgs::
   for (std::vector<suturo_perception_msgs::PerceivedObject>::iterator it = objs.begin(); 
        it != objs.end (); ++it)
   {
+
+    // Has the cuboid been estimated successfully ?
+    if( it->matched_cuboid.length1 == 76 && it->matched_cuboid.length2 == 79 && 
+        it->matched_cuboid.length3 == 76)
+      continue;
+
     // Publish visualization markers
     visualization_msgs::Marker cuboidMarker;
     cuboidMarker.header.frame_id = frameId;

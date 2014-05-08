@@ -15,6 +15,9 @@ namespace suturo_perception_3d_capabilities
   /**
    * This class will estimate a Cuboid, that fit's a given pointcloud.
    * The core implementation is in the ROS package suturo_perception_match_cuboid.
+   * The CuboidMatcher will be used to calculate the cuboid, and enrich this data
+   * in the given PerceivedObject.
+   * If the estimation was not succesful, the cuboid dimensions will be: 76 x 79 x 76
    */
   class CuboidMatcherAnnotator : public suturo_perception_lib::Capability
   {

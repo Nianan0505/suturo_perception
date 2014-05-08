@@ -31,11 +31,19 @@ void CuboidMatcherAnnotator::execute(bool debug)
     // cm.setMode(CUBOID_MATCHER_MODE_WITH_COEFFICIENTS);
     // cm.setSaveIntermediateResults(true);
     Cuboid cuboid;
+    // Set a value pattern to see if the cuboid value has been changed
+    // in the CuboidMatcher call. These values WILL be overwritten, if a 
+    // cuboid has been estimated successfully
+    cuboid.length1 = 76;
+    cuboid.length2 = 79;
+    cuboid.length3 = 76;
+
     cm.execute(cuboid);
 
     // Set cuboid, if the estimation was successful
     if(cm.estimationSuccessful())
       perceived_object_.set_c_cuboid(cuboid);
+
 }
 void CuboidMatcherAnnotator::execute()
 {
