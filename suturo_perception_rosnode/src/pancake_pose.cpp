@@ -133,6 +133,9 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
       co.mesh_poses[0].orientation.y = orientation.y();
       co.mesh_poses[0].orientation.z = orientation.z();
       co.mesh_poses[0].orientation.w = orientation.w();
+      cout << "Estimated pose: " << origin.x << " " << origin.y << " " << origin.z << " " << "O: ";
+      cout << orientation.x() << " " << orientation.y() << " " << orientation.z() << " " << orientation.w();
+      cout << "Frame " << inputCloud->header.frame_id << std::endl;
       ros::WallDuration(1.0).sleep();
       pub_co.publish(co);
       processOneCloud = false;
