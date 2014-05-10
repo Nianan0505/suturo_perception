@@ -128,6 +128,8 @@ int main(int argc, char** argv){
   l.logTime(file_load_start,file_load_end,"File loading and voxeling done");
 
   boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time();
+  // Specify the table normal of the given model
+  // Eigen::Vector4f table_normal(-0.0102523,-0.746435,-0.66538,0.92944); // pancake_fail
   Eigen::Vector4f table_normal(0.0118185, 0.612902, 0.79007, -0.917831); // pancake 
   // Eigen::Vector4f table_normal(0.00924593, 0.697689, 0.716341, -0.914689); // pancake 0deg moved
   // Eigen::Vector4f table_normal(0.0102382,0.6985,0.715537,-0.914034); // pancake 0deg moved

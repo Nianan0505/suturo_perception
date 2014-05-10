@@ -171,8 +171,24 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr PancakePose::execute()
       _table_normal[1],
       _table_normal[2]);
 
+  // Decide if the object is table normal is upside down or not. The table vector should point into the positive sector of the x-z plane
+  Eigen::Vector3f rotation_base_vector;
+  if(table_normal[1] < 0)
+  {
+    // Table Normal Vector is pointing down. Invert the Y Unit vector
+    rotation_base_vector[0] = rotation_base_vector[2] = 0;
+    rotation_base_vector[1] = -1;
+  }
+  else
+  {
+    // Table Normal Vector is pointing up. No need to invert the Y Unit vector
+    rotation_base_vector[0] = rotation_base_vector[2] = 0;
+    rotation_base_vector[1] = 1;
+  }
+  // Eigen::Matrix< float, 4, 4 > transformationRotateObject = 
+  //   rotateAroundCrossProductOfNormals(Eigen::Vector3f(0,1,0), table_normal);
   Eigen::Matrix< float, 4, 4 > transformationRotateObject = 
-    rotateAroundCrossProductOfNormals(Eigen::Vector3f(0,1,0), table_normal);
+    rotateAroundCrossProductOfNormals(rotation_base_vector, table_normal);
 
   pcl::transformPointCloud (*_cloud_in, *_upwards_object, transformationRotateObject);   
   pcl::transformPointCloud (*_cloud_in, *_upwards_object_s1, transformationRotateObject);   
