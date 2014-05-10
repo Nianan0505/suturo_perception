@@ -62,9 +62,6 @@ Cuboid PancakePose::computeCuboidFromBorderPoints(pcl::PointCloud<pcl::PointXYZR
   c.length3 = pcl::distances::l2(corner_points->points.at(0).getVector4fMap(),corner_points->points.at(4).getVector4fMap());
 
   c.volume = c.length1 * c.length2 * c.length3;
-  // Eigen::Vector4f centroid;
-  // CuboidMatcher::computeCentroid(corner_points, centroid);
-  // c.center = getVector3fFromVector4f(centroid);
   c.corner_points = corner_points;
   return c;
 }
@@ -265,8 +262,6 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr PancakePose::execute()
 
   // Compute the centroids of both clouds and bring them closer together
   // for an rough initial alignment.
-  // Eigen::Vector4f input_cloud_centroid, model_cloud_centroid, diff_of_centroids;
-  // pcl::compute3DCentroid(*_cloud_in, input_cloud_centroid); 
   pcl::compute3DCentroid(*transformed_cloud, model_cloud_centroid); 
   diff_of_centroids = input_cloud_centroid - model_cloud_centroid;
   Eigen::Affine3f transformC = pcl::getTransformation(diff_of_centroids[0],

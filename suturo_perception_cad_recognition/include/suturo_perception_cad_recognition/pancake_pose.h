@@ -50,16 +50,20 @@ class PancakePose
     Eigen::Vector4f _table_normal;
 
   public:
-  // Attributes
+    // Attributes
     pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud_in;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _model_cloud;
+    // Intermediate pointclouds that have been generated in the execution step
     pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_model;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object_s1;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object_s2;
     pcl::PointCloud<pcl::PointXYZ>::Ptr _upwards_object_s3;
+    // The transformation that has been done by ICP after the initial alignment
     Eigen::Matrix<float, 4, 4> _icp_transform;
+    // The inverse of the last transformation
     Eigen::Matrix<float, 4, 4> _icp_transform_inverse;
+
     std::vector<Eigen::Matrix< float, 4, 4 >, Eigen::aligned_allocator<Eigen::Matrix< float, 4, 4> > > rotations_;
     std::vector<Eigen::Matrix< float, 4, 4 >, Eigen::aligned_allocator<Eigen::Matrix< float, 4, 4> > > translations_;
 
