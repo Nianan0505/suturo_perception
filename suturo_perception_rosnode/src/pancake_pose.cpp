@@ -117,12 +117,14 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
       vis_pub.publish(meshMarker);
 
       // Publish moveit CollisionObject
+      
+      
+      
       moveit_msgs::CollisionObject co;
       co.header.stamp = ros::Time::now();
       co.header.frame_id = inputCloud->header.frame_id;
       co.id = "pancake_mix";
-      co.operation = moveit_msgs::CollisionObject::ADD;
-
+      
       co.meshes.resize(1);
       co.meshes[0] = load_mesh_msg(PANCAKE_MODEL_PATH);
       co.mesh_poses.resize(1);
@@ -137,6 +139,12 @@ void receive_cloud(const sensor_msgs::PointCloud2ConstPtr& inputCloud)
       cout << orientation.x() << " " << orientation.y() << " " << orientation.z() << " " << orientation.w();
       cout << "Frame " << inputCloud->header.frame_id << std::endl;
       ros::WallDuration(1.0).sleep();
+      
+      co.operation = moveit_msgs::CollisionObject::REMOVE;
+	  pub_co.publish(co);
+      
+      co.operation = moveit_msgs::CollisionObject::ADD;
+      
       pub_co.publish(co);
       processOneCloud = false;
     }
