@@ -140,7 +140,11 @@ void CuboidMatcher::segmentPlanes()
     // to the normal of the table
     //
     // no planes? Exit immediately
-    if(detected_planes_.size() == 0) return;
+    if(detected_planes_.size() == 0)
+    {
+      if(debug) std::cout << "Could not detect any plane" << std::endl;
+      return;
+    }
 
     float angle = detected_planes_.at(0).angleBetween(
            getTableCoefficientsAsVector3f());
@@ -183,6 +187,7 @@ void CuboidMatcher::segmentPlanes()
         // The second plane also fails. Delete all the detected planes to
         // indicate a failed segmentation
         detected_planes_.clear();
+        if(debug) std::cout << "Deleted planes in second plane angle check" << std::endl;
         return;
       }
 
@@ -192,13 +197,16 @@ void CuboidMatcher::segmentPlanes()
       // No proper plane found, no more plane candidates available
       // -> exit with an empty set of suitable planes
       if( good_plane == -1 ){
-        std::cerr << "No plane found" << std::endl;
+        std::cerr << "No good plane found" << std::endl;
         detected_planes_.clear();
         return;
       }
     }
 
-    if(good_plane == -1) return; // Security - This should not happen
+    if(good_plane == -1){
+      if(debug) std::cout << "Deleted planes in second plane angle check" << std::endl;
+      return; // Security - This should not happen
+    }
 
 
     // Push the normal of the good plane and the table
